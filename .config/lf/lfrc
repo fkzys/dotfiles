@@ -1,0 +1,10 @@
+map m $mpv "$f" #>/dev/null 2>&1 & #call mpv 
+map n $nvim "$f"  #call nvim
+
+cmd ffmpeg_jp %sh ~/scripts/ffmpeg_jp.sh "$f" && lf -remote "send $id reload"
+
+map o ffmpeg_jp
+
+cmd rename_subs %sh ~/scripts/rename_subs.sh && lf -remote "send $id reload"
+
+map <c-b> rename_subs
