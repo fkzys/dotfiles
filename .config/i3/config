@@ -11,6 +11,8 @@ exec feh --bg-fill ~/Downloads/background.jpg
 font pango: Hack, IPAPGothic, Noto Sans Mono CJK JP, FontAwesome, Hack Nerd Font Mono 9
 exec --no-sturtup-id lxsession
 exec --no-startup-id /usr/bin/gnome-keyring-daemon --start 
+#opentabletdriver
+exec --no-startup-id otd-daemon
 exec_always --no-startup-id /home/user/.config/polybar/launch.sh
 
 bindsym $mod + F1 exec firefox
