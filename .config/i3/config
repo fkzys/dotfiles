@@ -30,7 +30,7 @@ exec --no-startup-id numlockx on
 
 exec xrandr --output DP-4 --mode 1920x1080 --rate 144.00
 
-exec --no-startup-id nitrogen --restore; sleep 1; compton -b
+exec --no-startup-id nitrogen --restore; sleep 1; picom -b --backend xrender
 
 #exec --no-startup-id setxkbmap -model pc105 -layout us,ru -option grp:alt_shift_toggle
 
