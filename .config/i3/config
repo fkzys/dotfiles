@@ -7,33 +7,32 @@
 
 # rofi polybar firefox telegram-desktop thunar numlockx nitrogen xorg-xrandr xclip lxappearance lxsession materia-gtk-theme papirus-icon-theme
 bindsym $mod+d exec rofi -show run drun -show-icons 
-exec feh --bg-fill ~/Downloads/background.jpg
+exec feh --bg-fill $HOME/Downloads/background.jpg
 font pango: Hack, IPAPGothic, Noto Sans Mono CJK JP, FontAwesome, Hack Nerd Font Mono 9
+
 exec --no-sturtup-id lxsession
 exec --no-startup-id /usr/bin/gnome-keyring-daemon --start 
-#opentabletdriver
+
+#https://github.com/OpenTabletDriver/OpenTabletDriver
 exec --no-startup-id otd-daemon
-exec_always --no-startup-id /home/user/.config/polybar/launch.sh
+exec_always --no-startup-id $HOME/.config/polybar/launch.sh
+
+#https://github.com/Ajatt-Tools/transformers_ocr
+exec --no-startup-id transformers_ocr listen
+bindsym $mod+o exec --no-startup-id transformers_ocr recognize
+bindsym $mod+Shift+o  exec --no-startup-id transformers_ocr hold
 
 bindsym $mod + F1 exec firefox
-
-
 bindsym $mod + F2 exec telegram-desktop
-
-
 bindsym $mod + F3 exec thunar
-
-
 bindsym $mod + F4 exec kitty /bin/zsh
 
 exec --no-startup-id numlockx on
 
 exec xrandr --output DP-4 --mode 1920x1080 --rate 144.00
-
 exec --no-startup-id nitrogen --restore; sleep 1; picom -b --backend xrender
 
 #exec --no-startup-id setxkbmap -model pc105 -layout us,ru -option grp:alt_shift_toggle
-
 #exec kitty --hold -e "neofetch"
 
 exec nvidia-settings -a '[gpu:0]/GPUPowerMizerMode=1'
