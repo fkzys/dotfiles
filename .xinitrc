@@ -8,6 +8,9 @@ export XMODIFIERS=@im=fcitx
 
 export QT_QPA_PLATFORMTHEME=qt6ct
 
+#https://tatsumoto-ren.github.io/blog/setting-up-anki.html
+export PATH="${PATH}:${HOME}/.local/bin"
+
 nextcloud &
 flameshot &
 mpd &
