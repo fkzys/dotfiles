@@ -29,6 +29,7 @@ nvim
 picom
 polybar
 rofi
+ueberzug
 ---
 fonts-deps:
 fcitx

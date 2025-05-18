@@ -121,6 +121,9 @@ export DEB_BUILD_OPTIONS="parallel=$(nproc)"
 EDITOR=nvim
 alias vi="nvim"
 alias vim="nvim"
+
+alias lf="$HOME/.local/bin/lf"
+
 # Change directory
 alias subs='cd -- "/mnt/hdd1/jp/kitsunekko-mirror/subtitles"'
 alias anime='cd -- "/mnt/hdd1/torrents"'
