@@ -1,0 +1,38 @@
+install.sh should not be executed before setting your own variables inside the script
+
+inside ".local/bin/cabl" i commented out everything that i don't use for now
+original "cabl" lives here:
+https://github.com/tatsumoto-ren/dotfiles/blob/main/.local/bin/i3cmds/cabl
+
+
+file ".local/bin/dmenu" was changed. source is here:
+https://github.com/tatsumoto-ren/dotfiles/blob/main/.local/bin/dmenu
+
+other sources, not modified for now:
+https://github.com/tatsumoto-ren/dotfiles/blob/main/.config/mpd/mpd.conf
+https://github.com/tatsumoto-ren/dotfiles/tree/main/.config/ncmpcpp
+https://github.com/tatsumoto-ren/dotfiles/tree/main/.config/fontconfig/conf.d
+https://github.com/tatsumoto-ren/dotfiles/tree/main/.config/lf
+https://github.com/tatsumoto-ren/dotfiles/blob/main/.config/mpv/input.conf
+
+deps:
+podman
+firefox
+goldendict
+i3
+kitty
+lf
+mpd
+mpv
+ncmpcpp
+nvim
+picom
+polybar
+rofi
+---
+fonts-deps:
+fcitx
+fcitx-configtool
+fcitx-kkc
+fcitx-qt5
+fcitx-qt6

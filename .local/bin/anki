@@ -1,0 +1,4 @@
+#!/bin/bash
+
+export VERSION=25.2.4
+source $HOME/anki_venv/anki_$VERSION/bin/activate && anki

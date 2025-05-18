@@ -1,0 +1,3 @@
+#!/bin/sh
+rofi -dmenu -location 2 -fixed-num-lines 15 "$@"
+#rofi -dmenu "$@"
