@@ -12,6 +12,7 @@ man-db
 neovim
 nextcloud-client
 code
+ollama
 obs-studio
 go
 libreoffice-fresh
@@ -52,6 +53,7 @@ mpv
 mpd
 ncmpcpp
 lf
+ueberzug
 kvantum
 noto-fonts-cjk
 restic
@@ -70,4 +72,3 @@ iptables-nft
 traceroute
 wireguard-tools
 wget
-ueberzug
