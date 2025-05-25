@@ -94,8 +94,8 @@
   <program commandLine="gd-marisa --word %GDWORD% --sentence %GDSEARCH%&#xa;" enabled="1" icon="" id="2c7ab45221125fd3a60018471e4a9bf6" name="marisa" type="2"/>
  </programs>
  <mutedDictionaries>
-  <mutedDictionary>1a864a434706cc149d914bed03998bd9</mutedDictionary>
   <mutedDictionary>5d295bcd561d50af84342ad2d6bac1ea</mutedDictionary>
+  <mutedDictionary>1a864a434706cc149d914bed03998bd9</mutedDictionary>
  </mutedDictionaries>
  <popupMutedDictionaries/>
  <preferences>
