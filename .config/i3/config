@@ -23,7 +23,7 @@ bindsym $mod+o exec --no-startup-id transformers_ocr recognize
 bindsym $mod+Shift+o  exec --no-startup-id transformers_ocr hold
 
 bindsym $mod+Shift+f exec flameshot gui
-
+bindsym $mod+Shift+a exec $HOME/.local/bin/audio-device-switcher.sh
 #https://tatsumoto-ren.github.io/blog/plumbing-for-language-learners.html
 # Run cabl
 bindsym $mod+c          exec --no-startup-id cabl
