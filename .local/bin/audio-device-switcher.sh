@@ -4,7 +4,7 @@ set -euo pipefail  # Включаем строгий режим: ошибки �
 
 # Выводит список аудиоустройств в формате для rofi/dmenu
 get_audio_devices() {
-    wpctl status | awk -v RS='\0' '{sub(/Sources:[^\n]*(\n|$).*/, ""); print}' | grep -A10 "Sinks:" | grep "  [0-9]\+\. " | tr -d "│"
+    wpctl status | awk 'BEGIN {found=0} /Sources:/ {found=1} found==0 {print}' | grep -A10 "Sinks:" | grep "  [0-9]\+\. " | tr -d "│"
 }
 
 # Показывает меню выбора устройства (можно заменить rofi на dmenu/fzf)
