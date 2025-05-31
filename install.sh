@@ -16,6 +16,7 @@ ln -s $HOME/dotfiles/.local/bin/anki $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/cabl $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/dmenu $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/lf $HOME/.local/bin
+ln -s $HOME/dotfiles/.local/bin/lf/audio-device-switcher.sh $HOME/.local/bin
 
 #config
 ln -s $HOME/dotfiles/.config/containers/storage.conf $HOME/.config/containers/storage.conf
