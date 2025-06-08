@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+
+boot_status=$(ls /dev/disk/by-label/BOOT 2>/dev/null)
+
+mount_boot() { sudo mount /dev/disk/by-label/BOOT /boot; }
+umount_boot() { sudo umount /boot; }
+update_kernel() { mount_boot && sudo pacman -Syyu && sync && umount_boot; }
+
+if [ -n "$boot_status" ]; then
+    update_kernel
+else
+    exit 1
+fi
