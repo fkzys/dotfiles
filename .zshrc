@@ -122,10 +122,6 @@ EDITOR=nvim
 alias vi="nvim"
 alias vim="nvim"
 
-alias mount-boot="sudo mount /dev/disk/by-label/BOOT /boot"
-alias umount-boot="sudo umount /boot"
-alias update-kernel='mount-boot && sudo pacman -Syyu && sync && umount-boot'
-
 alias lf="$HOME/.local/bin/lf"
 
 # Change directory
