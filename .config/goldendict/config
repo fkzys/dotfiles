@@ -44,7 +44,6 @@
   </chinese>
   <romaji>
    <enable>0</enable>
-   <enableHepburn>1</enableHepburn>
    <enableHiragana>1</enableHiragana>
    <enableKatakana>1</enableKatakana>
   </romaji>
@@ -101,7 +100,7 @@
  <preferences>
   <interfaceLanguage></interfaceLanguage>
   <interfaceFont>Noto Sans</interfaceFont>
-  <interfaceFontSize>12</interfaceFontSize>
+  <interfaceFontSize_0>12</interfaceFontSize_0>
   <customFonts monospace="Adobe Courier" sans-serif="Noto Sans" serif="Noto Serif" standard="Noto Serif"/>
   <displayStyle></displayStyle>
   <interfaceStyle>Default</interfaceStyle>
@@ -198,7 +197,7 @@
  <popupWindowGeometry2>AdnQywADAAAAAAWcAAAAOQAAB2kAAAQhAAAFnAAAADkAAAdpAAAEIQAAAAAAAAAAB4AAAAWcAAAAOQAAB2kAAAQh</popupWindowGeometry2>
  <pinPopupWindow>0</pinPopupWindow>
  <popupWindowAlwaysOnTop>0</popupWindowAlwaysOnTop>
- <mainWindowState>AAAA/wAAAAD9AAAAAgAAAAAAAABcAAABx/wCAAAAAfsAAAAUAHMAZQBhAHIAYwBoAFAAYQBuAGUAAAAAUwAAAccAAACUAP///wAAAAEAAACuAAADhPwCAAAAA/sAAAASAGQAaQBjAHQAcwBQAGEAbgBlAQAAAGkAAAEpAAAAaAD////7AAAAGgBmAGEAdgBvAHIAaQB0AGUAcwBQAGEAbgBlAQAAAZgAAAEmAAAAaAD////7AAAAFgBoAGkAcwB0AG8AcgB5AFAAYQBuAGUBAAACxAAAASkAAABoAP///wAABqQAAAOEAAAABAAAAAQAAAAIAAAACPwAAAACAAAAAgAAAAEAAAAUAG4AYQB2AFQAbwBvAGwAYgBhAHIBAAAAAP////8AAAAAAAAAAAAAAAIAAAABAAAAGgBkAGkAYwB0AGkAbwBuAGEAcgB5AEIAYQByAQAAAAD/////AAAAAAAAAAA=</mainWindowState>
+ <mainWindowState>AAAA/wAAAAD9AAAAAgAAAAAAAABcAAABx/wCAAAAAfsAAAAUAHMAZQBhAHIAYwBoAFAAYQBuAGUAAAAAUwAAAccAAACUAP///wAAAAEAAACuAAADhPwCAAAAA/sAAAASAGQAaQBjAHQAcwBQAGEAbgBlAQAAAGkAAAEqAAAAaAD////7AAAAGgBmAGEAdgBvAHIAaQB0AGUAcwBQAGEAbgBlAQAAAZkAAAEkAAAAaAD////7AAAAFgBoAGkAcwB0AG8AcgB5AFAAYQBuAGUBAAACwwAAASoAAABoAP///wAABqQAAAOEAAAABAAAAAQAAAAIAAAACPwAAAACAAAAAgAAAAEAAAAUAG4AYQB2AFQAbwBvAGwAYgBhAHIBAAAAAP////8AAAAAAAAAAAAAAAIAAAABAAAAGgBkAGkAYwB0AGkAbwBuAGEAcgB5AEIAYQByAQAAAAD/////AAAAAAAAAAA=</mainWindowState>
  <mainWindowGeometry>AdnQywADAAAAAAAUAAAANwAAB2sAAAQjAAADxAAAADkAAAdpAAAEIQAAAAACAAAAB4AAAAAUAAAANwAAB2sAAAQj</mainWindowGeometry>
  <dictInfoGeometry>AdnQywADAAAAAAIEAAABTAAABWwAAALmAAACBgAAAU4AAAVqAAAC5AAAAAAAAAAAB4AAAAIGAAABTgAABWoAAALk</dictInfoGeometry>
  <inspectorGeometry></inspectorGeometry>

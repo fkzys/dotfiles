@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+
+boot_status=$(ls /dev/disk/by-label/BOOT 2>/dev/null)
+
+mount_boot() { sudo mount /dev/disk/by-label/BOOT /boot; }
+umount_boot() { sudo umount /boot; }
+restore_bootloader() { mount_boot && sudo grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=arch && sudo grub-mkconfig -o /boot/grub/grub.cfg && sync && umount_boot; }
+
+if [ -n "$boot_status" ]; then
+    restore_bootloader
+else
+    exit 1
+fi
