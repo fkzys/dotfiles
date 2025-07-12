@@ -30,9 +30,9 @@ update_kernel() {
 }
 
 # Проверка наличия раздела BOOT
-boot_status=/dev/disk/by-label/BOOT
+boot_status=$(ls /dev/disk/by-label/BOOT 2>/dev/null || true)
 
-if [ -n "" ]; then
+if [ -n "$boot_status" ]; then
     update_kernel
 else
     echo "Ошибка: раздел BOOT не найден"
