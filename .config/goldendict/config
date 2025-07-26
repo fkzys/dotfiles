@@ -6,13 +6,21 @@
   <sounddir icon="" name="ja">/mnt/hdd1/jp/goldendict/audio/Forvo_pronunciations/export/opus/ja</sounddir>
  </sounddirs>
  <dictionaryOrder id="0" name="">
+  <dictionary name="（大修館）明鏡国語辞典［第三版］">0f86472489b5cfe7d60bc9ffcb71beb0</dictionary>
+  <dictionary name="（小学館）デジタル大辞泉 [2021.10]">c499cdd072814f002c70dc12df1c10ae</dictionary>
   <dictionary name="大辞泉202304">6d51ed369ebc73f9e76485028c6684e9</dictionary>
   <dictionary name="大辞林　第四版">315f7aaee16eef780e6f5871fb7b8883</dictionary>
+  <dictionary name="（三省堂）スーパー大辞林 [3.0]">994f584a6ab12caa3d3107054b477044</dictionary>
   <dictionary name="新明解国語辞典　第八版">1a864a434706cc149d914bed03998bd9</dictionary>
+  <dictionary name="（三省堂）新明解国語辞典［第七版］">cb2aee6a7329c004544b6b69e2f019a6</dictionary>
+  <dictionary name="（三省堂）国語辞典［第七版］">3651bdef457c9d6ce0778ad18f170cca</dictionary>
+  <dictionary name="（小学館）日本国語大辞典［第二版］">c64021fbb44b9a0f957d014f9b21a5b3</dictionary>
+  <dictionary name="（岩波）国語辞典［第六版］">4c33fc2a210599808c80723a8fac4f61</dictionary>
+  <dictionary name="（旺文社）国語辞典［第十一版］">d34a4cd3fc9ebe8e28f3ccc04c886545</dictionary>
+  <dictionary name="旺文社国語辞典［第十一版］">5d295bcd561d50af84342ad2d6bac1ea</dictionary>
   <dictionary name="Japanese (JP) Morphology">a4b0c0b061cead2d9377d20dbf976b42</dictionary>
   <dictionary name="ja">015dd3c995241d3a2e10a648219954dd</dictionary>
-  <dictionary name="marisa">2c7ab45221125fd3a60018471e4a9bf6</dictionary>
-  <dictionary name="旺文社国語辞典［第十一版］">5d295bcd561d50af84342ad2d6bac1ea</dictionary>
+  <dictionary name="Marisa">2c7ab45221125fd3a60018471e4a9bf6</dictionary>
   <mutedDictionaries/>
  </dictionaryOrder>
  <inactiveDictionaries id="0" name="">
@@ -20,11 +28,21 @@
  </inactiveDictionaries>
  <groups nextId="2">
   <group icon="ja.png" id="1" name="jp">
+   <dictionary name="（大修館）明鏡国語辞典［第三版］">0f86472489b5cfe7d60bc9ffcb71beb0</dictionary>
+   <dictionary name="（小学館）デジタル大辞泉 [2021.10]">c499cdd072814f002c70dc12df1c10ae</dictionary>
    <dictionary name="大辞泉202304">6d51ed369ebc73f9e76485028c6684e9</dictionary>
    <dictionary name="大辞林　第四版">315f7aaee16eef780e6f5871fb7b8883</dictionary>
+   <dictionary name="（三省堂）スーパー大辞林 [3.0]">994f584a6ab12caa3d3107054b477044</dictionary>
    <dictionary name="新明解国語辞典　第八版">1a864a434706cc149d914bed03998bd9</dictionary>
+   <dictionary name="（三省堂）新明解国語辞典［第七版］">cb2aee6a7329c004544b6b69e2f019a6</dictionary>
+   <dictionary name="（三省堂）国語辞典［第七版］">3651bdef457c9d6ce0778ad18f170cca</dictionary>
+   <dictionary name="（小学館）日本国語大辞典［第二版］">c64021fbb44b9a0f957d014f9b21a5b3</dictionary>
+   <dictionary name="（岩波）国語辞典［第六版］">4c33fc2a210599808c80723a8fac4f61</dictionary>
+   <dictionary name="（旺文社）国語辞典［第十一版］">d34a4cd3fc9ebe8e28f3ccc04c886545</dictionary>
+   <dictionary name="旺文社国語辞典［第十一版］">5d295bcd561d50af84342ad2d6bac1ea</dictionary>
    <dictionary name="Japanese (JP) Morphology">a4b0c0b061cead2d9377d20dbf976b42</dictionary>
    <dictionary name="ja">015dd3c995241d3a2e10a648219954dd</dictionary>
+   <dictionary name="Marisa">2c7ab45221125fd3a60018471e4a9bf6</dictionary>
    <mutedDictionaries/>
   </group>
  </groups>
@@ -90,7 +108,11 @@
   <program commandLine="festival --tts" enabled="0" icon="" id="428b4c2b905ef568a43d9a16f59559b0" name="Festival" type="0"/>
   <program commandLine="espeak %GDWORD%" enabled="0" icon="" id="2cf8b3a60f27e1ac812de0b57c148340" name="Espeak" type="0"/>
   <program commandLine="man -a --html=/bin/cat %GDWORD%" enabled="0" icon="" id="4f898f7582596cea518c6b0bfdceb8b3" name="Manpages" type="2"/>
-  <program commandLine="gd-marisa --word %GDWORD% --sentence %GDSEARCH%&#xa;" enabled="1" icon="" id="2c7ab45221125fd3a60018471e4a9bf6" name="marisa" type="2"/>
+  <program commandLine="gd-marisa --word %GDWORD% --sentence %GDSEARCH%&#xa;" enabled="1" icon="" id="2c7ab45221125fd3a60018471e4a9bf6" name="Marisa" type="2"/>
+  <program commandLine="gd-mecab %GDWORD%" enabled="0" icon="" id="a553ce07440826320d55900d70d9f423" name="Mecab" type="2"/>
+  <program commandLine="gd-strokeorder %GDWORD%" enabled="0" icon="" id="8e1ecb351f5bdf853bf25b517247658e" name="Stroke Order" type="2"/>
+  <program commandLine="gd-pics %GDWORD%" enabled="0" icon="" id="1e507500e913d46d779f471bd619abb1" name="Pictures" type="2"/>
+  <program commandLine="gd-massif %GDWORD%" enabled="0" icon="" id="25b95a57cda128ef8ae83ee7ce6285d8" name="Massif" type="2"/>
  </programs>
  <mutedDictionaries>
   <mutedDictionary>1a864a434706cc149d914bed03998bd9</mutedDictionary>
@@ -191,7 +213,7 @@
    <parallelThreads>5</parallelThreads>
   </fullTextSearch>
  </preferences>
- <lastMainGroupId>0</lastMainGroupId>
+ <lastMainGroupId>1</lastMainGroupId>
  <lastPopupGroupId>0</lastPopupGroupId>
  <popupWindowState2>AAAA/wAAAAD9AAAAAAAAAaYAAAOcAAAABAAAAAQAAAAIAAAACPwAAAADAAAAAQAAAAEAAAAkAHAAbwBwAHUAcABOAGEAdgBnAGkAYQB0AGkAbwBuAEIAYQByAwAAAAD/////AAAAAAAAAAAAAAACAAAAAgAAABwAcABvAHAAdQBwAFMAZQBhAHIAYwBoAEIAYQByAQAAAAD/////AAAAAAAAAAAAAAAYAHAAbwBwAHUAcABUAG8AbwBsAEIAYQByAQAAAMz/////AAAAAAAAAAAAAAACAAAAAQAAABoAZABpAGMAdABpAG8AbgBhAHIAeQBCAGEAcgEAAAAA/////wAAAAAAAAAA</popupWindowState2>
  <popupWindowGeometry2>AdnQywADAAAAAAWcAAAAOQAAB2kAAAQhAAAFnAAAADkAAAdpAAAEIQAAAAAAAAAAB4AAAAWcAAAAOQAAB2kAAAQh</popupWindowGeometry2>
@@ -201,7 +223,7 @@
  <mainWindowGeometry>AdnQywADAAAAAAAUAAAANwAAB2sAAAQjAAADxAAAADkAAAdpAAAEIQAAAAACAAAAB4AAAAAUAAAANwAAB2sAAAQj</mainWindowGeometry>
  <dictInfoGeometry>AdnQywADAAAAAAIEAAABTAAABWwAAALmAAACBgAAAU4AAAVqAAAC5AAAAAAAAAAAB4AAAAIGAAABTgAABWoAAALk</dictInfoGeometry>
  <inspectorGeometry></inspectorGeometry>
- <dictionariesDialogGeometry>AdnQywADAAAAAAC/AAAAsgAABaMAAAL+AAAAwQAAALQAAAWhAAAC/AAAAAAAAAAAB4AAAADBAAAAtAAABaEAAAL8</dictionariesDialogGeometry>
+ <dictionariesDialogGeometry>AdnQywADAAAAAADJAAABFgAABa0AAANiAAAAywAAARgAAAWrAAADYAAAAAAAAAAAB4AAAADLAAABGAAABasAAANg</dictionariesDialogGeometry>
  <timeForNewReleaseCheck></timeForNewReleaseCheck>
  <skippedRelease></skippedRelease>
  <showingDictBarNames>0</showingDictBarNames>
