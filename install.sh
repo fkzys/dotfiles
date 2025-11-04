@@ -12,7 +12,7 @@ mkdir -p $HOME/.config/mpv
 mkdir -p $HOME/.config/ncmpcpp
 
 #bin
-ln -s $HOME/dotfiles/.local/bin/anki $HOME/.local/bin
+#ln -s $HOME/dotfiles/.local/bin/anki $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/cabl $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/dmenu $HOME/.local/bin
 ln -s $HOME/dotfiles/.local/bin/lf $HOME/.local/bin
