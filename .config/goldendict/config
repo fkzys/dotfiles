@@ -6,21 +6,19 @@
   <sounddir icon="" name="ja">/mnt/hdd1/jp/goldendict/audio/Forvo_pronunciations/export/opus/ja</sounddir>
  </sounddirs>
  <dictionaryOrder id="0" name="">
-  <dictionary name="（大修館）明鏡国語辞典［第三版］">0f86472489b5cfe7d60bc9ffcb71beb0</dictionary>
-  <dictionary name="（小学館）デジタル大辞泉 [2021.10]">c499cdd072814f002c70dc12df1c10ae</dictionary>
-  <dictionary name="大辞泉202304">6d51ed369ebc73f9e76485028c6684e9</dictionary>
-  <dictionary name="大辞林　第四版">315f7aaee16eef780e6f5871fb7b8883</dictionary>
-  <dictionary name="（三省堂）スーパー大辞林 [3.0]">994f584a6ab12caa3d3107054b477044</dictionary>
-  <dictionary name="新明解国語辞典　第八版">1a864a434706cc149d914bed03998bd9</dictionary>
-  <dictionary name="（三省堂）新明解国語辞典［第七版］">cb2aee6a7329c004544b6b69e2f019a6</dictionary>
-  <dictionary name="（三省堂）国語辞典［第七版］">3651bdef457c9d6ce0778ad18f170cca</dictionary>
-  <dictionary name="（小学館）日本国語大辞典［第二版］">c64021fbb44b9a0f957d014f9b21a5b3</dictionary>
-  <dictionary name="（岩波）国語辞典［第六版］">4c33fc2a210599808c80723a8fac4f61</dictionary>
-  <dictionary name="（旺文社）国語辞典［第十一版］">d34a4cd3fc9ebe8e28f3ccc04c886545</dictionary>
-  <dictionary name="旺文社国語辞典［第十一版］">5d295bcd561d50af84342ad2d6bac1ea</dictionary>
   <dictionary name="Japanese (JP) Morphology">a4b0c0b061cead2d9377d20dbf976b42</dictionary>
   <dictionary name="ja">015dd3c995241d3a2e10a648219954dd</dictionary>
   <dictionary name="Marisa">2c7ab45221125fd3a60018471e4a9bf6</dictionary>
+  <dictionary name="スーパー大辞林 [第四版]">4d46d444494e7df8b5d67a94fb1c54d5</dictionary>
+  <dictionary name="デジタル大辞泉［2023.04版］">65c91919de76a2e2b66552df7c643000</dictionary>
+  <dictionary name="三省堂国語辞典［第八版］">c5517e7d158625cd24ea301c02e2c501</dictionary>
+  <dictionary name="新明解国語辞典［第八版］">51fbd9fd9e8a8749a8623a71e72ae669</dictionary>
+  <dictionary name="明鏡国語辞典［第三版］">5c53951dd0340445f9e271d188dd1722</dictionary>
+  <dictionary name="新選国語辞典［第十版］">a01a4b27fe258cfe1e2f93fe203d1592</dictionary>
+  <dictionary name="日本国語大辞典［第二版］">61abdf1669cd00035e36aec774e7d740</dictionary>
+  <dictionary name="現代国語例解辞典［第五版］">cdb6ef0e19eb142f98036d666b621556</dictionary>
+  <dictionary name="岩波国語辞典［第八版］">8eeb166f767d9fb32a94db3f12a88737</dictionary>
+  <dictionary name="旺文社国語辞典［第十一版］">df2cce69b7e448322f87fb138ea30f9b</dictionary>
   <mutedDictionaries/>
  </dictionaryOrder>
  <inactiveDictionaries id="0" name="">
@@ -28,18 +26,16 @@
  </inactiveDictionaries>
  <groups nextId="2">
   <group icon="ja.png" id="1" name="jp">
-   <dictionary name="（大修館）明鏡国語辞典［第三版］">0f86472489b5cfe7d60bc9ffcb71beb0</dictionary>
-   <dictionary name="（小学館）デジタル大辞泉 [2021.10]">c499cdd072814f002c70dc12df1c10ae</dictionary>
-   <dictionary name="大辞泉202304">6d51ed369ebc73f9e76485028c6684e9</dictionary>
-   <dictionary name="大辞林　第四版">315f7aaee16eef780e6f5871fb7b8883</dictionary>
-   <dictionary name="（三省堂）スーパー大辞林 [3.0]">994f584a6ab12caa3d3107054b477044</dictionary>
-   <dictionary name="新明解国語辞典　第八版">1a864a434706cc149d914bed03998bd9</dictionary>
-   <dictionary name="（三省堂）新明解国語辞典［第七版］">cb2aee6a7329c004544b6b69e2f019a6</dictionary>
-   <dictionary name="（三省堂）国語辞典［第七版］">3651bdef457c9d6ce0778ad18f170cca</dictionary>
-   <dictionary name="（小学館）日本国語大辞典［第二版］">c64021fbb44b9a0f957d014f9b21a5b3</dictionary>
-   <dictionary name="（岩波）国語辞典［第六版］">4c33fc2a210599808c80723a8fac4f61</dictionary>
-   <dictionary name="（旺文社）国語辞典［第十一版］">d34a4cd3fc9ebe8e28f3ccc04c886545</dictionary>
-   <dictionary name="旺文社国語辞典［第十一版］">5d295bcd561d50af84342ad2d6bac1ea</dictionary>
+   <dictionary name="スーパー大辞林 [第四版]">4d46d444494e7df8b5d67a94fb1c54d5</dictionary>
+   <dictionary name="デジタル大辞泉［2023.04版］">65c91919de76a2e2b66552df7c643000</dictionary>
+   <dictionary name="新明解国語辞典［第八版］">51fbd9fd9e8a8749a8623a71e72ae669</dictionary>
+   <dictionary name="三省堂国語辞典［第八版］">c5517e7d158625cd24ea301c02e2c501</dictionary>
+   <dictionary name="新選国語辞典［第十版］">a01a4b27fe258cfe1e2f93fe203d1592</dictionary>
+   <dictionary name="明鏡国語辞典［第三版］">5c53951dd0340445f9e271d188dd1722</dictionary>
+   <dictionary name="日本国語大辞典［第二版］">61abdf1669cd00035e36aec774e7d740</dictionary>
+   <dictionary name="現代国語例解辞典［第五版］">cdb6ef0e19eb142f98036d666b621556</dictionary>
+   <dictionary name="岩波国語辞典［第八版］">8eeb166f767d9fb32a94db3f12a88737</dictionary>
+   <dictionary name="旺文社国語辞典［第十一版］">df2cce69b7e448322f87fb138ea30f9b</dictionary>
    <dictionary name="Japanese (JP) Morphology">a4b0c0b061cead2d9377d20dbf976b42</dictionary>
    <dictionary name="ja">015dd3c995241d3a2e10a648219954dd</dictionary>
    <dictionary name="Marisa">2c7ab45221125fd3a60018471e4a9bf6</dictionary>
@@ -96,10 +92,10 @@
   <mediawiki enabled="0" icon="" id="b68b9fb71b5a8c766cc7a5ea8237fc6b" lang="zh-hans" name="Simplified Chinese Wiktionary" url="https://zh.wiktionary.org/w"/>
  </mediawikis>
  <websites>
-  <website enabled="0" icon="" id="b88cb2898e634c6638df618528284c2d" inside_iframe="1" name="Google En-En (Oxford)" url="https://www.google.com/search?q=define:%GDWORD%&amp;hl=en"/>
-  <website enabled="0" icon="" id="f376365a0de651fd7505e7e5e683aa45" inside_iframe="1" name="Urban Dictionary" url="https://www.urbandictionary.com/define.php?term=%GDWORD%"/>
-  <website enabled="0" icon="" id="324ca0306187df7511b26d3847f4b07c" inside_iframe="1" name="Multitran (En-Ru)" url="https://www.multitran.com/m.exe?s=%GDWORD%&amp;l1=1&amp;l2=2"/>
-  <website enabled="0" icon="" id="379a0ce02a34747d642cb0d7de1b2882" inside_iframe="1" name="Merriam-Webster (En)" url="https://www.merriam-webster.com/dictionary/%GDWORD%"/>
+  <website enabled="0" icon="" id="b88cb2898e634c6638df618528284c2d" name="Google En-En (Oxford)" script="" url="https://www.google.com/search?q=define:%GDWORD%&amp;hl=en"/>
+  <website enabled="0" icon="" id="f376365a0de651fd7505e7e5e683aa45" name="Urban Dictionary" script="" url="https://www.urbandictionary.com/define.php?term=%GDWORD%"/>
+  <website enabled="0" icon="" id="324ca0306187df7511b26d3847f4b07c" name="Multitran (En-Ru)" script="" url="https://www.multitran.com/m.exe?s=%GDWORD%&amp;l1=1&amp;l2=2"/>
+  <website enabled="0" icon="" id="379a0ce02a34747d642cb0d7de1b2882" name="Merriam-Webster (En)" script="" url="https://www.merriam-webster.com/dictionary/%GDWORD%"/>
  </websites>
  <dictservers>
   <server databases="wn" enabled="0" icon="" id="6eb6f7a1df225e1cfdcd4cf8e9e4771b" name="dict.org" strategies="" url="dict://dict.org"/>
@@ -115,14 +111,16 @@
   <program commandLine="gd-massif %GDWORD%" enabled="0" icon="" id="25b95a57cda128ef8ae83ee7ce6285d8" name="Massif" type="2"/>
  </programs>
  <mutedDictionaries>
-  <mutedDictionary>1a864a434706cc149d914bed03998bd9</mutedDictionary>
   <mutedDictionary>5d295bcd561d50af84342ad2d6bac1ea</mutedDictionary>
+  <mutedDictionary>1a864a434706cc149d914bed03998bd9</mutedDictionary>
  </mutedDictionaries>
  <popupMutedDictionaries/>
+ <dictionariesToReindex/>
  <preferences>
   <interfaceLanguage></interfaceLanguage>
   <interfaceFont>Noto Sans</interfaceFont>
   <interfaceFontSize_0>12</interfaceFontSize_0>
+  <enableInterfaceFont>0</enableInterfaceFont>
   <customFonts monospace="Adobe Courier" sans-serif="Noto Sans" serif="Noto Serif" standard="Noto Serif"/>
   <displayStyle></displayStyle>
   <interfaceStyle>Default</interfaceStyle>
@@ -192,6 +190,7 @@
   <clearNetworkCacheOnExit>1</clearNetworkCacheOnExit>
   <removeInvalidIndexOnExit>0</removeInvalidIndexOnExit>
   <enableApplicationLog>0</enableApplicationLog>
+  <openWebsiteInNewTab>0</openWebsiteInNewTab>
   <maxStringsInHistory>500</maxStringsInHistory>
   <storeHistory>1</storeHistory>
   <alwaysExpandOptionalParts>1</alwaysExpandOptionalParts>
@@ -219,11 +218,11 @@
  <popupWindowGeometry2>AdnQywADAAAAAAWcAAAAOQAAB2kAAAQhAAAFnAAAADkAAAdpAAAEIQAAAAAAAAAAB4AAAAWcAAAAOQAAB2kAAAQh</popupWindowGeometry2>
  <pinPopupWindow>0</pinPopupWindow>
  <popupWindowAlwaysOnTop>0</popupWindowAlwaysOnTop>
- <mainWindowState>AAAA/wAAAAD9AAAAAgAAAAAAAABcAAABx/wCAAAAAfsAAAAUAHMAZQBhAHIAYwBoAFAAYQBuAGUAAAAAUwAAAccAAACUAP///wAAAAEAAACuAAADhPwCAAAAA/sAAAASAGQAaQBjAHQAcwBQAGEAbgBlAQAAAGkAAAEqAAAAaAD////7AAAAGgBmAGEAdgBvAHIAaQB0AGUAcwBQAGEAbgBlAQAAAZkAAAEkAAAAaAD////7AAAAFgBoAGkAcwB0AG8AcgB5AFAAYQBuAGUBAAACwwAAASoAAABoAP///wAABqQAAAOEAAAABAAAAAQAAAAIAAAACPwAAAACAAAAAgAAAAEAAAAUAG4AYQB2AFQAbwBvAGwAYgBhAHIBAAAAAP////8AAAAAAAAAAAAAAAIAAAABAAAAGgBkAGkAYwB0AGkAbwBuAGEAcgB5AEIAYQByAQAAAAD/////AAAAAAAAAAA=</mainWindowState>
- <mainWindowGeometry>AdnQywADAAAAAAAUAAAANwAAB2sAAAQjAAADxAAAADkAAAdpAAAEIQAAAAACAAAAB4AAAAAUAAAANwAAB2sAAAQj</mainWindowGeometry>
+ <mainWindowState>AAAA/wAAAAD9AAAAAgAAAAAAAABcAAADhPwCAAAAAfsAAAAUAHMAZQBhAHIAYwBoAFAAYQBuAGUAAAAAaQAAA4QAAACUAP///wAAAAEAAACuAAADhPwCAAAAA/sAAAASAGQAaQBjAHQAcwBQAGEAbgBlAQAAAGkAAAEqAAAAaAD////7AAAAGgBmAGEAdgBvAHIAaQB0AGUAcwBQAGEAbgBlAQAAAZkAAAEkAAAAaAD////7AAAAFgBoAGkAcwB0AG8AcgB5AFAAYQBuAGUBAAACwwAAASoAAABoAP///wAABqQAAAOEAAAABAAAAAQAAAAIAAAACPwAAAACAAAAAgAAAAEAAAAUAG4AYQB2AFQAbwBvAGwAYgBhAHIBAAAAAP////8AAAAAAAAAAAAAAAIAAAABAAAAGgBkAGkAYwB0AGkAbwBuAGEAcgB5AEIAYQByAQAAAAD/////AAAAAAAAAAA=</mainWindowState>
+ <mainWindowGeometry>AdnQywADAAAAAAAUAAAANwAAB2sAAAQjAAAAFAAAADcAAAdrAAAEIwAAAAACAAAAB4AAAAAUAAAANwAAB2sAAAQj</mainWindowGeometry>
  <dictInfoGeometry>AdnQywADAAAAAAIEAAABTAAABWwAAALmAAACBgAAAU4AAAVqAAAC5AAAAAAAAAAAB4AAAAIGAAABTgAABWoAAALk</dictInfoGeometry>
  <inspectorGeometry></inspectorGeometry>
- <dictionariesDialogGeometry>AdnQywADAAAAAADJAAABFgAABa0AAANiAAAAywAAARgAAAWrAAADYAAAAAAAAAAAB4AAAADLAAABGAAABasAAANg</dictionariesDialogGeometry>
+ <dictionariesDialogGeometry>AdnQywADAAAAAADbAAABygAABb8AAAQWAAAA3QAAAcwAAAW9AAAEFAAAAAAAAAAAB4AAAADdAAABzAAABb0AAAQU</dictionariesDialogGeometry>
  <timeForNewReleaseCheck></timeForNewReleaseCheck>
  <skippedRelease></skippedRelease>
  <showingDictBarNames>0</showingDictBarNames>
