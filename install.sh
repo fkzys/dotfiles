@@ -10,6 +10,8 @@ mkdir -p $HOME/.config/goldendict
 mkdir -p $HOME/.config/mpd
 mkdir -p $HOME/.config/mpv
 mkdir -p $HOME/.config/ncmpcpp
+mkdir -p $HOME/.config/gtk-3.0
+mkdir -p $HOME/.config/gtk-4.0
 
 #bin
 #ln -s $HOME/dotfiles/.local/bin/anki $HOME/.local/bin
@@ -36,8 +38,8 @@ ln -s $HOME/dotfiles/.config/nvim $HOME/.config
 ln -s $HOME/dotfiles/.config/hypr $HOME/.config
 ln -s $HOME/dotfiles/.config/waybar $HOME/.config
 #ln -s $HOME/dotfiles/.config/swaylock $HOME/.config
-ln -s $HOME/dotfiles/.config/gtk-3.0 $HOME/.config
-ln -s $HOME/dotfiles/.config/gtk-4.0 $HOME/.config
+ln -s $HOME/dotfiles/.config/gtk-3.0/settings.ini $HOME/.config/gtk-3.0
+ln -s $HOME/dotfiles/.config/gtk-4.0/settings.ini $HOME/.config/gtk-4.0
 ln -s $HOME/dotfiles/.config/flameshot $HOME/.config
 ln -s $HOME/dotfiles/.config/mimeapps.list $HOME/.config
 ln -s $HOME/dotfiles/.config/firejail $HOME/.config
