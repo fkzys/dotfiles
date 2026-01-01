@@ -123,6 +123,10 @@ export PATH="${PATH}:${HOME}/.local/bin"
 EDITOR=nvim
 alias vi="nvim"
 alias vim="nvim"
+alias firefox="flatpak run org.mozilla.firefox"
+alias telegram="flatpak run flatpak run org.telegram.desktop"
+alias portproton="flatpak run ru.linux_gaming.PortProton"
+alias flatseal="flatpak run com.github.tchx84.Flatseal"
 
 alias lf="$HOME/.local/bin/lf"
 

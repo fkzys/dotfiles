@@ -7,7 +7,7 @@
     // Choose the order of the modules
     "modules-left": ["hyprland/workspaces", "custom/media"],
     "modules-center": ["hyprland/window"],
-    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "custom/gpu_temp", "custom/cpu_temp", "custom/weather", "backlight", "battery", "battery#bat2", "clock", "tray"],
+    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/gpu_temp", "custom/cpu_temp", "custom/weather", "backlight", "battery", "battery#bat2", "clock", "tray"],
     // Modules configuration
     // "hyprland/workspaces": {
     //     "disable-scroll": true,
@@ -25,6 +25,14 @@
     //         "default": ""
     //     }
     // },
+
+    "disk": {
+    "interval": 25,
+    "path": "/",
+    "format": "<span color='#0a81f5'>{path}</span>: {free}",
+    
+    "tooltip-format": "{used} used of {total} ({percentage_used}%)"
+    },
 
     "custom/weather": {
         "exec": "curl -s 'wttr.in/?format=%c+%t'",

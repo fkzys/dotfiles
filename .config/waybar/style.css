@@ -152,7 +152,9 @@ label:focus {
 }
 
 #disk {
-    background-color: #964B00;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #ffffff;
 }
 
 #backlight {
