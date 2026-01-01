@@ -11,7 +11,7 @@ exec feh --bg-fill $HOME/Downloads/background.jpg
 font pango: Hack, IPAPGothic, Noto Sans Mono CJK JP, FontAwesome, Hack Nerd Font Mono 9
 
 exec --no-startup-id lxsession
-exec --no-startup-id /usr/bin/gnome-keyring-daemon --start 
+#exec --no-startup-id /usr/bin/gnome-keyring-daemon --start 
 
 #https://github.com/OpenTabletDriver/OpenTabletDriver
 exec --no-startup-id otd-daemon

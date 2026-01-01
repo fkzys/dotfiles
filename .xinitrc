@@ -5,9 +5,9 @@ export GPG_AGENT_INFO
 export GNOME_KEYRING_CONTROL
 export GNOME_KEYRING_PID
 [[ -f ~/.Xresources ]] && xrdb -merge -I$HOME ~/.Xresources
-export GTK_IM_MODULE=fcitx
-export QT_IM_MODULE=fcitx
-export XMODIFIERS=@im=fcitx
+export GTK_IM_MODULE=fcitx5
+export QT_IM_MODULE=fcitx5
+export XMODIFIERS=@im=fcitx5
 
 export QT_QPA_PLATFORMTHEME=qt6ct
 
@@ -20,5 +20,5 @@ export PATH="${PATH}:${HOME}/.local/bin"
 nextcloud &
 flameshot &
 mpd &
-fcitx -dr &
+fcitx5 -dr &
 exec i3

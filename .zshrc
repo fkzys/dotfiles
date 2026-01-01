@@ -118,6 +118,8 @@ export NINJAFLAGS="-j$(nproc)"
 export MESON_BUILD_CORES=$(nproc)
 export DEB_BUILD_OPTIONS="parallel=$(nproc)"
 
+export PATH="${PATH}:${HOME}/.local/bin"
+
 EDITOR=nvim
 alias vi="nvim"
 alias vim="nvim"
