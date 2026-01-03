@@ -26,6 +26,7 @@ NATIVE_PKGS=(
     "gnome-keyring"               # Пароли
 
     # --- Софт (User Apps) ---
+    "flatpak"
     "kitty"
     "thunar"                      
     "firefox"
@@ -73,7 +74,7 @@ NATIVE_PKGS=(
     "papirus-icon-theme"
 )
 
-# --- 2. Пакеты AUR (Yay/Paru) ---
+# --- 2. Пакеты AUR (Yay) ---
 AUR_PKGS=(
     "qownnotes"
     "kopia-bin"
@@ -81,6 +82,13 @@ AUR_PKGS=(
     "goldendict-ng"
     "anki-bin"
     "coolercontrol-bin"
+)
+
+FLATPAK_PKGS=(
+    "com.github.tchx84.Flatseal"
+    "org.mozilla.firefox"
+    "org.telegram.desktop"
+    "ru.linux_gaming.PortProton"
 )
 
 # --- УСТАНОВКА ---
@@ -91,3 +99,6 @@ sudo pacman -S --needed "${NATIVE_PKGS[@]}"
 echo "--- Устанавливаем пакеты AUR ---"
 yay -S --needed "${AUR_PKGS[@]}"
 echo "--- Готово! ---"
+
+#echo "--- Устанавливаем пакеты Flatpak ---"
+#yay -S --needed "${FLATPAK_PKGS[@]}"

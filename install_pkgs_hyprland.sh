@@ -20,6 +20,7 @@ NATIVE_PKGS=(
     "fcitx5-material-color"       # Тема для fcitx
 
     # --- Софт ---
+    "flatpak"
     "kitty"
     "thunar"                      
     "firefox"
@@ -81,6 +82,13 @@ AUR_PKGS=(
     "coolercontrol-bin"
 )
 
+FLATPAK_PKGS=(
+    "com.github.tchx84.Flatseal"
+    "org.mozilla.firefox"
+    "org.telegram.desktop"
+    "ru.linux_gaming.PortProton"
+)
+
 # --- УСТАНОВКА ---
 
 echo "--- Устанавливаем пакеты ---"
@@ -89,3 +97,6 @@ sudo pacman -S --needed "${NATIVE_PKGS[@]}"
 echo "--- Устанавливаем пакеты AUR ---"
 yay -S --needed "${AUR_PKGS[@]}"
 echo "--- Готово! ---"
+
+#echo "--- Устанавливаем пакеты Flatpak ---"
+#yay -S --needed "${FLATPAK_PKGS[@]}"
