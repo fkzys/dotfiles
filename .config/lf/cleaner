@@ -1,2 +1,2 @@
 #!/bin/sh
-[ -p "$FIFO_UEBERZUG" ] && printf '{"action":"remove","identifier":"preview"}\n' >"$FIFO_UEBERZUG"
+exec kitten icat --clear --stdin no --transfer-mode memory </dev/null >/dev/tty
