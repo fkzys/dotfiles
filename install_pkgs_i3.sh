@@ -24,6 +24,7 @@ NATIVE_PKGS=(
     "xclip"                       # Буфер обмена для X11 
     "flameshot"                   # Скриншоты 
     "gnome-keyring"               # Пароли
+    "zram-generator"
 
     # --- Софт (User Apps) ---
     "flatpak"

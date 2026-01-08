@@ -13,6 +13,7 @@ NATIVE_PKGS=(
     "gnome-keyring"               # Хранение паролей
     "hypridle"                    # Демон простоя 
     "hyprlock"
+    "zram-generator"
 
     # --- Ввод и Язык (Fcitx5) ---
     "fcitx5-im"                   # Мета-пакет (все нужные модули)
@@ -36,7 +37,6 @@ NATIVE_PKGS=(
     "grim"                        # Скриншоты (захват)
     "slurp"                       # Скриншоты (выделение области)
     "wl-clipboard"                # Буфер обмена
-    "ueberzugpp"                  # Картинки в терминале (для lf)
     "flameshot"
     "lf"                          
     "neovim"
