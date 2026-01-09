@@ -41,6 +41,7 @@ NATIVE_PKGS=(
     # --- Инструменты (CLI) ---
     
     "ueberzugpp"                  # Картинки в терминале (для lf)
+    "ffmpegthumbnailer"
     "lf"                          
     "neovim"
     "zsh"

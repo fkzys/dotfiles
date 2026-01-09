@@ -37,6 +37,7 @@ NATIVE_PKGS=(
     "grim"                        # Скриншоты (захват)
     "slurp"                       # Скриншоты (выделение области)
     "wl-clipboard"                # Буфер обмена
+    "ffmpegthumbnailer"
     "flameshot"
     "lf"                          
     "neovim"
