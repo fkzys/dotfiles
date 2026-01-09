@@ -1,2 +1,4 @@
 #!/bin/sh
-exec kitten icat --clear --stdin no --transfer-mode memory </dev/null >/dev/tty
+exec 3> /dev/tty
+exec kitten icat --clear --stdin no --transfer-mode stream </dev/null >&3
+perl -MPOSIX -e 'POSIX::tcdrain(3)'

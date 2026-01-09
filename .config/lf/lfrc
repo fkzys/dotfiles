@@ -1,4 +1,4 @@
-set previewer ~/.config/lf/previewer
+set previewer ~/.config/lf/previewer_sandbox
 set cleaner ~/.config/lf/cleaner
 
 map m $mpv "$f" #>/dev/null 2>&1 & #call mpv 
