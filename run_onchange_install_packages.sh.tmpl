@@ -57,9 +57,9 @@ NATIVE_PKGS=(
     # === APPS ===
     "kitty"
     "thunar"
-    {{ if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     "opentabletdriver"
-    {{ end }}
+    {{- end }}
     "nextcloud-client"
     "keepassxc"
     "libreoffice-fresh"
@@ -95,20 +95,20 @@ NATIVE_PKGS=(
     "go"
     "podman"
     "podman-compose"
-    {{ if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     "qemu-full"
     "virt-manager"
     {{ end }}
     "ansible"
     "ansible-lint"
 
-    {{ if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     # === NVIDIA ===
     "nvidia-open"
     "nvidia-settings"
     "nvidia-utils"
     "libva-nvidia-driver"
-    {{ end }}
+    {{- end }}
     
     # === THEMES ===
     "materia-gtk-theme"
@@ -121,9 +121,9 @@ AUR_PKGS=(
     "qownnotes"
     "kopia-bin"
     "localsend-bin"
-    {{ if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     "goldendict-ng"
-    {{ end }}
+    {{- end }}
     "anki-bin"
     "coolercontrol-bin"
 )
@@ -132,9 +132,9 @@ FLATPAK_PKGS=(
     "com.github.tchx84.Flatseal"
     "org.mozilla.firefox"
     "org.telegram.desktop"
-    {{ if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     "ru.linux_gaming.PortProton"
-    {{ end }}
+    {{- end }}
 )
 
 echo "--- Installing Native Packages ---"

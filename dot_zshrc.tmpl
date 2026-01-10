@@ -131,11 +131,11 @@ alias telegram="flatpak run flatpak run org.telegram.desktop"
 alias portproton="flatpak run ru.linux_gaming.PortProton"
 alias flatseal="flatpak run com.github.tchx84.Flatseal"
 
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 # Change directory
 alias subs='cd -- "/mnt/hdd1/jp/kitsunekko-mirror/subtitles"'
 alias anime='cd -- "/mnt/hdd1/torrents"'
-{{ end }}
+{{- end }}
 # Ctrl+O to launch lf file manager.
 bindkey -s '^o' '^ulf\n'
 # Ctrl+F to search directory with fzf.

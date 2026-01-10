@@ -7,9 +7,9 @@
 ################
 
 # See https://wiki.hypr.land/Configuring/Monitors/
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 monitor=DP-3,1920x1080@144,0x0,1
-{{ end }}
+{{- end }}
 monitor=,preferred,auto,auto
 
 #############################
@@ -18,13 +18,13 @@ monitor=,preferred,auto,auto
 
 # See https://wiki.hypr.land/Configuring/Environment-variables/
 # Essential for Nvidia on Wayland
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 env = LIBVA_DRIVER_NAME,nvidia
 env = XDG_SESSION_TYPE,wayland
 env = GBM_BACKEND,nvidia-drm
 env = __GLX_VENDOR_LIBRARY_NAME,nvidia
 env = WLR_NO_HARDWARE_CURSORS,1
-{{ end }}
+{{- end }}
 
 # Theming and Cursor
 env = XCURSOR_SIZE,24
@@ -52,15 +52,15 @@ exec-once = hyprpaper
 # Status Bar 
 exec-once = waybar
 
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 # Tablet Driver
 exec-once = otd-daemon
-{{ end }}
+{{- end }}
 
 # OCR and Utils
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 exec-once = transformers_ocr listen
-{{ end }}
+{{- end }}
 exec-once = nextcloud
 exec-once = mpd
 
@@ -100,11 +100,11 @@ input {
     numlock_by_default = true
 
     touchpad {
-	{{ if eq .chezmoi.hostname "desktop-1" }}
+	{{- if eq .chezmoi.hostname "desktop-1" }}
         natural_scroll = false
-	{{ else if eq .chezmoi.hostname "laptop-1" }}
+	{{- else if eq .chezmoi.hostname "laptop-1" }}
         natural_scroll = true
-	{{ end }}
+	{{- end }}
     }
 }
 
@@ -303,12 +303,12 @@ bind = $mainMod, F2, exec, flatpak run org.telegram.desktop
 bind = $mainMod, F3, exec, thunar
 bind = $mainMod, F4, exec, $terminal
 
-{{ if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .chezmoi.hostname "desktop-1" }}
 # -- Custom Tools (OCR, Cabl, Audio) --
 # OCR
 bind = $mainMod, O, exec, transformers_ocr recognize
 bind = $mainMod SHIFT, O, exec, transformers_ocr hold
-{{ end }}
+{{- end }}
 
 # Audio Device Switcher
 bind = $mainMod SHIFT, A, exec, ~/.local/bin/audio-device-switcher
