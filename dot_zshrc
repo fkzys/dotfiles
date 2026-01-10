@@ -128,8 +128,6 @@ alias telegram="flatpak run flatpak run org.telegram.desktop"
 alias portproton="flatpak run ru.linux_gaming.PortProton"
 alias flatseal="flatpak run com.github.tchx84.Flatseal"
 
-alias lf="$HOME/.local/bin/lf"
-
 # Change directory
 alias subs='cd -- "/mnt/hdd1/jp/kitsunekko-mirror/subtitles"'
 alias anime='cd -- "/mnt/hdd1/torrents"'
