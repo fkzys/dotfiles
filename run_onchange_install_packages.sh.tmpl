@@ -1,0 +1,148 @@
+#!/bin/bash
+
+
+set -e  
+
+echo "Checking AUR helper..."
+if ! command -v yay &> /dev/null; then
+    echo "Yay not found. Installing..."
+    sudo pacman -S --needed base-devel git
+    git clone https://aur.archlinux.org/yay.git /tmp/yay
+    cd /tmp/yay
+    makepkg -si 
+    cd -
+    rm -rf /tmp/yay
+fi
+
+# --- 1. Pacman ---
+NATIVE_PKGS=(
+    # === SYSTEM & HYPRLAND ===
+    "hyprland"
+    "xdg-desktop-portal-hyprland"
+    "xdg-desktop-portal-gtk"
+    "xorg-xwayland"
+    "waybar"
+    "swaybg"
+    "wofi"
+    "hyprpolkitagent"
+    "gnome-keyring"
+    "hypridle"
+    "hyprlock"
+    "zram-generator"
+    "libnotify"
+    "openssh"
+
+    # === AUDIO & VIDEO ===
+    "pipewire"
+    "pipewire-pulse"
+    "pipewire-alsa"
+    "wireplumber"
+    "mpd"
+    "ncmpcpp"
+    "mpv"
+    "obs-studio"
+    "ffmpegthumbnailer"
+
+    # === INPUT & FONTS ===
+    "fcitx5-im"
+    "fcitx5-kkc"
+    "fcitx5-material-color"
+    "ttf-hack"
+    "otf-ipafont"
+    "noto-fonts-cjk"
+    "ttf-jetbrains-mono-nerd"
+    "ttf-font-awesome"
+
+    # === APPS ===
+    "kitty"
+    "thunar"
+    {{ if eq .chezmoi.hostname "desktop-1" }}
+    "opentabletdriver"
+    {{ end }}
+    "nextcloud-client"
+    "keepassxc"
+    "libreoffice-fresh"
+    "qbittorrent"
+    "gimp"
+    "krita"
+    "flatpak"
+
+    # === CLI & TOOLS ===
+    "neovim"
+    "zsh"
+    "fzf"
+    "ripgrep"
+    "unzip"
+    "7zip"
+    "man-db"
+    "git"
+    "htop"
+    "wl-clipboard"
+    "grim"
+    "slurp"
+    "lf"
+    "rsync"
+    "rclone"
+    "restic"
+    "syncthing"
+    "wget"
+    "reflector"
+    "pacman-contrib"
+
+    # === DEV & VIRTUALIZATION ===
+    "base-devel"
+    "go"
+    "podman"
+    "podman-compose"
+    {{ if eq .chezmoi.hostname "desktop-1" }}
+    "qemu-full"
+    "virt-manager"
+    {{ end }}
+    "ansible"
+    "ansible-lint"
+
+    {{ if eq .chezmoi.hostname "desktop-1" }}
+    # === NVIDIA ===
+    "nvidia-open"
+    "nvidia-settings"
+    "nvidia-utils"
+    "libva-nvidia-driver"
+    {{ end }}
+    
+    # === THEMES ===
+    "materia-gtk-theme"
+    "papirus-icon-theme"
+    "kvantum"
+)
+
+# --- 2. AUR ---
+AUR_PKGS=(
+    "qownnotes"
+    "kopia-bin"
+    "localsend"
+    {{ if eq .chezmoi.hostname "desktop-1" }}
+    "goldendict-ng"
+    {{ end }}
+    "anki-bin"
+    "coolercontrol-bin"
+)
+
+FLATPAK_PKGS=(
+    "com.github.tchx84.Flatseal"
+    "org.mozilla.firefox"
+    "org.telegram.desktop"
+    {{ if eq .chezmoi.hostname "desktop-1" }}
+    "ru.linux_gaming.PortProton"
+    {{ end }}
+)
+
+echo "--- Installing Native Packages ---"
+sudo pacman -S --needed "${NATIVE_PKGS[@]}"
+
+echo "--- Installing AUR Packages ---"
+yay -S --needed "${AUR_PKGS[@]}"
+
+echo "--- Flatpak ---"
+flatpak install "${FLATPAK_PKGS[@]}"
+
+echo "Done"

@@ -9,7 +9,7 @@ get_audio_devices() {
 
 # Показывает меню выбора устройства (можно заменить rofi на dmenu/fzf)
 show_device_menu() {
-    rofi -dmenu -p "Select audio device"
+    wofi -dmenu -p "Select audio device"
 }
 
 # Извлекает ID устройства из строки (например, "42. Super Audio" → 42)

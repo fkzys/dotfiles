@@ -1,0 +1,6 @@
+[Unit]
+Description=Turn on Night Light (Gammastep)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/hyprsunset

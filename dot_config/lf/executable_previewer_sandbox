@@ -18,7 +18,8 @@ set -euo pipefail
      --dev /dev \
      --ro-bind /etc /etc \
      --ro-bind /mnt /mnt \
-     --ro-bind ~/.config ~/.config \
+     --dir ~/.config \
+     --ro-bind ~/.config/lf ~/.config/lf \
      --ro-bind ~/.cache ~/.cache \
      --bind ~/.cache/vidthumb ~/.cache/vidthumb \
      --ro-bind ~/dotfiles ~/dotfiles \
