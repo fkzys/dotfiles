@@ -3,4 +3,4 @@ Description=Turn on Night Light (Gammastep)
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/hyprsunset
+ExecStart=/usr/bin/hyprsunset -t 4000

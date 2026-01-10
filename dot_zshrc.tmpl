@@ -120,6 +120,9 @@ export DEB_BUILD_OPTIONS="parallel=$(nproc)"
 
 export PATH="${PATH}:${HOME}/.local/bin"
 
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
 EDITOR=nvim
 alias vi="nvim"
 alias vim="nvim"
@@ -128,9 +131,11 @@ alias telegram="flatpak run flatpak run org.telegram.desktop"
 alias portproton="flatpak run ru.linux_gaming.PortProton"
 alias flatseal="flatpak run com.github.tchx84.Flatseal"
 
+{{ if eq .chezmoi.hostname "desktop-1" }}
 # Change directory
 alias subs='cd -- "/mnt/hdd1/jp/kitsunekko-mirror/subtitles"'
 alias anime='cd -- "/mnt/hdd1/torrents"'
+{{ end }}
 # Ctrl+O to launch lf file manager.
 bindkey -s '^o' '^ulf\n'
 # Ctrl+F to search directory with fzf.
