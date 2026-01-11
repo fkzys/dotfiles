@@ -1,4 +1,5 @@
 [storage]
 driver = "btrfs"
-
+{{- if eq .chezmoi.hostname "desktop-1" }}
 graphroot = "/mnt/ssd2/podman_user/$USER/storage"
+{{- end }}
