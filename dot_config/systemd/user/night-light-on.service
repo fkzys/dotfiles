@@ -1,6 +1,11 @@
 [Unit]
-Description=Turn on Night Light (Gammastep)
+Description=Turn on Night Light
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/hyprsunset -t 4000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target
