@@ -41,16 +41,24 @@ env = XMODIFIERS,@im=fcitx
 
 # Autostart necessary processes (like notifications daemons, status bars, etc.)
 # Or execute your favorite apps at launch like this:
-# Authentication Agent 
-exec-once = /usr/lib/hyprpolkitagent/hyprpolkitagent
-exec-once = gnome-keyring-daemon --start
-exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 
-# Wallpaper 
-exec-once = hyprpaper
+#D-Bus
+exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
+
+# Apply GTK Theme
+exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
+exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
+exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 # Status Bar 
 exec-once = waybar
+
+# Authentication Agent 
+exec-once = /usr/lib/hyprpolkitagent/hyprpolkitagent
+exec-once = gnome-keyring-daemon --start
+
+# Wallpaper 
+exec-once = hyprpaper
 
 {{- if eq .chezmoi.hostname "desktop-1" }}
 # Tablet Driver
@@ -69,12 +77,6 @@ exec-once = fcitx5 -dr
 
 # Idle
 exec-once = hypridle
-
-# Apply GTK Theme
-exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
-exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
-exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-exec-once = systemctl --user restart xdg-desktop-portal-gtk
 
 ###################
 ### MY PROGRAMS ###
