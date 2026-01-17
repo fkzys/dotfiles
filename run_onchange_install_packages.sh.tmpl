@@ -48,7 +48,6 @@ NATIVE_PKGS=(
     # === INPUT & FONTS ===
     "fcitx5-im"
     "fcitx5-kkc"
-    "fcitx5-material-color"
     "ttf-hack"
     "otf-ipafont"
     "noto-fonts-cjk"
@@ -59,9 +58,6 @@ NATIVE_PKGS=(
     # === APPS ===
     "kitty"
     "thunar"
-    {{- if eq .chezmoi.hostname "desktop-1" }}
-    "opentabletdriver"
-    {{- end }}
     "nextcloud-client"
     "keepassxc"
     "libreoffice-fresh"
@@ -99,7 +95,7 @@ NATIVE_PKGS=(
     "podman"
     "podman-compose"
     {{- if eq .chezmoi.hostname "desktop-1" }}
-    "qemu-full"
+    "qemu-base"
     "virt-manager"
     {{ end }}
     "ansible"
@@ -125,6 +121,7 @@ AUR_PKGS=(
     "kopia-bin"
     "localsend-bin"
     {{- if eq .chezmoi.hostname "desktop-1" }}
+    "opentabletdriver"
     "goldendict-ng"
     {{- end }}
     "anki-bin"
