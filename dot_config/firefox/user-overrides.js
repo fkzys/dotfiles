@@ -6,6 +6,8 @@ user_pref("browser.download.always_ask_before_handling_new_types", false);
 user_pref("gfx.webrender.all", true);
 user_pref("media.ffmpeg.vaapi.enabled", true);
 
+user_pref("ui.key.menuAccessKey", 0);
+
 //https://github.com/arkenfox/user.js/issues/1080
 
 /* override recipe: enable session restore ***/
