@@ -73,6 +73,8 @@ exec-once = hypridle
 # Apply GTK Theme
 exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
 exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
+exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+exec-once = systemctl --user restart xdg-desktop-portal-gtk
 
 ###################
 ### MY PROGRAMS ###
