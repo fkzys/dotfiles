@@ -10,7 +10,7 @@
     {{- if eq .chezmoi.hostname "desktop-1" }}
     "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/gpu_temp", "custom/cpu_temp", "custom/weather", "clock", "tray"],
     {{- else if eq .chezmoi.hostname "laptop-1" }}
-    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/cpu_temp", "custom/weather", "backlight", "battery", "battery#bat2", "clock", "tray"],
+    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/cpu_temp", "custom/weather", "backlight", "battery#bat1", "battery#bat2", "clock", "tray"],
     {{- end }}
     // Modules configuration
     // "hyprland/workspaces": {
@@ -160,8 +160,35 @@
         // "format-full": "",
         "format-icons": ["", "", "", "", ""]
     },
-    "battery#bat2": {
-        "bat": "BAT2"
+    "battery#bat0": {
+        "bat": "BAT0"
+        "states": {
+            // "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{capacity}% {icon}",
+        "format-charging": "{capacity}% ",
+        "format-plugged": "{capacity}% ",
+        "format-alt": "{time} {icon}",
+        // "format-good": "", // An empty format will hide the module
+        // "format-full": "",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "battery#bat1": {
+        "bat": "BAT1"
+        "states": {
+            // "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{capacity}% {icon}",
+        "format-charging": "{capacity}% ",
+        "format-plugged": "{capacity}% ",
+        "format-alt": "{time} {icon}",
+        // "format-good": "", // An empty format will hide the module
+        // "format-full": "",
+        "format-icons": ["", "", "", "", ""]
     },
     "network": {
         // "interface": "wlp2*", // (Optional) To force the use of this interface
