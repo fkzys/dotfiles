@@ -1,3 +1,7 @@
+change theme in kvantummanager to KvGnomeDark
+
+text below are deprecated
+---
 install.sh should not be executed before setting your own variables inside the script
 
 inside ".local/bin/cabl" i commented out everything that i don't use for now
