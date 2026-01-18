@@ -38,7 +38,6 @@ env = XMODIFIERS,@im=fcitx
 #################
 ### AUTOSTART ###
 #################
-
 # Autostart necessary processes (like notifications daemons, status bars, etc.)
 # Or execute your favorite apps at launch like this:
 
@@ -57,9 +56,6 @@ exec-once = waybar
 exec-once = /usr/lib/hyprpolkitagent/hyprpolkitagent
 exec-once = gnome-keyring-daemon --start
 
-# Wallpaper 
-exec-once = hyprpaper
-
 {{- if eq .chezmoi.hostname "desktop-1" }}
 # Tablet Driver
 exec-once = otd-daemon
@@ -77,6 +73,9 @@ exec-once = fcitx5 -dr
 
 # Idle
 exec-once = hypridle
+
+# Wallpaper 
+exec-once = hyprpaper
 
 ###################
 ### MY PROGRAMS ###
