@@ -1,6 +1,0 @@
-[Unit]
-Description=Turn off Night Light (Reset Gamma)
-
-[Service]
-Type=oneshot
-ExecStart=pkill hyprsunset
