@@ -38,6 +38,8 @@ NATIVE_PKGS=(
     "ukify" #atomic
     {{- if eq .chezmoi.hostname "laptop-1" }}
     "brightnessctl"
+    "tpm2-tss" 
+    "tpm2-tools"
     {{ end }}
 
     # === AUDIO & VIDEO ===
