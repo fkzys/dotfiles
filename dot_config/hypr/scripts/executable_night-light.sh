@@ -7,7 +7,7 @@ command -v hyprsunset &>/dev/null || { echo "hyprsunset not found" >&2; exit 1; 
 readonly NIGHT_TEMP=${NIGHT_TEMP:-4000}
 readonly DAY_TEMP=${DAY_TEMP:-6500}
 readonly NIGHT_START=${NIGHT_START:-22}
-readonly NIGHT_END=${NIGHT_END:-7}
+readonly NIGHT_END=${NIGHT_END:-6}
 readonly CHECK_INTERVAL=${CHECK_INTERVAL:-60}
 
 validate_config() {
