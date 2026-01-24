@@ -1,9 +1,0 @@
-[Unit]
-Description=Timer to turn on Night Light
-
-[Timer]
-OnCalendar=22:00
-Persistent=true
-
-[Install]
-WantedBy=timers.target
