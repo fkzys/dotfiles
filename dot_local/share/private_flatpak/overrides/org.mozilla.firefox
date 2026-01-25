@@ -1,3 +1,4 @@
 [Context]
 sockets=!fallback-x11;!x11
 devices=dri
+filesystems=!xdg-download
