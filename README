@@ -1,5 +1,8 @@
 change theme in kvantummanager to KvGnomeDark
 
+use:
+systemctl --user enable --now hyprsunset
+
 text below are deprecated
 ---
 install.sh should not be executed before setting your own variables inside the script
