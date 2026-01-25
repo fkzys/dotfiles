@@ -40,7 +40,7 @@ NATIVE_PKGS=(
     "brightnessctl"
     "tpm2-tss" 
     "tpm2-tools"
-    {{ end }}
+    {{- end }}
 
     # === AUDIO & VIDEO ===
     "pipewire"
@@ -105,7 +105,7 @@ NATIVE_PKGS=(
     {{- if eq .chezmoi.hostname "desktop-1" }}
     "qemu-base"
     "virt-manager"
-    {{ end }}
+    {{- end }}
     "ansible"
     "ansible-lint"
 
