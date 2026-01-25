@@ -22,7 +22,6 @@ set -euo pipefail
      --ro-bind ~/.config/lf ~/.config/lf \
      --ro-bind ~/.cache ~/.cache \
      --bind ~/.cache/vidthumb ~/.cache/vidthumb \
-     --ro-bind ~/dotfiles ~/dotfiles \
      --ro-bind "$PWD" "$PWD" \
      --unshare-all \
      --new-session \
