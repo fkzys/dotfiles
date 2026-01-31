@@ -1,12 +1,7 @@
 [Added Associations]
 application/x-bat=kitty.desktop;
 audio/x-opus+ogg=mpv.desktop;
-application/pdf=org.gnome.Papers.desktop;
 text/html=org.mozilla.firefox.desktop;
-image/jpeg=imv.desktop;gimp.desktop;
-image/png=imv.desktop;gimp.desktop;
-image/gif=imv.desktop;
-image/webp=imv.desktop;
 
 [Default Applications]
 text/html=org.mozilla.firefox.desktop
@@ -17,11 +12,18 @@ x-scheme-handler/https=org.mozilla.firefox.desktop
 x-scheme-handler/about=org.mozilla.firefox.desktop
 x-scheme-handler/unknown=org.mozilla.firefox.desktop
 
+image/jpeg=imv.desktop;gimp.desktop;
+image/png=imv.desktop;gimp.desktop;
+image/gif=imv.desktop;
+image/webp=imv.desktop;
+
 application/x-extension-htm=org.mozilla.firefox.desktop
 application/x-extension-html=org.mozilla.firefox.desktop
 application/x-extension-shtml=org.mozilla.firefox.desktop
 application/x-extension-xhtml=org.mozilla.firefox.desktop
 application/x-extension-xht=org.mozilla.firefox.desktop
+
+application/pdf=org.gnome.Papers.desktop;
 
 application/x-ms-dos-executable=ru.linux_gaming.PortProton.desktop
 application/x-wine-extension-msp=ru.linux_gaming.PortProton.desktop
