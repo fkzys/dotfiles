@@ -42,19 +42,12 @@ env = XMODIFIERS,@im=fcitx
 # Or execute your favorite apps at launch like this:
 
 #D-Bus
-exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
+#exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
 
 # Apply GTK Theme
 exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
 exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
 exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-
-# Status Bar 
-exec-once = waybar
-
-# Authentication Agent 
-exec-once = /usr/lib/hyprpolkitagent/hyprpolkitagent
-exec-once = gnome-keyring-daemon --start
 
 {{- if eq .chezmoi.hostname "desktop-1" }}
 # Tablet Driver
@@ -65,22 +58,11 @@ exec-once = otd-daemon
 {{- if eq .chezmoi.hostname "desktop-1" }}
 exec-once = transformers_ocr listen
 {{- end }}
-exec-once = nextcloud
-exec-once = mpd
 
 # Input Method
 exec-once = fcitx5 -dr
 
-# Idle
-exec-once = hypridle
-
-# Wallpaper 
-exec-once = hyprpaper
-
-# Blue-light filter
-#exec-once = hyprsunset
-
-###################
+##################
 ### MY PROGRAMS ###
 ###################
 
@@ -296,7 +278,7 @@ bind = $mainMod SHIFT, Tab, changegroupactive, b
 # -- System and Windows --
 bind = $mainMod, Return, exec, $terminal
 bind = $mainMod SHIFT, Q, killactive 
-bind = $mainMod SHIFT, E, exec, command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit
+bind = $mainMod SHIFT, E, exec, uwsm stop
 bind = $mainMod SHIFT, SPACE, togglefloating, 
 bind = $mainMod, D, exec, $menu 
 bind = $mainMod, F, fullscreen,

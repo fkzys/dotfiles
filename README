@@ -1,7 +1,9 @@
 change theme in kvantummanager to KvGnomeDark
 
 use:
-systemctl --user enable --now hyprsunset
+systemctl --user enable --now hypridle hyprpaper hyprpolkitagent hyprsunset mpd waybar
+systemctl enable --now com.nextcloud.desktopclient.nextcloud
+systemctl enable --now gnome-keyring-daemon
 systemctl enable --now firewalld
 text below are deprecated
 ---
