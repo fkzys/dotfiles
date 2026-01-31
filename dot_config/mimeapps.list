@@ -2,8 +2,29 @@
 application/x-bat=kitty.desktop;
 audio/x-opus+ogg=mpv.desktop;
 application/pdf=org.gnome.Papers.desktop;
-text/html=firefox.desktop
-image/jpeg=feh.desktop;gimp.desktop;
+text/html=org.mozilla.firefox.desktop;
+image/jpeg=imv.desktop;gimp.desktop;
+image/png=imv.desktop;gimp.desktop;
+image/gif=imv.desktop;
+image/webp=imv.desktop;
 
 [Default Applications]
-application/x-ms-dos-executable;application/x-wine-extension-msp;application/x-msi;application/x-msdos-program;text/win-bat;=PortProton.desktop
+text/html=org.mozilla.firefox.desktop
+application/xhtml+xml=org.mozilla.firefox.desktop
+application/xml=org.mozilla.firefox.desktop
+x-scheme-handler/http=org.mozilla.firefox.desktop
+x-scheme-handler/https=org.mozilla.firefox.desktop
+x-scheme-handler/about=org.mozilla.firefox.desktop
+x-scheme-handler/unknown=org.mozilla.firefox.desktop
+
+application/x-extension-htm=org.mozilla.firefox.desktop
+application/x-extension-html=org.mozilla.firefox.desktop
+application/x-extension-shtml=org.mozilla.firefox.desktop
+application/x-extension-xhtml=org.mozilla.firefox.desktop
+application/x-extension-xht=org.mozilla.firefox.desktop
+
+application/x-ms-dos-executable=ru.linux_gaming.PortProton.desktop
+application/x-wine-extension-msp=ru.linux_gaming.PortProton.desktop
+application/x-msi=ru.linux_gaming.PortProton.desktop
+application/x-msdos-program=ru.linux_gaming.PortProton.desktop
+text/win-bat=ru.linux_gaming.PortProton.desktop
