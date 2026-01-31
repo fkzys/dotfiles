@@ -98,6 +98,7 @@ NATIVE_PKGS=(
     "pacman-contrib"
     "udisks2"
     "strace"
+    "imv"
 
     # === DEV & VIRTUALIZATION ===
     "base-devel"
@@ -128,9 +129,7 @@ NATIVE_PKGS=(
 
 # --- 2. AUR ---
 AUR_PKGS=(
-    "qownnotes"
     "kopia-bin"
-    "localsend-bin"
     {{- if eq .chezmoi.hostname "desktop-1" }}
     "opentabletdriver"
     "goldendict-ng"
@@ -143,8 +142,10 @@ FLATPAK_PKGS=(
     "com.github.tchx84.Flatseal"
     "org.mozilla.firefox"
     "org.telegram.desktop"
-    "org.libreoffice.Libreoffice"
+    "org.libreoffice.LibreOffice"
     "org.gnome.Papers"
+    "org.qownnotes.QOwnNotes"
+    "org.localsend.localsend_app"
     {{- if eq .chezmoi.hostname "desktop-1" }}
     "ru.linux_gaming.PortProton"
     "runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/25.08"
