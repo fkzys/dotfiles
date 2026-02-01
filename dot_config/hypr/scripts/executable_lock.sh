@@ -15,4 +15,3 @@ hyprlock
 
 set_usb_lock 1
 
-systemctl --user restart hyprsunset
