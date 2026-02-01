@@ -22,4 +22,4 @@ case "$(file -Lb --mime-type "$file")" in
     ;;
 esac
 
-pistol "$file"
+bat --color=always --style=plain --line-range=:$h --terminal-width=$w "$file" 2>/dev/null || file -b "$file"
