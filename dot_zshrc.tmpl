@@ -152,7 +152,9 @@ alias vim="nvim"
 typeset -A flatpak_apps=(
     firefox     "org.mozilla.firefox"
     telegram    "org.telegram.desktop"
+    {{- if eq .chezmoi.hostname "desktop-1" }}
     portproton  "ru.linux_gaming.PortProton"
+    {{- end }}
     flatseal    "com.github.tchx84.Flatseal"
     libreoffice "org.libreoffice.LibreOffice"
     papers      "org.gnome.Papers"
