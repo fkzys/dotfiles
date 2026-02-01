@@ -107,11 +107,7 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 source /home/user/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-#export LANG=en_US.UTF-8
-#export LC_ALL=en_US.UTF-8
 
-
-# Автоматически использовать все ядра
 export MAKEFLAGS="-j$(nproc)"
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
 export NINJAFLAGS="-j$(nproc)"
@@ -120,8 +116,32 @@ export DEB_BUILD_OPTIONS="parallel=$(nproc)"
 
 export PATH="${PATH}:${HOME}/.local/bin"
 
+eval "$(zoxide init zsh)"
+eval "$(fzf --zsh)"
+
+alias ls='eza --color=always --group-directories-first'
+alias ll='eza -la --color=always --group-directories-first --git'
+alias la='eza -a --color=always --group-directories-first'
+alias lt='eza -T --color=always --group-directories-first --level=2'
+alias l.='eza -d .* --color=always --group-directories-first'
+
+alias cat='bat --paging=never'
+alias catp='bat'
+
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+export MANROFFOPT="-c"
+
+alias rg='rg --smart-case'
+
 export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+
+export FZF_CTRL_T_OPTS="
+  --preview 'bat --color=always --style=numbers --line-range=:500 {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
 
 EDITOR=nvim
 alias start-hyprland="exec uwsm start start-hyprland"
@@ -152,6 +172,6 @@ alias anime='cd -- "/mnt/hdd1/torrents"'
 # Ctrl+O to launch lf file manager.
 bindkey -s '^o' '^ulf\n'
 # Ctrl+F to search directory with fzf.
-bindkey -s '^f' '^ucd -- "$(dirname -- "$(fzf)")"\n'
+bindkey '^f' fzf-cd-widget
 #launch ncmpcpp\
 bindkey -s '^n' '^uncmpcpp\n'
