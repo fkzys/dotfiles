@@ -1,7 +1,6 @@
 #!/bin/bash
-
-{{ $secrets := joinPath .chezmoi.sourceDir "secrets.yaml.age" | include | decrypt | fromYaml -}}
-{{ $url := index $secrets "sing-box" "config_url" .chezmoi.hostname -}}
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $url := index $s "sing-box" "config_url" .chezmoi.hostname -}}
 
 CONFIG="$HOME/{{ .chezmoi.hostname }}_sing-box/config.json"
 TEMP=$(mktemp)

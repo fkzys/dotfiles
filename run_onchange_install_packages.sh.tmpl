@@ -105,6 +105,8 @@ NATIVE_PKGS=(
     "strace"
     "imv"
     "swappy"
+    "git-delta"
+    "lazygit"
 
     # === DEV & VIRTUALIZATION ===
     "base-devel"
@@ -120,6 +122,7 @@ NATIVE_PKGS=(
     "ansible-lint"
     "age"
     "sops"
+    "direnv"
 
     {{- if eq .chezmoi.hostname "desktop-1" }}
     # === NVIDIA ===

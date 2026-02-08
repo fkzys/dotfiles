@@ -120,6 +120,7 @@ export SOPS_AGE_KEY_FILE="$HOME/keys/age-key.txt"
 
 eval "$(zoxide init zsh)"
 eval "$(fzf --zsh)"
+eval "$(direnv hook zsh)"
 
 alias ls='eza --color=always --group-directories-first'
 alias ll='eza -la --color=always --group-directories-first --git'
@@ -149,6 +150,8 @@ EDITOR=nvim
 alias start-hyprland="exec uwsm start start-hyprland"
 alias vi="nvim"
 alias vim="nvim"
+
+alias lg="lazygit"
 
 # Flatpak aliases
 typeset -A flatpak_apps=(

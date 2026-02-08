@@ -1,0 +1,16 @@
+gui:
+  showIcons: true
+  nerdFontsVersion: "3"
+
+git:
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never
+
+os:
+  editPreset: "nvim"
+
+keybinding:
+  universal:
+    quit: "q"
+    quit-alt1: "<c-c>"
