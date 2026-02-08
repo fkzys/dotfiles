@@ -1,4 +1,5 @@
 README
+re-encrypt.sh
 secrets.yaml.age
 {{- if eq .chezmoi.hostname "laptop-1" }}
 dot_config/goldendict/*
