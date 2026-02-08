@@ -116,6 +116,8 @@ export DEB_BUILD_OPTIONS="parallel=$(nproc)"
 
 export PATH="${PATH}:${HOME}/.local/bin"
 
+export SOPS_AGE_KEY_FILE="$HOME/keys/age-key.txt"
+
 eval "$(zoxide init zsh)"
 eval "$(fzf --zsh)"
 

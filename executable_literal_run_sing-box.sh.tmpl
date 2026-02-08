@@ -1,0 +1,22 @@
+#!/bin/bash
+
+{{ $secrets := joinPath .chezmoi.sourceDir "secrets.yaml.age" | include | decrypt | fromYaml -}}
+{{ $url := index $secrets "sing-box" "config_url" .chezmoi.hostname -}}
+
+CONFIG="$HOME/desktop-1_sing-box/config.json"
+TEMP=$(mktemp)
+
+# -f = fail on HTTP errors (4xx, 5xx)
+# -s = silent, -S = show errors
+if curl -fsSL "{{ $url }}" -o "$TEMP"; then
+    mv "$TEMP" "$CONFIG"
+    echo "Config updated"
+else
+    rm -f "$TEMP"
+    echo "Load failed, using old config"
+fi
+
+trap 'kill $(jobs -p) 2>/dev/null' EXIT SIGHUP SIGINT SIGTERM
+
+"$HOME/sing-box/sing-box" run -c "$CONFIG" &
+wait
