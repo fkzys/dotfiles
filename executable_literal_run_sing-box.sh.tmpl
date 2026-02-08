@@ -3,7 +3,7 @@
 {{ $secrets := joinPath .chezmoi.sourceDir "secrets.yaml.age" | include | decrypt | fromYaml -}}
 {{ $url := index $secrets "sing-box" "config_url" .chezmoi.hostname -}}
 
-CONFIG="$HOME/desktop-1_sing-box/config.json"
+CONFIG="$HOME/{{ .chezmoi.hostname }}_sing-box/config.json"
 TEMP=$(mktemp)
 
 # -f = fail on HTTP errors (4xx, 5xx)
