@@ -62,6 +62,12 @@ fi
 [[ -f "${HOME}/.gitconfig" ]]   && OPT+=(--ro-bind "${HOME}/.gitconfig"   "${HOME}/.gitconfig")
 [[ -d "${HOME}/.config/git" ]]  && OPT+=(--ro-bind "${HOME}/.config/git"  "${HOME}/.config/git")
 
+# Lazy lockfile — must come AFTER the ro-bind for ~/.config/nvim
+LATE_BINDS=()
+[[ -f "${HOME}/.config/nvim/lazy-lock.json" ]] && \
+    LATE_BINDS+=(--bind "${HOME}/.config/nvim/lazy-lock.json" \
+                        "${HOME}/.config/nvim/lazy-lock.json")
+
 # chezmoi — chezmoi.vim plugin works with the source directory
 [[ -d "${HOME}/.local/share/chezmoi" ]] && \
     OPT+=(--bind "${HOME}/.local/share/chezmoi" "${HOME}/.local/share/chezmoi")
@@ -89,6 +95,7 @@ exec bwrap \
     \
     --dir     "${HOME}"                                               \
     --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim"      \
+    "${LATE_BINDS[@]}"                                                \
     --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim" \
     --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim" \
     --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim"       \
