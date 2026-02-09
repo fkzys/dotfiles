@@ -5,7 +5,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 ## What's included
 
 - **WM**: Hyprland + waybar + hyprpaper + hypridle/hyprlock
-- **Terminal**: kitty + zsh + oh-my-zsh
+- **Terminal**: kitty + zsh
 - **Editor**: neovim
 - **Files**: lf + thunar
 - **Audio**: mpd + ncmpcpp + mpv
