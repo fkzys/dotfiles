@@ -82,7 +82,7 @@ source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 
 # ── Environment ─────────────────────────────────────────────
 export EDITOR=nvim
-export PATH="${PATH}:${HOME}/.local/bin"
+export PATH="${HOME}/.local/bin:${PATH}"
 export SOPS_AGE_KEY_FILE="$HOME/keys/age-key.txt"
 
 export MAKEFLAGS="-j$(nproc)"
