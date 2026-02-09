@@ -17,6 +17,10 @@ PROMPT='%(?:%B%F{green}➜ :%B%F{red}➜ )%f%b %F{cyan}%c%f $(_git_prompt)'
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
 
+# Ctrl+A/E
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
+
 # Home / End
 bindkey '^[[H'  beginning-of-line
 bindkey '^[[F'  end-of-line
@@ -44,6 +48,33 @@ HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt hist_ignore_dups share_history append_history hist_ignore_space
+
+# Dir colors
+eval "$(dircolors -b)"
+
+# ── Completion ────────────────────────────────────────────
+autoload -Uz compinit && compinit
+zmodload zsh/complist
+
+# Interactive menu on ambiguous completion
+zstyle ':completion:*' menu select
+# Case-insensitive matching
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+# Use LS_COLORS for file completions
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}" 'di=1;34'
+# Show . and .. in directory completions
+zstyle ':completion:*' special-dirs true
+# Group completions by type
+zstyle ':completion:*' group-name ''
+# Header format for completion groups
+zstyle ':completion:*:descriptions' format '%F{yellow}── %d ──%f'
+
+# Navigate completion menu with arrows
+bindkey -M menuselect '^[[A'  up-line-or-history       # Up
+bindkey -M menuselect '^[[B'  down-line-or-history     # Down
+bindkey -M menuselect '^[[D'  backward-char            # Left
+bindkey -M menuselect '^[[C'  forward-char             # Right
+bindkey -M menuselect '^[[Z'  reverse-menu-complete    # Shift+Tab — go back
 
 # ── Plugins  ──────────
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
