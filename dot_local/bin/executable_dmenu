@@ -1,3 +1,2 @@
 #!/bin/sh
 wofi -dmenu -location 2 -fixed-num-lines 15 "$@"
-#rofi -dmenu "$@"
