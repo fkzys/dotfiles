@@ -265,6 +265,20 @@ group {
 # KEYBINDINGS 
 # -----------------------------------------------------
 
+# Alt+Space → enter IM select mode → press 1/2/3 → done
+#bind = ALT, space, submap, imselect
+#
+#submap = imselect
+#bind = , 1, exec, fcitx5-remote -s keyboard-us
+#bind = , 1, submap, reset
+#bind = , 2, exec, fcitx5-remote -s keyboard-ru
+#bind = , 2, submap, reset
+#bind = , 3, exec, fcitx5-remote -s kkc
+#bind = , 3, submap, reset
+#bind = , escape, submap, reset
+#bind = ALT, space, submap, reset
+#submap = reset
+
 # -- groups --
 bind = $mainMod CONTROL, left, moveintogroup, l
 bind = $mainMod CONTROL, right, moveintogroup, r
