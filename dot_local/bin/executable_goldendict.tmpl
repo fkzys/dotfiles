@@ -1,150 +1,48 @@
 #!/usr/bin/env bash
-# File: ~/.local/bin/goldendict (chezmoi template)
-# Sandboxed GoldenDict-ng via bubblewrap
-# Note: GoldenDict-ng doesn't support native Wayland, runs via XWayland (xcb)
+# Sandboxed GoldenDict-ng via bubblewrap (XWayland)
 set -euo pipefail
-
-UID2="$(id -u)"
-XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${UID2}}"
+. "${HOME}/.local/lib/bwrap-common.sh"
 
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
-DICT_DIR_RAW="{{ index $s "goldendict" "dict_dir" }}"
-DICT_DIR="$(realpath -m -- "${DICT_DIR_RAW}")"
+DICT_DIR="$(realpath -m -- "{{ index $s "goldendict" "dict_dir" }}")"
+[[ -d "${DICT_DIR}" ]] || { echo "No dict dir: ${DICT_DIR}" >&2; exit 1; }
 
-if [[ ! -d "${DICT_DIR}" ]]; then
-  echo "Dictionary directory does not exist: ${DICT_DIR}" >&2
-  exit 1
-fi
+mkdir -p "${HOME}/.config/goldendict" \
+         "${HOME}/.local/share/goldendict" \
+         "${HOME}/.local/share/GoldenDict-ng" \
+         "${HOME}/.cache/goldendict" \
+         "${HOME}/.cache/fontconfig"
 
-mkdir -p \
-  "${HOME}/.config/goldendict" \
-  "${HOME}/.local/share/goldendict" \
-  "${HOME}/.local/share/GoldenDict-ng" \
-  "${HOME}/.cache/goldendict" \
-  "${HOME}/.cache/fontconfig"
-
-# ── X11 / XWayland ──
-X11=()
-if [[ -n "${DISPLAY:-}" ]]; then
-  [[ -d /tmp/.X11-unix ]] && X11+=(--ro-bind /tmp/.X11-unix /tmp/.X11-unix)
-  X11+=(--setenv DISPLAY "${DISPLAY}")
-  if [[ -n "${XAUTHORITY:-}" && -f "${XAUTHORITY}" ]]; then
-    X11+=(--ro-bind "${XAUTHORITY}" "${XAUTHORITY}" --setenv XAUTHORITY "${XAUTHORITY}")
-  elif [[ -f "${HOME}/.Xauthority" ]]; then
-    X11+=(--ro-bind "${HOME}/.Xauthority" "${HOME}/.Xauthority" \
-          --setenv XAUTHORITY "${HOME}/.Xauthority")
-  fi
-fi
-
-# ── Audio ──
-AUDIO=()
-[[ -S "${XDG_RUNTIME_DIR}/pipewire-0" ]] && \
-  AUDIO+=(--ro-bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
-[[ -d "${XDG_RUNTIME_DIR}/pulse" ]] && \
-  AUDIO+=(--ro-bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
-
-# ── D-Bus session ──
-DBUS=()
-_bus="${DBUS_SESSION_BUS_ADDRESS:-}"
-if [[ "$_bus" == unix:path=* ]]; then
-  _bus_path="${_bus#unix:path=}"
-  [[ -S "$_bus_path" ]] && DBUS+=(
-    --ro-bind "$_bus_path" "$_bus_path"
-    --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
-  )
-elif [[ -S "${XDG_RUNTIME_DIR}/bus" ]]; then
-  DBUS+=(
-    --ro-bind "${XDG_RUNTIME_DIR}/bus" "${XDG_RUNTIME_DIR}/bus"
-    --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
-  )
-fi
-
-# ── D-Bus system ──
-SYSBUS=()
-if [[ -S /run/dbus/system_bus_socket ]]; then
-  SYSBUS+=(
-    --perms 0755 --dir /run
-    --perms 0755 --dir /run/dbus
-    --ro-bind /run/dbus/system_bus_socket /run/dbus/system_bus_socket
-  )
-fi
-
-# ── GPU ──
-GPU=()
-[[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
-for dev in /dev/nvidia{0,1,2,3,ctl,-modeset,-uvm,-uvm-tools}; do
-  [[ -e "$dev" ]] && GPU+=(--dev-bind "$dev" "$dev")
-done
-[[ -d /dev/nvidia-caps ]] && GPU+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
-
-# ── /usr/lib64 ──
-OPT=()
-if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
-  OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
-else
-  OPT+=(--symlink /usr/lib /lib64)
-fi
-
-# ── Optional read-only ──
-OPTIONAL_RO=()
-for p in \
-  "${HOME}/.config/fontconfig" \
-  "${HOME}/.config/qt6ct" \
-  "${HOME}/.config/qt5ct" \
-  "${HOME}/.config/gtk-3.0" \
-  "${HOME}/.config/Kvantum" \
-  "${HOME}/.local/share/fonts" \
-  "${HOME}/.local/share/icons" \
-  "${HOME}/.icons"; do
-  [[ -e "$p" ]] && OPTIONAL_RO+=(--ro-bind "$p" "$p")
-done
+OPT=(); bwrap_lib64 OPT
+GPU=(); bwrap_gpu GPU
+X11=(); bwrap_x11 X11
+AUDIO=(); bwrap_audio AUDIO
+DBUS=(); bwrap_dbus_session DBUS
+SYSBUS=(); bwrap_dbus_system SYSBUS
+THEMES=(); bwrap_themes THEMES
+BASE=(); bwrap_base BASE OPT
+HOME_FS=(); bwrap_home_tmpfs HOME_FS
+ENV=(); bwrap_env_base ENV
+ENV+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
+SANDBOX=(); bwrap_sandbox SANDBOX yes
 
 exec bwrap \
-  --ro-bind /usr /usr \
-  "${OPT[@]}" \
-  --symlink /usr/bin /bin \
-  --symlink /usr/bin /sbin \
-  --symlink /usr/lib /lib \
-  --proc /proc \
-  --ro-bind /sys /sys \
-  --dev /dev \
-  "${GPU[@]}" \
-  --tmpfs /tmp \
-  --tmpfs /dev/shm \
-  --ro-bind /etc /etc \
-  \
-  "${SYSBUS[@]}" \
-  --perms 0755 --dir /run/user \
-  --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-  \
-  --tmpfs "${HOME}" \
-  --perms 0700 --dir "${HOME}/.config" \
-  --perms 0700 --dir "${HOME}/.local" \
-  --perms 0700 --dir "${HOME}/.local/share" \
-  --perms 0700 --dir "${HOME}/.cache" \
-  \
-  --bind "${HOME}/.config/goldendict"       "${HOME}/.config/goldendict" \
-  --bind "${HOME}/.local/share/goldendict"  "${HOME}/.local/share/goldendict" \
-  --bind "${HOME}/.local/share/GoldenDict-ng" "${HOME}/.local/share/GoldenDict-ng" \
-  --bind "${HOME}/.cache/goldendict"        "${HOME}/.cache/goldendict" \
-  --bind "${HOME}/.cache/fontconfig"        "${HOME}/.cache/fontconfig" \
-  --ro-bind "${DICT_DIR}" "${DICT_DIR}" \
-  "${OPTIONAL_RO[@]}" \
-  \
-  "${X11[@]}" \
-  "${AUDIO[@]}" \
-  "${DBUS[@]}" \
-  \
-  --setenv HOME "${HOME}" \
-  --setenv LANG "${LANG:-en_US.UTF-8}" \
-  --setenv PATH "/usr/bin:/bin" \
-  --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}" \
-  --setenv XDG_CACHE_HOME "${HOME}/.cache" \
-  --setenv QT_QPA_PLATFORM xcb \
-  --setenv QT_QPA_PLATFORMTHEME qt6ct \
-  \
-  --unshare-all \
-  --share-net \
-  --new-session \
-  --die-with-parent \
-  /usr/bin/goldendict "$@"
+    "${BASE[@]}" \
+    "${GPU[@]}" \
+    "${SYSBUS[@]}" \
+    --perms 0755 --dir /run/user \
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
+    "${HOME_FS[@]}" \
+    --bind "${HOME}/.config/goldendict"         "${HOME}/.config/goldendict" \
+    --bind "${HOME}/.local/share/goldendict"    "${HOME}/.local/share/goldendict" \
+    --bind "${HOME}/.local/share/GoldenDict-ng" "${HOME}/.local/share/GoldenDict-ng" \
+    --bind "${HOME}/.cache/goldendict"          "${HOME}/.cache/goldendict" \
+    --bind "${HOME}/.cache/fontconfig"          "${HOME}/.cache/fontconfig" \
+    --ro-bind "${DICT_DIR}" "${DICT_DIR}" \
+    "${THEMES[@]}" \
+    "${X11[@]}" \
+    "${AUDIO[@]}" \
+    "${DBUS[@]}" \
+    "${ENV[@]}" \
+    "${SANDBOX[@]}" \
+    /usr/bin/goldendict "$@"

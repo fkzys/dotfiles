@@ -1,106 +1,46 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Sandboxed Anki via bubblewrap
 set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
 
 mkdir -p "${HOME}/.local/share/Anki2" \
          "${HOME}/Downloads/anki"
 
-# ── Bind-mount files passed as arguments (.apkg, .ankiaddon) ────
 FILE_BINDS=()
-for arg in "$@"; do
-    [[ "$arg" == -* ]] && continue
-    if [[ -e "$arg" ]]; then
-        _real="$(realpath "$arg")"
-        _dir="$(dirname "$_real")"
-        case "$_dir" in /usr/*|/etc/*|/proc/*|/dev/*|/tmp*|/sys/*) continue ;; esac
-        FILE_BINDS+=(--ro-bind "$_dir" "$_dir")
-    fi
-done
+ARGS=()
+bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
-# ── Wayland ─────────────────────────────────────────────────────
-WL=()
-_wl="${XDG_RUNTIME_DIR:-}/${WAYLAND_DISPLAY:-}"
-if [[ -S "$_wl" ]]; then
-    WL+=(
-        --ro-bind "$_wl" "$_wl"
-        --setenv WAYLAND_DISPLAY "$WAYLAND_DISPLAY"
-    )
-fi
-
-# ── Audio ───────────────────────────────────────────────────────
-AUDIO=()
-_pw="${XDG_RUNTIME_DIR:-}/pipewire-0"
-_pulse="${XDG_RUNTIME_DIR:-}/pulse"
-[[ -S "$_pw" ]]    && AUDIO+=(--ro-bind "$_pw" "$_pw")
-[[ -d "$_pulse" ]] && AUDIO+=(--ro-bind "$_pulse" "$_pulse")
-
-# ── D-Bus ───────────────────────────────────────────────────────
-DBUS=()
-_bus="${DBUS_SESSION_BUS_ADDRESS:-}"
-if [[ "$_bus" == unix:path=* ]]; then
-    _bus_path="${_bus#unix:path=}"
-    [[ -S "$_bus_path" ]] && DBUS+=(
-        --ro-bind "$_bus_path" "$_bus_path"
-        --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
-    )
-fi
-
-# ── GPU ─────────────────────────────────────────────────────────
-GPU=()
-[[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
-
-# ── Conditional system binds ────────────────────────────────────
-OPT=()
-if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
-    OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
-else
-    OPT+=(--symlink /usr/lib /lib64)
-fi
-if [[ -L /etc/resolv.conf ]]; then
-    OPT+=(--ro-bind "$(dirname "$(realpath /etc/resolv.conf)")" \
-                     "$(dirname "$(realpath /etc/resolv.conf)")")
-fi
+OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
+GPU=(); bwrap_gpu GPU
+WL=(); bwrap_wayland WL
+AUDIO=(); bwrap_audio AUDIO
+DBUS=(); bwrap_dbus_session DBUS
+SYSBUS=(); bwrap_dbus_system SYSBUS
+THEMES=(); bwrap_themes THEMES
+BASE=(); bwrap_base BASE OPT
+HOME_FS=(); bwrap_home_tmpfs HOME_FS
+ENV=(); bwrap_env_base ENV
+ENV+=(
+    --setenv QT_QPA_PLATFORM wayland
+    --setenv QT_QPA_PLATFORMTHEME qt6ct
+    --setenv QTWEBENGINE_DISABLE_SANDBOX 1
+)
+SANDBOX=(); bwrap_sandbox SANDBOX yes
 
 exec bwrap \
-    --ro-bind /usr /usr \
-    "${OPT[@]}" \
-    --symlink /usr/bin /bin \
-    --symlink /usr/bin /sbin \
-    --symlink /usr/lib /lib \
-    --proc /proc \
-    --ro-bind /sys /sys \
-    --dev /dev \
+    "${BASE[@]}" \
     "${GPU[@]}" \
-    --tmpfs /tmp \
-    --tmpfs /dev/shm \
-    --ro-bind /etc /etc \
-    \
-    --tmpfs "${HOME}" \
-    --bind "${HOME}/.local/share/Anki2" "${HOME}/.local/share/Anki2" \
-    --bind "${HOME}/Downloads/anki" "${HOME}/Downloads/anki" \
-    "${FILE_BINDS[@]}" \
-    --ro-bind-try "${HOME}/.config/qt6ct" "${HOME}/.config/qt6ct" \
-    --ro-bind-try "${HOME}/.config/qt5ct" "${HOME}/.config/qt5ct" \
-    --ro-bind-try "${HOME}/.config/gtk-3.0" "${HOME}/.config/gtk-3.0" \
-    --ro-bind-try "${HOME}/.config/fontconfig" "${HOME}/.config/fontconfig" \
-    --ro-bind-try "${HOME}/.config/Kvantum" "${HOME}/.config/Kvantum" \
-    --ro-bind-try "${HOME}/.local/share/fonts" "${HOME}/.local/share/fonts" \
-    \
+    "${SYSBUS[@]}" \
+    --perms 0755 --dir /run/user \
     --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
+    "${HOME_FS[@]}" \
+    --bind "${HOME}/.local/share/Anki2" "${HOME}/.local/share/Anki2" \
+    --bind "${HOME}/Downloads/anki"     "${HOME}/Downloads/anki" \
+    "${FILE_BINDS[@]}" \
+    "${THEMES[@]}" \
     "${WL[@]}" \
     "${AUDIO[@]}" \
     "${DBUS[@]}" \
-    \
-    --setenv HOME "${HOME}" \
-    --setenv LANG "${LANG:-en_US.UTF-8}" \
-    --setenv PATH "/usr/bin:/bin" \
-    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}" \
-    --setenv QT_QPA_PLATFORM wayland \
-    --setenv QT_QPA_PLATFORMTHEME qt6ct \
-    --setenv QTWEBENGINE_DISABLE_SANDBOX 1 \
-    \
-    --unshare-all \
-    --share-net \
-    --new-session \
-    --die-with-parent \
-    /usr/bin/anki "$@"
+    "${ENV[@]}" \
+    "${SANDBOX[@]}" \
+    /usr/bin/anki "${ARGS[@]}"

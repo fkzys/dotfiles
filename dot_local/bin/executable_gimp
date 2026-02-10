@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Sandboxed GIMP via bubblewrap
 set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
 
 mkdir -p "${HOME}/.config/GIMP" \
          "${HOME}/.local/share/GIMP" \
@@ -8,92 +9,35 @@ mkdir -p "${HOME}/.config/GIMP" \
          "${HOME}/Pictures" \
          "${HOME}/Downloads"
 
-# ── Resolve file arguments ──────────────────────────────────────
 FILE_BINDS=()
 ARGS=()
-for arg in "$@"; do
-    if [[ "$arg" != -* && -e "$arg" ]]; then
-        _real="$(realpath "$arg")"
-        _dir="$(dirname "$_real")"
-        case "$_dir" in /usr/*|/etc/*|/proc/*|/dev/*|/tmp*|/sys/*) ;; *)
-            FILE_BINDS+=(--bind "$_dir" "$_dir")
-        ;; esac
-        ARGS+=("$_real")
-    else
-        ARGS+=("$arg")
-    fi
-done
+bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
 
-# ── Wayland ─────────────────────────────────────────────────────
-WL=()
-_wl="${XDG_RUNTIME_DIR:-}/${WAYLAND_DISPLAY:-}"
-if [[ -S "$_wl" ]]; then
-    WL+=(
-        --ro-bind "$_wl" "$_wl"
-        --setenv WAYLAND_DISPLAY "$WAYLAND_DISPLAY"
-    )
-fi
+OPT=(); bwrap_lib64 OPT
+GPU=(); bwrap_gpu GPU
+WL=(); bwrap_wayland WL
+DBUS=(); bwrap_dbus_session DBUS
+THEMES=(); bwrap_themes THEMES
+BASE=(); bwrap_base BASE OPT
+HOME_FS=(); bwrap_home_tmpfs HOME_FS
+ENV=(); bwrap_env_base ENV
+SANDBOX=(); bwrap_sandbox SANDBOX no
 
-# ── D-Bus (for fcitx5 input method) ─────────────────────────────
-DBUS=()
-_bus="${DBUS_SESSION_BUS_ADDRESS:-}"
-if [[ "$_bus" == unix:path=* ]]; then
-    _bus_path="${_bus#unix:path=}"
-    [[ -S "$_bus_path" ]] && DBUS+=(
-        --ro-bind "$_bus_path" "$_bus_path"
-        --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
-    )
-fi
-
-# ── GPU ─────────────────────────────────────────────────────────
-GPU=()
-[[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
-
-# ── Conditional binds (outside $HOME) ───────────────────────────
-OPT=()
-if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
-    OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
-else
-    OPT+=(--symlink /usr/lib /lib64)
-fi
-
-# ── Launch ──────────────────────────────────────────────────────
 exec bwrap \
-    --ro-bind /usr /usr          \
-    "${OPT[@]}"                  \
-    --symlink /usr/bin /bin      \
-    --symlink /usr/bin /sbin     \
-    --symlink /usr/lib /lib      \
-    --proc /proc                 \
-    --ro-bind /sys /sys          \
-    --dev /dev                   \
-    "${GPU[@]}"                  \
-    --tmpfs /tmp                 \
-    --tmpfs /dev/shm             \
-    --ro-bind /etc /etc          \
-    \
-    --dir "${HOME}"              \
-    --dir "${HOME}/.config"      \
-    --bind "${HOME}/.config/GIMP"      "${HOME}/.config/GIMP"      \
-    --bind "${HOME}/.local/share/GIMP" "${HOME}/.local/share/GIMP" \
-    --bind "${HOME}/.cache/GIMP"       "${HOME}/.cache/GIMP"       \
-    --bind "${HOME}/Pictures"          "${HOME}/Pictures"          \
-    --bind "${HOME}/Downloads"         "${HOME}/Downloads"         \
-    "${FILE_BINDS[@]}"           \
-    --ro-bind-try "${HOME}/.config/fontconfig" "${HOME}/.config/fontconfig" \
-    --ro-bind-try "${HOME}/.config/gtk-3.0"    "${HOME}/.config/gtk-3.0"    \
-    --ro-bind-try "${HOME}/.local/share/fonts" "${HOME}/.local/share/fonts" \
-    \
+    "${BASE[@]}" \
+    "${GPU[@]}" \
+    --perms 0755 --dir /run/user \
     --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    "${WL[@]}"                   \
-    "${DBUS[@]}"                 \
-    \
-    --setenv HOME            "${HOME}"                \
-    --setenv LANG            "${LANG:-en_US.UTF-8}"   \
-    --setenv PATH            "/usr/bin:/bin"           \
-    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"     \
-    \
-    --unshare-all            \
-    --new-session            \
-    --die-with-parent        \
+    "${HOME_FS[@]}" \
+    --bind "${HOME}/.config/GIMP"      "${HOME}/.config/GIMP" \
+    --bind "${HOME}/.local/share/GIMP" "${HOME}/.local/share/GIMP" \
+    --bind "${HOME}/.cache/GIMP"       "${HOME}/.cache/GIMP" \
+    --bind "${HOME}/Pictures"          "${HOME}/Pictures" \
+    --bind "${HOME}/Downloads"         "${HOME}/Downloads" \
+    "${FILE_BINDS[@]}" \
+    "${THEMES[@]}" \
+    "${WL[@]}" \
+    "${DBUS[@]}" \
+    "${ENV[@]}" \
+    "${SANDBOX[@]}" \
     /usr/bin/gimp "${ARGS[@]}"
