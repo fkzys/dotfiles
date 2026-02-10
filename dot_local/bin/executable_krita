@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# Sandboxed Krita via bubblewrap
+# Note: Krita runs via XWayland, not native Wayland
+set -euo pipefail
+
+KRITA_CONF="${HOME}/.local/share/krita-config"
+mkdir -p "$KRITA_CONF" \
+         "${HOME}/.local/share/krita" \
+         "${HOME}/.cache/krita" \
+         "${HOME}/Pictures" \
+         "${HOME}/Downloads"
+
+# ── Resolve file arguments ──────────────────────────────────────
+FILE_BINDS=()
+ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" != -* && -e "$arg" ]]; then
+        _real="$(realpath "$arg")"
+        _dir="$(dirname "$_real")"
+        case "$_dir" in /usr/*|/etc/*|/proc/*|/dev/*|/tmp*|/sys/*) ;; *)
+            FILE_BINDS+=(--bind "$_dir" "$_dir")
+        ;; esac
+        ARGS+=("$_real")
+    else
+        ARGS+=("$arg")
+    fi
+done
+
+# ── X11 / XWayland ───────────────────────────────────────────────
+X11=()
+if [[ -n "${DISPLAY:-}" ]]; then
+    [[ -d /tmp/.X11-unix ]] && X11+=(--ro-bind /tmp/.X11-unix /tmp/.X11-unix)
+    X11+=(--setenv DISPLAY "${DISPLAY}")
+    if [[ -n "${XAUTHORITY:-}" && -f "${XAUTHORITY}" ]]; then
+        X11+=(--ro-bind "${XAUTHORITY}" "${XAUTHORITY}" --setenv XAUTHORITY "${XAUTHORITY}")
+    elif [[ -f "${HOME}/.Xauthority" ]]; then
+        X11+=(--ro-bind "${HOME}/.Xauthority" "${HOME}/.Xauthority" \
+              --setenv XAUTHORITY "${HOME}/.Xauthority")
+    fi
+fi
+
+# ── D-Bus (for fcitx5 input method) ─────────────────────────────
+DBUS=()
+_bus="${DBUS_SESSION_BUS_ADDRESS:-}"
+if [[ "$_bus" == unix:path=* ]]; then
+    _bus_path="${_bus#unix:path=}"
+    [[ -S "$_bus_path" ]] && DBUS+=(
+        --ro-bind "$_bus_path" "$_bus_path"
+        --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
+    )
+elif [[ -S "${XDG_RUNTIME_DIR:-}/bus" ]]; then
+    DBUS+=(
+        --ro-bind "${XDG_RUNTIME_DIR}/bus" "${XDG_RUNTIME_DIR}/bus"
+        --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
+    )
+fi
+
+# ── Audio ─────────────────────────────────────────────────────────
+AUDIO=()
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+[[ -S "${XDG_RUNTIME_DIR}/pipewire-0" ]] && \
+    AUDIO+=(--ro-bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
+[[ -d "${XDG_RUNTIME_DIR}/pulse" ]] && \
+    AUDIO+=(--ro-bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
+
+# ── GPU ───────────────────────────────────────────────────────────
+GPU=()
+[[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
+for dev in /dev/nvidia{0,1,2,3,ctl,-modeset,-uvm,-uvm-tools}; do
+    [[ -e "$dev" ]] && GPU+=(--dev-bind "$dev" "$dev")
+done
+[[ -d /dev/nvidia-caps ]] && GPU+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
+
+# ── Conditional binds ─────────────────────────────────────────────
+OPT=()
+if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
+    OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
+else
+    OPT+=(--symlink /usr/lib /lib64)
+fi
+
+[[ -d "${HOME}/.local/share/fonts" ]] && \
+    OPT+=(--ro-bind "${HOME}/.local/share/fonts" "${HOME}/.local/share/fonts")
+
+exec bwrap \
+    --ro-bind /usr /usr          \
+    "${OPT[@]}"                  \
+    --symlink /usr/bin /bin      \
+    --symlink /usr/bin /sbin     \
+    --symlink /usr/lib /lib      \
+    --proc /proc                 \
+    --ro-bind /sys /sys          \
+    --dev /dev                   \
+    "${GPU[@]}"                  \
+    --tmpfs /tmp                 \
+    --tmpfs /dev/shm             \
+    --ro-bind /etc /etc          \
+    \
+    --dir "${HOME}"              \
+    --bind "$KRITA_CONF"                "${HOME}/.config"              \
+    --ro-bind-try "${HOME}/.config/fontconfig" "${HOME}/.config/fontconfig" \
+    --ro-bind-try "${HOME}/.config/qt6ct"      "${HOME}/.config/qt6ct"      \
+    --ro-bind-try "${HOME}/.config/Kvantum"    "${HOME}/.config/Kvantum"    \
+    --bind "${HOME}/.local/share/krita" "${HOME}/.local/share/krita" \
+    --bind "${HOME}/.cache/krita"       "${HOME}/.cache/krita"       \
+    --bind "${HOME}/Pictures"           "${HOME}/Pictures"           \
+    --bind "${HOME}/Downloads"          "${HOME}/Downloads"          \
+    "${FILE_BINDS[@]}"           \
+    \
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
+    "${X11[@]}"                  \
+    "${AUDIO[@]}"                \
+    "${DBUS[@]}"                 \
+    \
+    --setenv HOME            "${HOME}"                \
+    --setenv LANG            "${LANG:-en_US.UTF-8}"   \
+    --setenv PATH            "/usr/bin:/bin"           \
+    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"     \
+    --setenv QT_QPA_PLATFORM xcb                      \
+    --setenv QT_QPA_PLATFORMTHEME qt6ct               \
+    \
+    --unshare-all            \
+    --share-net              \
+    --new-session            \
+    --die-with-parent        \
+    /usr/bin/krita "${ARGS[@]}"

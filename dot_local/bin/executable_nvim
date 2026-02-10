@@ -9,12 +9,16 @@ mkdir -p "${HOME}/.local/share/nvim" \
 
 # ── Bind-mount working files ─────────────────────────────────────
 FILE_BINDS=()
+TMP_BINDS=()
 
 _add_bind() {
     local d="$1"
-    # Skip paths already covered by system mounts
-    case "$d" in /usr/*|/etc/*|/proc/*|/dev/*|/tmp*) return ;; esac
-    FILE_BINDS+=(--bind "$d" "$d")
+    case "$d" in /usr/*|/etc/*|/proc/*|/dev/*|/sys/*) return ;; esac
+    if [[ "$d" == /tmp* ]]; then
+        TMP_BINDS+=(--bind "$d" "$d")
+    else
+        FILE_BINDS+=(--bind "$d" "$d")
+    fi
 }
 
 # CWD — so that relative paths and :e work
@@ -42,35 +46,18 @@ if [[ -S "$_wl" ]]; then
     )
 fi
 
-# ── Conditional binds (may not exist on every system) ─────────────
+# ── Conditional binds (outside $HOME) ─────────────────────────────
 OPT=()
 
-# lib64 — the ELF interpreter lives at /lib64/ld-linux-x86-64.so.2
 if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
-    # Real directory (Fedora/openSUSE)
     OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
 else
-    # Symlink or absent (Arch) — point /lib64 to /usr/lib
     OPT+=(--symlink /usr/lib /lib64)
 fi
 
 # C headers — treesitter compiles parsers via cc
 [[ -d /usr/include ]] && \
     OPT+=(--ro-bind /usr/include /usr/include)
-
-# Git config — lazy.nvim clones repositories
-[[ -f "${HOME}/.gitconfig" ]]   && OPT+=(--ro-bind "${HOME}/.gitconfig"   "${HOME}/.gitconfig")
-[[ -d "${HOME}/.config/git" ]]  && OPT+=(--ro-bind "${HOME}/.config/git"  "${HOME}/.config/git")
-
-# Lazy lockfile — must come AFTER the ro-bind for ~/.config/nvim
-LATE_BINDS=()
-[[ -f "${HOME}/.config/nvim/lazy-lock.json" ]] && \
-    LATE_BINDS+=(--bind "${HOME}/.config/nvim/lazy-lock.json" \
-                        "${HOME}/.config/nvim/lazy-lock.json")
-
-# chezmoi — chezmoi.vim plugin works with the source directory
-[[ -d "${HOME}/.local/share/chezmoi" ]] && \
-    OPT+=(--bind "${HOME}/.local/share/chezmoi" "${HOME}/.local/share/chezmoi")
 
 # resolv.conf is often a symlink into /run (systemd-resolved)
 if [[ -L /etc/resolv.conf ]]; then
@@ -91,14 +78,19 @@ exec bwrap \
     --dev  /dev                     \
     --dev-bind /dev/pts /dev/pts    \
     --tmpfs /tmp                    \
+    "${TMP_BINDS[@]}"               \
     --ro-bind /etc /etc             \
     \
     --dir     "${HOME}"                                               \
+    --dir     "${HOME}/.config"                                       \
     --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim"      \
-    "${LATE_BINDS[@]}"                                                \
     --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim" \
     --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim" \
     --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim"       \
+    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig"             \
+    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git"            \
+    --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json" \
+    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi"   \
     "${FILE_BINDS[@]}"              \
     "${WL[@]}"                      \
     \
