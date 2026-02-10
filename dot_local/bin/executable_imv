@@ -2,6 +2,8 @@
 # Sandboxed imv via bubblewrap
 set -euo pipefail
 
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
 # ── Resolve file arguments ──────────────────────────────────────
 FILE_BINDS=()
 ARGS=()
@@ -18,21 +20,27 @@ for arg in "$@"; do
     fi
 done
 
-# ── Wayland ─────────────────────────────────────────────────────
+# ── Wayland (connect() needs write) ──────────────────────────────
 WL=()
-_wl="${XDG_RUNTIME_DIR:-}/${WAYLAND_DISPLAY:-}"
+_wl="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-1}"
 if [[ -S "$_wl" ]]; then
     WL+=(
-        --ro-bind "$_wl" "$_wl"
-        --setenv WAYLAND_DISPLAY "$WAYLAND_DISPLAY"
+        --bind "$_wl" "$_wl"
+        --setenv WAYLAND_DISPLAY "${WAYLAND_DISPLAY:-wayland-1}"
     )
+    # lock file
+    [[ -f "${_wl}.lock" ]] && WL+=(--ro-bind "${_wl}.lock" "${_wl}.lock")
 fi
 
-# ── GPU ─────────────────────────────────────────────────────────
+# ── GPU (DRM + NVIDIA) ────────────────────────────────────────────
 GPU=()
 [[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
+for dev in /dev/nvidia{0,1,2,3,ctl,-modeset,-uvm,-uvm-tools}; do
+    [[ -e "$dev" ]] && GPU+=(--dev-bind "$dev" "$dev")
+done
+[[ -d /dev/nvidia-caps ]] && GPU+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
 
-# ── Conditional binds (outside $HOME) ───────────────────────────
+# ── Conditional binds ─────────────────────────────────────────────
 OPT=()
 if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
     OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
@@ -40,7 +48,7 @@ else
     OPT+=(--symlink /usr/lib /lib64)
 fi
 
-# ── Launch ──────────────────────────────────────────────────────
+# ── Launch ────────────────────────────────────────────────────────
 exec bwrap \
     --ro-bind /usr /usr          \
     "${OPT[@]}"                  \
@@ -52,10 +60,11 @@ exec bwrap \
     --dev /dev                   \
     "${GPU[@]}"                  \
     --tmpfs /tmp                 \
-    --tmpfs /dev/shm             \
+    --dev-bind /dev/shm /dev/shm \
     --ro-bind /etc /etc          \
     \
     --dir "${HOME}"              \
+    --ro-bind-try "${HOME}/.config/imv" "${HOME}/.config/imv" \
     --ro-bind-try "${HOME}/.config/fontconfig" "${HOME}/.config/fontconfig" \
     "${FILE_BINDS[@]}"           \
     \
@@ -66,8 +75,10 @@ exec bwrap \
     --setenv LANG            "${LANG:-en_US.UTF-8}"   \
     --setenv PATH            "/usr/bin:/bin"           \
     --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"     \
+    --setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}" \
     \
     --unshare-all            \
+    --share-net              \
     --new-session            \
     --die-with-parent        \
     /usr/bin/imv "${ARGS[@]}"
