@@ -1,13 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Sandboxed neovim via bubblewrap
 set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
 
-# Create host directories if they don't exist yet
 mkdir -p "${HOME}/.local/share/nvim" \
          "${HOME}/.local/state/nvim" \
          "${HOME}/.cache/nvim"
 
-# ── Bind-mount working files ─────────────────────────────────────
+# ── Bind CWD + file arguments ─────────────────────────────────────
 FILE_BINDS=()
 TMP_BINDS=()
 
@@ -21,10 +21,8 @@ _add_bind() {
     fi
 }
 
-# CWD — so that relative paths and :e work
 _add_bind "$(realpath "$PWD")"
 
-# Directories of files passed as arguments
 for arg in "$@"; do
     [[ "$arg" == -* ]] && continue
     if [[ -e "$arg" ]]; then
@@ -34,73 +32,51 @@ for arg in "$@"; do
     fi
 done
 
-# ── Wayland clipboard (wl-copy / wl-paste) ───────────────────────
+# ── Wayland clipboard ─────────────────────────────────────────────
 WL=()
-_wl="${XDG_RUNTIME_DIR:-}/${WAYLAND_DISPLAY:-}"
-if [[ -S "$_wl" ]]; then
-    WL+=(
-        --dir      "${XDG_RUNTIME_DIR}"
-        --ro-bind  "$_wl" "$_wl"
-        --setenv   WAYLAND_DISPLAY "$WAYLAND_DISPLAY"
-        --setenv   XDG_RUNTIME_DIR "$XDG_RUNTIME_DIR"
-    )
-fi
+bwrap_wayland WL
 
-# ── Conditional binds (outside $HOME) ─────────────────────────────
-OPT=()
+OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
+[[ -d /usr/include ]] && OPT+=(--ro-bind /usr/include /usr/include)
 
-if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
-    OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
-else
-    OPT+=(--symlink /usr/lib /lib64)
-fi
+SANDBOX=(); bwrap_sandbox SANDBOX yes
 
-# C headers — treesitter compiles parsers via cc
-[[ -d /usr/include ]] && \
-    OPT+=(--ro-bind /usr/include /usr/include)
-
-# resolv.conf is often a symlink into /run (systemd-resolved)
-if [[ -L /etc/resolv.conf ]]; then
-    OPT+=(--ro-bind "$(dirname "$(realpath /etc/resolv.conf)")" \
-                     "$(dirname "$(realpath /etc/resolv.conf)")")
-fi
-
-# ── Launch ────────────────────────────────────────────────────────
 exec bwrap \
     --ro-bind /usr/bin   /usr/bin   \
     --ro-bind /usr/lib   /usr/lib   \
     --ro-bind /usr/share /usr/share \
-    "${OPT[@]}"                     \
-    --symlink /usr/bin /bin         \
-    --symlink /usr/bin /sbin        \
-    --symlink /usr/lib /lib         \
-    --proc /proc                    \
-    --dev  /dev                     \
-    --dev-bind /dev/pts /dev/pts    \
-    --tmpfs /tmp                    \
-    "${TMP_BINDS[@]}"               \
-    --ro-bind /etc /etc             \
+    "${OPT[@]}" \
+    --symlink /usr/bin /bin \
+    --symlink /usr/bin /sbin \
+    --symlink /usr/lib /lib \
+    --proc /proc \
+    --dev  /dev \
+    --dev-bind /dev/pts /dev/pts \
+    --tmpfs /tmp \
+    "${TMP_BINDS[@]}" \
+    --ro-bind /etc /etc \
     \
-    --dir     "${HOME}"                                               \
-    --dir     "${HOME}/.config"                                       \
-    --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim"      \
+    --dir "${HOME}" \
+    --dir "${HOME}/.config" \
+    --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim" \
     --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim" \
     --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim" \
-    --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim"       \
-    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig"             \
-    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git"            \
+    --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim" \
+    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig" \
+    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git" \
     --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json" \
-    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi"   \
-    "${FILE_BINDS[@]}"              \
-    "${WL[@]}"                      \
+    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi" \
+    "${FILE_BINDS[@]}" \
     \
-    --setenv HOME  "${HOME}"                  \
-    --setenv TERM  "${TERM}"                  \
-    --setenv LANG  "${LANG:-en_US.UTF-8}"     \
-    --setenv PATH  "/usr/bin:/bin"             \
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
+    "${WL[@]}" \
+    \
+    --setenv HOME  "${HOME}" \
+    --setenv TERM  "${TERM}" \
+    --setenv LANG  "${LANG:-en_US.UTF-8}" \
+    --setenv PATH  "/usr/bin:/bin" \
+    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}" \
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"} \
     \
-    --unshare-all                   \
-    --share-net                     \
-    --die-with-parent               \
+    "${SANDBOX[@]}" \
     /usr/bin/nvim "$@"

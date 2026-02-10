@@ -1,41 +1,42 @@
 #!/usr/bin/env bash
-# Sandboxed qBittorrent via bubblewrap (native Wayland)
+# Sandboxed mpv via bubblewrap (native Wayland)
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-mkdir -p "${HOME}/.config/qBittorrent" \
-         "${HOME}/.local/share/qBittorrent" \
-         "${HOME}/.cache/qBittorrent" \
-         "${HOME}/Downloads"
+mkdir -p "${HOME}/Pictures/Screenshots" \
+         "${HOME}/.config/mpv" \
+         "${HOME}/.local/state/mpv/watch_later" \
+         "${HOME}/.local/share/Anki2" \
+         "${HOME}/.cache/fontconfig"
 
 # ── Data dirs from secrets ────────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $host := .chezmoi.hostname -}}
-{{ $qbt := index $s "qbittorrent" -}}
+{{ $mpv := index $s "mpv" -}}
 DATA_BINDS=()
-{{ if hasKey $qbt $host -}}
-{{ range $key, $path := index $qbt $host -}}
+{{ if hasKey $mpv $host -}}
+{{ range $key, $path := index $mpv $host -}}
 _p="{{ $path }}"
 _real="$(realpath -m -- "$_p")"
-if [[ -d "$_real" ]]; then
-  DATA_BINDS+=(--bind "$_real" "$_real")
-else
-  mkdir -p "$_real"
-  DATA_BINDS+=(--bind "$_real" "$_real")
-fi
+[[ -d "$_real" ]] && DATA_BINDS+=(--ro-bind "$_real" "$_real")
 {{ end -}}
 {{ end -}}
+
+FILE_BINDS=()
+ARGS=()
+bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
 OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
 GPU=(); bwrap_gpu GPU
 WL=(); bwrap_wayland WL
+AUDIO=(); bwrap_audio AUDIO
 DBUS=(); bwrap_dbus_session DBUS
 SYSBUS=(); bwrap_dbus_system SYSBUS
 THEMES=(); bwrap_themes THEMES
 BASE=(); bwrap_base BASE OPT
 HOME_FS=(); bwrap_home_tmpfs HOME_FS
 ENV=(); bwrap_env_base ENV
-ENV+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
+ENV+=(--setenv XDG_STATE_HOME "${HOME}/.local/state")
 SANDBOX=(); bwrap_sandbox SANDBOX yes
 
 exec bwrap \
@@ -45,14 +46,17 @@ exec bwrap \
     --perms 0755 --dir /run/user \
     --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
     "${HOME_FS[@]}" \
-    --bind "${HOME}/.config/qBittorrent"      "${HOME}/.config/qBittorrent" \
-    --bind "${HOME}/.local/share/qBittorrent" "${HOME}/.local/share/qBittorrent" \
-    --bind "${HOME}/.cache/qBittorrent"       "${HOME}/.cache/qBittorrent" \
-    --bind "${HOME}/Downloads"                "${HOME}/Downloads" \
+    --bind "${HOME}/.config/mpv"          "${HOME}/.config/mpv" \
+    --bind "${HOME}/.local/state/mpv"     "${HOME}/.local/state/mpv" \
+    --bind "${HOME}/.local/share/Anki2"   "${HOME}/.local/share/Anki2" \
+    --bind "${HOME}/Pictures/Screenshots" "${HOME}/Pictures/Screenshots" \
+    --bind "${HOME}/.cache/fontconfig"    "${HOME}/.cache/fontconfig" \
     "${DATA_BINDS[@]}" \
+    "${FILE_BINDS[@]}" \
     "${THEMES[@]}" \
     "${WL[@]}" \
+    "${AUDIO[@]}" \
     "${DBUS[@]}" \
     "${ENV[@]}" \
     "${SANDBOX[@]}" \
-    /usr/bin/qbittorrent "$@"
+    /usr/bin/mpv "${ARGS[@]}"
