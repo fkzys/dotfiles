@@ -214,3 +214,17 @@ bwrap_sandbox() {
     _arr+=(--new-session --die-with-parent)
     return 0
 }
+
+# ── fcitx5 input method ───────────────────────────────────────────
+bwrap_fcitx() {
+    local -n _arr=$1
+    _arr+=(
+        --setenv QT_IM_MODULE fcitx
+        --setenv XMODIFIERS "@im=fcitx"
+    )
+    local sock
+    for sock in /tmp/fcitx5-*; do
+        [[ -e "$sock" ]] && _arr+=(--bind "$sock" "$sock")
+    done
+    return 0
+}
