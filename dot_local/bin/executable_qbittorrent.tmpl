@@ -12,8 +12,11 @@ mkdir -p "${HOME}/.config/qBittorrent" \
 
 # ── Download/data directories from secrets ────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $host := .chezmoi.hostname -}}
+{{ $qbt := index $s "qbittorrent" -}}
 DATA_BINDS=()
-{{ range $key, $path := index $s "qbittorrent" -}}
+{{ if hasKey $qbt $host -}}
+{{ range $key, $path := index $qbt $host -}}
 _p="{{ $path }}"
 _real="$(realpath -m -- "$_p")"
 if [[ -d "$_real" ]]; then
@@ -22,7 +25,8 @@ else
   mkdir -p "$_real"
   DATA_BINDS+=(--bind "$_real" "$_real")
 fi
-{{ end }}
+{{ end -}}
+{{ end -}}
 
 # ── Display server ────────────────────────────────────────────────
 DISPLAY_ARGS=()
