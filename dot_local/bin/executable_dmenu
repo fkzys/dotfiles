@@ -1,2 +1,18 @@
-#!/bin/sh
-wofi -dmenu -location 2 -fixed-num-lines 15 "$@"
+#!/usr/bin/env bash
+# dmenu-compatible wrapper for wofi
+# Translates common dmenu options to wofi equivalents
+
+wofi_args=(--dmenu --location 2)
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -p) wofi_args+=(--prompt "$2"); shift 2 ;;
+        -i) wofi_args+=(--insensitive); shift ;;
+        -l) wofi_args+=(--lines "$2"); shift 2 ;;
+        -fn|-nb|-nf|-sb|-sf) shift 2 ;;  # skip dmenu appearance options
+        *) wofi_args+=("$1"); shift ;;
+    esac
+done
+
+exec wofi "${wofi_args[@]}"
+
