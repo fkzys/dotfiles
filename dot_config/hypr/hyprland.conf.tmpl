@@ -31,8 +31,9 @@ env = XCURSOR_SIZE,24
 env = HYPRCURSOR_SIZE,24
 env = QT_QPA_PLATFORMTHEME,qt6ct
 
-# Input Method 
-env = QT_IM_MODULES="wayland;fcitx;ibus"
+# Input Method
+env = QT_IM_MODULE,fcitx
+env = QT_IM_MODULES,wayland;fcitx;ibus
 env = XMODIFIERS,@im=fcitx
 
 #################
