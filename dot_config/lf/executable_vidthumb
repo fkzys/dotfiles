@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+# Generate and cache video thumbnails using ffmpegthumbnailer.
+# Thumbnails are indexed by realpath in a JSON file for fast lookups.
 
 if ! [ -f "$1" ]; then
-	exit 1
+    exit 1
 fi
 
 cache="$HOME/.cache/vidthumb"
@@ -10,23 +12,25 @@ movie="$(realpath "$1")"
 
 mkdir -p "$cache"
 
+# Return cached thumbnail if it exists
 if [ -f "$index" ]; then
-	thumbnail="$(jq -r --arg k "$movie" '.[$k]' <"$index")"
-	if [[ "$thumbnail" != "null" ]]; then
-		if [[ ! -f "$cache/$thumbnail" ]]; then
-			exit 1
-		fi
-		echo "$cache/$thumbnail"
-		exit 0
-	fi
+    thumbnail="$(jq -r --arg k "$movie" '.[$k]' <"$index")"
+    if [[ "$thumbnail" != "null" ]]; then
+        if [[ ! -f "$cache/$thumbnail" ]]; then
+            exit 1
+        fi
+        echo "$cache/$thumbnail"
+        exit 0
+    fi
 fi
 
 thumbnail="$(uuidgen).jpg"
 
 if ! ffmpegthumbnailer -i "$movie" -o "$cache/$thumbnail" -s 0 2>/dev/null; then
-	exit 1
+    exit 1
 fi
 
+# Update the index
 if [[ ! -f "$index" ]]; then
     echo '{}' > "$index"
 fi

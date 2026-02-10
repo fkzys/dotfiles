@@ -1,29 +1,53 @@
-#!/bin/bash
-## ~/.config/lf/previewer_sandbox
-
-exec 3> /dev/tty
+#!/usr/bin/env bash
+# Sandboxed wrapper for lf previewer.
+# Runs the previewer inside a bubblewrap sandbox with:
+#   - read-only access to system and config files
+#   - write access to vidthumb cache
+#   - writable /tmp for image resize temp files
+#   - no network, isolated namespaces
+#
+# Mount order matters in bwrap: later mounts override earlier ones
+# on the same path. Writable --bind mounts must come AFTER any
+# read-only parent mounts.
 
 set -euo pipefail
-(
-    exec bwrap \
-     --ro-bind /usr/bin /usr/bin \
-     --ro-bind /usr/share/ /usr/share/ \
-     --ro-bind /usr/lib /usr/lib \
-     --ro-bind /usr/lib64 /usr/lib64 \
-     --symlink /usr/bin /bin \
-     --symlink /usr/bin /sbin \
-     --symlink /usr/lib /lib \
-     --symlink /usr/lib64 /lib64 \
-     --proc /proc \
-     --dev /dev \
-     --ro-bind /etc /etc \
-     --ro-bind /mnt /mnt \
-     --dir ~/.config \
-     --ro-bind ~/.config/lf ~/.config/lf \
-     --ro-bind ~/.cache ~/.cache \
-     --bind ~/.cache/vidthumb ~/.cache/vidthumb \
-     --ro-bind "$PWD" "$PWD" \
-     --unshare-all \
-     --new-session \
-     /usr/bin/bash ~/.config/lf/previewer "$@"
+exec 3>/dev/tty
+
+real_file="$(realpath -- "$1")"
+file_dir="$(dirname -- "$real_file")"
+shift
+
+bwrap_args=(
+    # System (read-only)
+    --ro-bind /usr /usr
+    --symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --dev /dev
+    --ro-bind /etc /etc
+
+    # Writable /tmp for magick resize temp files
+    --tmpfs /tmp
+
+    # File directory (read-only)
+    --ro-bind "$file_dir" "$file_dir"
+
+    # Config (read-only)
+    --ro-bind "$HOME/.config/lf" "$HOME/.config/lf"
+
+    # Cache: read-only base, then writable vidthumb on top
+    --ro-bind "$HOME/.cache" "$HOME/.cache"
+    --bind "$HOME/.cache/vidthumb" "$HOME/.cache/vidthumb"
+
+    --unshare-all
+    --new-session
+    --die-with-parent
 )
+
+[[ -d /usr/lib64 ]] && bwrap_args+=(
+    --symlink /usr/lib64 /lib64
+)
+
+exec bwrap "${bwrap_args[@]}" \
+    /usr/bin/bash "$HOME/.config/lf/previewer" "$real_file" "$@"

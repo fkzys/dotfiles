@@ -1,4 +1,5 @@
 #!/bin/sh
-exec 3> /dev/tty
+# Clear kitty icat images from the preview pane
+exec 3>/dev/tty
 exec kitten icat --clear --stdin no --transfer-mode stream </dev/null >&3
 perl -MPOSIX -e 'POSIX::tcdrain(3)'

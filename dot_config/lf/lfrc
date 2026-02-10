@@ -1,8 +1,10 @@
 set previewer ~/.config/lf/previewer_sandbox
 set cleaner ~/.config/lf/cleaner
 
-map m $mpv "$f" #>/dev/null 2>&1 & #call mpv 
-map n $nvim "$f"  #call nvim
+# Play with mpv
+map m $mpv "$f" #>/dev/null 2>&1 &
+# Edit with nvim
+map n $nvim "$f"
 
 #cmd ffmpeg_jp %sh ~/scripts/ffmpeg.sh "$f" & disown
 #cmd ffmpeg_jp %sh setsid ~/scripts/ffmpeg.sh "$f" >/dev/null 2>&1
