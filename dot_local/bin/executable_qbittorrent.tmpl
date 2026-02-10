@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# File: ~/.local/bin/qbittorrent (chezmoi template)
+# Sandboxed qBittorrent via bubblewrap
+set -euo pipefail
+
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+mkdir -p "${HOME}/.config/qBittorrent" \
+         "${HOME}/.local/share/qBittorrent" \
+         "${HOME}/.cache/qBittorrent" \
+         "${HOME}/Downloads"
+
+# ── Download/data directories from secrets ────────────────────────
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+DATA_BINDS=()
+{{ range $key, $path := index $s "qbittorrent" -}}
+_p="{{ $path }}"
+_real="$(realpath -m -- "$_p")"
+if [[ -d "$_real" ]]; then
+  DATA_BINDS+=(--bind "$_real" "$_real")
+else
+  mkdir -p "$_real"
+  DATA_BINDS+=(--bind "$_real" "$_real")
+fi
+{{ end }}
+
+# ── Display server ────────────────────────────────────────────────
+DISPLAY_ARGS=()
+_wl="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-1}"
+if [[ -S "$_wl" ]]; then
+    DISPLAY_ARGS+=(
+        --bind "$_wl" "$_wl"
+        --setenv WAYLAND_DISPLAY "${WAYLAND_DISPLAY:-wayland-1}"
+        --setenv QT_QPA_PLATFORM wayland
+    )
+    [[ -f "${_wl}.lock" ]] && DISPLAY_ARGS+=(--ro-bind "${_wl}.lock" "${_wl}.lock")
+elif [[ -n "${DISPLAY:-}" ]]; then
+    [[ -d /tmp/.X11-unix ]] && DISPLAY_ARGS+=(--ro-bind /tmp/.X11-unix /tmp/.X11-unix)
+    DISPLAY_ARGS+=(--setenv DISPLAY "${DISPLAY}" --setenv QT_QPA_PLATFORM xcb)
+    if [[ -n "${XAUTHORITY:-}" && -f "${XAUTHORITY}" ]]; then
+        DISPLAY_ARGS+=(--ro-bind "${XAUTHORITY}" "${XAUTHORITY}" --setenv XAUTHORITY "${XAUTHORITY}")
+    elif [[ -f "${HOME}/.Xauthority" ]]; then
+        DISPLAY_ARGS+=(--ro-bind "${HOME}/.Xauthority" "${HOME}/.Xauthority" \
+                       --setenv XAUTHORITY "${HOME}/.Xauthority")
+    fi
+fi
+
+# ── D-Bus session ─────────────────────────────────────────────────
+DBUS=()
+_bus="${DBUS_SESSION_BUS_ADDRESS:-}"
+if [[ "$_bus" == unix:path=* ]]; then
+    _bus_path="${_bus#unix:path=}"
+    [[ -S "$_bus_path" ]] && DBUS+=(
+        --ro-bind "$_bus_path" "$_bus_path"
+        --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
+    )
+elif [[ -S "${XDG_RUNTIME_DIR}/bus" ]]; then
+    DBUS+=(
+        --ro-bind "${XDG_RUNTIME_DIR}/bus" "${XDG_RUNTIME_DIR}/bus"
+        --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
+    )
+fi
+
+# ── D-Bus system ──────────────────────────────────────────────────
+SYSBUS=()
+if [[ -S /run/dbus/system_bus_socket ]]; then
+    SYSBUS+=(
+        --perms 0755 --dir /run
+        --perms 0755 --dir /run/dbus
+        --ro-bind /run/dbus/system_bus_socket /run/dbus/system_bus_socket
+    )
+fi
+
+# ── GPU + NVIDIA ──────────────────────────────────────────────────
+GPU=()
+[[ -d /dev/dri ]] && GPU+=(--dev-bind /dev/dri /dev/dri)
+for dev in /dev/nvidia{0,1,2,3,ctl,-modeset,-uvm,-uvm-tools}; do
+    [[ -e "$dev" ]] && GPU+=(--dev-bind "$dev" "$dev")
+done
+[[ -d /dev/nvidia-caps ]] && GPU+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
+
+# ── /usr/lib64 ────────────────────────────────────────────────────
+OPT=()
+if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
+    OPT+=(--ro-bind /usr/lib64 /usr/lib64 --symlink /usr/lib64 /lib64)
+else
+    OPT+=(--symlink /usr/lib /lib64)
+fi
+
+# ── resolv.conf symlink ───────────────────────────────────────────
+if [[ -L /etc/resolv.conf ]]; then
+    _rd="$(dirname "$(realpath /etc/resolv.conf)")"
+    OPT+=(--ro-bind "$_rd" "$_rd")
+fi
+
+# ── Optional read-only (themes, fonts) ────────────────────────────
+OPTIONAL_RO=()
+for p in \
+    "${HOME}/.config/fontconfig" \
+    "${HOME}/.config/qt6ct" \
+    "${HOME}/.config/qt5ct" \
+    "${HOME}/.config/gtk-3.0" \
+    "${HOME}/.config/Kvantum" \
+    "${HOME}/.local/share/fonts" \
+    "${HOME}/.local/share/icons" \
+    "${HOME}/.icons"; do
+    [[ -e "$p" ]] && OPTIONAL_RO+=(--ro-bind "$p" "$p")
+done
+
+exec bwrap \
+    --ro-bind /usr /usr          \
+    "${OPT[@]}"                  \
+    --symlink /usr/bin /bin      \
+    --symlink /usr/bin /sbin     \
+    --symlink /usr/lib /lib      \
+    --proc /proc                 \
+    --ro-bind /sys /sys          \
+    --dev /dev                   \
+    "${GPU[@]}"                  \
+    --tmpfs /tmp                 \
+    --dev-bind /dev/shm /dev/shm \
+    --ro-bind /etc /etc          \
+    \
+    "${SYSBUS[@]}"               \
+    --perms 0755 --dir /run/user \
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
+    \
+    --tmpfs "${HOME}"            \
+    --perms 0700 --dir "${HOME}/.config" \
+    --perms 0700 --dir "${HOME}/.local" \
+    --perms 0700 --dir "${HOME}/.local/share" \
+    --perms 0700 --dir "${HOME}/.cache" \
+    \
+    --bind "${HOME}/.config/qBittorrent"      "${HOME}/.config/qBittorrent"      \
+    --bind "${HOME}/.local/share/qBittorrent" "${HOME}/.local/share/qBittorrent" \
+    --bind "${HOME}/.cache/qBittorrent"       "${HOME}/.cache/qBittorrent"       \
+    --bind "${HOME}/Downloads"                "${HOME}/Downloads"                \
+    "${DATA_BINDS[@]}"           \
+    "${OPTIONAL_RO[@]}"          \
+    \
+    "${DISPLAY_ARGS[@]}"         \
+    "${DBUS[@]}"                 \
+    \
+    --setenv HOME            "${HOME}"                \
+    --setenv LANG            "${LANG:-en_US.UTF-8}"   \
+    --setenv PATH            "/usr/bin:/bin"           \
+    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"     \
+    --setenv XDG_CACHE_HOME  "${HOME}/.cache"         \
+    --setenv QT_QPA_PLATFORMTHEME qt6ct               \
+    \
+    --unshare-all            \
+    --share-net              \
+    --new-session            \
+    --die-with-parent        \
+    /usr/bin/qbittorrent "$@"
