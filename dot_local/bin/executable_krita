@@ -25,6 +25,7 @@ BASE=(); bwrap_base BASE OPT
 ENV=(); bwrap_env_base ENV
 ENV+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
 SANDBOX=(); bwrap_sandbox SANDBOX yes
+FCITX=(); bwrap_fcitx FCITX
 
 exec bwrap \
     "${BASE[@]}" \
@@ -44,6 +45,7 @@ exec bwrap \
     "${X11[@]}" \
     "${AUDIO[@]}" \
     "${DBUS[@]}" \
+    "${FCITX[@]}" \
     "${ENV[@]}" \
     "${SANDBOX[@]}" \
     /usr/bin/krita "${ARGS[@]}"
