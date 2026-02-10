@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=qBittorrent
+Comment=A BitTorrent client in Qt
+GenericName=BitTorrent Client
+Exec={{ .chezmoi.homeDir }}/.local/bin/qbittorrent %U
+TryExec={{ .chezmoi.homeDir }}/.local/bin/qbittorrent
+Icon=qbittorrent
+Categories=Network;FileTransfer;P2P;Qt;
+Terminal=false
+Type=Application
+Version=1.0
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+StartupNotify=true
