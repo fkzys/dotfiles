@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Sandboxed swappy via bubblewrap
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+mkdir -p "${HOME}/Pictures/Screenshots"
+
+FILE_BINDS=()
+ARGS=()
+bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
+
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_gpu A
+bwrap_dbus_system A
+
+A+=(--perms 0755 --dir /run/user
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+
+bwrap_home_tmpfs A
+
+A+=(--ro-bind-try "${HOME}/.config/swappy" "${HOME}/.config/swappy"
+    --bind "${HOME}/Pictures/Screenshots"  "${HOME}/Pictures/Screenshots"
+    "${FILE_BINDS[@]}")
+
+bwrap_themes A
+bwrap_wayland A
+bwrap_dbus_session A
+bwrap_env_base A
+bwrap_sandbox A
+
+exec bwrap "${A[@]}" -- /usr/bin/swappy "${ARGS[@]}"
