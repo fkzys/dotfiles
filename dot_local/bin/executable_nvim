@@ -32,51 +32,49 @@ for arg in "$@"; do
     fi
 done
 
-# ── Wayland clipboard ─────────────────────────────────────────────
-WL=()
-bwrap_wayland WL
+A=()
 
-OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
-[[ -d /usr/include ]] && OPT+=(--ro-bind /usr/include /usr/include)
+# nvim: minimal /usr (no full --ro-bind /usr /usr)
+A+=(--ro-bind /usr/bin   /usr/bin
+    --ro-bind /usr/lib   /usr/lib
+    --ro-bind /usr/share /usr/share)
 
-SANDBOX=(); bwrap_sandbox SANDBOX yes
+bwrap_lib64 A
+bwrap_resolv A
+[[ -d /usr/include ]] && A+=(--ro-bind /usr/include /usr/include)
 
-exec bwrap \
-    --ro-bind /usr/bin   /usr/bin   \
-    --ro-bind /usr/lib   /usr/lib   \
-    --ro-bind /usr/share /usr/share \
-    "${OPT[@]}" \
-    --symlink /usr/bin /bin \
-    --symlink /usr/bin /sbin \
-    --symlink /usr/lib /lib \
-    --proc /proc \
-    --dev  /dev \
-    --dev-bind /dev/pts /dev/pts \
-    --tmpfs /tmp \
-    "${TMP_BINDS[@]}" \
-    --ro-bind /etc /etc \
-    \
-    --dir "${HOME}" \
-    --dir "${HOME}/.config" \
-    --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim" \
-    --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim" \
-    --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim" \
-    --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim" \
-    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig" \
-    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git" \
-    --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json" \
-    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi" \
-    "${FILE_BINDS[@]}" \
-    \
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    "${WL[@]}" \
-    \
-    --setenv HOME  "${HOME}" \
-    --setenv TERM  "${TERM}" \
-    --setenv LANG  "${LANG:-en_US.UTF-8}" \
-    --setenv PATH  "/usr/bin:/bin" \
-    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}" \
-    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"} \
-    \
-    "${SANDBOX[@]}" \
-    /usr/bin/nvim "$@"
+A+=(--symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --dev /dev
+    --dev-bind /dev/pts /dev/pts
+    --tmpfs /tmp
+    "${TMP_BINDS[@]}"
+    --ro-bind /etc /etc)
+
+A+=(--dir "${HOME}"
+    --dir "${HOME}/.config"
+    --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim"
+    --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim"
+    --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim"
+    --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim"
+    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig"
+    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git"
+    --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json"
+    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi"
+    "${FILE_BINDS[@]}")
+
+A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
+bwrap_wayland A
+
+A+=(--setenv HOME  "${HOME}"
+    --setenv TERM  "${TERM}"
+    --setenv LANG  "${LANG:-en_US.UTF-8}"
+    --setenv PATH  "/usr/bin:/bin"
+    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
+    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
+
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- /usr/bin/nvim "$@"

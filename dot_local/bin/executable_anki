@@ -10,37 +10,30 @@ FILE_BINDS=()
 ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
-OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
-GPU=(); bwrap_gpu GPU
-WL=(); bwrap_wayland WL
-AUDIO=(); bwrap_audio AUDIO
-DBUS=(); bwrap_dbus_session DBUS
-SYSBUS=(); bwrap_dbus_system SYSBUS
-THEMES=(); bwrap_themes THEMES
-BASE=(); bwrap_base BASE OPT
-HOME_FS=(); bwrap_home_tmpfs HOME_FS
-ENV=(); bwrap_env_base ENV
-ENV+=(
-    --setenv QT_QPA_PLATFORM wayland
-    --setenv QT_QPA_PLATFORMTHEME qt6ct
-    --setenv QTWEBENGINE_DISABLE_SANDBOX 1
-)
-SANDBOX=(); bwrap_sandbox SANDBOX yes
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_resolv A
+bwrap_gpu A
+bwrap_dbus_system A
 
-exec bwrap \
-    "${BASE[@]}" \
-    "${GPU[@]}" \
-    "${SYSBUS[@]}" \
-    --perms 0755 --dir /run/user \
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    "${HOME_FS[@]}" \
-    --bind "${HOME}/.local/share/Anki2" "${HOME}/.local/share/Anki2" \
-    --bind "${HOME}/Downloads/anki"     "${HOME}/Downloads/anki" \
-    "${FILE_BINDS[@]}" \
-    "${THEMES[@]}" \
-    "${WL[@]}" \
-    "${AUDIO[@]}" \
-    "${DBUS[@]}" \
-    "${ENV[@]}" \
-    "${SANDBOX[@]}" \
-    /usr/bin/anki "${ARGS[@]}"
+A+=(--perms 0755 --dir /run/user
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+
+bwrap_home_tmpfs A
+
+A+=(--bind "${HOME}/.local/share/Anki2" "${HOME}/.local/share/Anki2"
+    --bind "${HOME}/Downloads/anki"     "${HOME}/Downloads/anki"
+    "${FILE_BINDS[@]}")
+
+bwrap_themes A
+bwrap_wayland A
+bwrap_audio A
+bwrap_dbus_session A
+bwrap_env_base A
+A+=(--setenv QT_QPA_PLATFORM wayland
+    --setenv QT_QPA_PLATFORMTHEME qt6ct
+    --setenv QTWEBENGINE_DISABLE_SANDBOX 1)
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- /usr/bin/anki "${ARGS[@]}"

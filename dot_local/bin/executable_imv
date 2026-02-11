@@ -7,24 +7,21 @@ FILE_BINDS=()
 ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
-OPT=(); bwrap_lib64 OPT
-GPU=(); bwrap_gpu GPU
-WL=(); bwrap_wayland WL
-BASE=(); bwrap_base BASE OPT
-ENV=(); bwrap_env_base ENV
-ENV+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
-SANDBOX=(); bwrap_sandbox SANDBOX no
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_gpu A
 
-exec bwrap \
-    "${BASE[@]}" \
-    "${GPU[@]}" \
-    --perms 0755 --dir /run/user \
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    --dir "${HOME}" \
-    --ro-bind-try "${HOME}/.config/imv" "${HOME}/.config/imv" \
-    --ro-bind-try "${HOME}/.config/fontconfig" "${HOME}/.config/fontconfig" \
-    "${FILE_BINDS[@]}" \
-    "${WL[@]}" \
-    "${ENV[@]}" \
-    "${SANDBOX[@]}" \
-    /usr/bin/imv "${ARGS[@]}"
+A+=(--perms 0755 --dir /run/user
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}"
+    --dir "${HOME}"
+    --ro-bind-try "${HOME}/.config/imv"        "${HOME}/.config/imv"
+    --ro-bind-try "${HOME}/.config/fontconfig"  "${HOME}/.config/fontconfig"
+    "${FILE_BINDS[@]}")
+
+bwrap_wayland A
+bwrap_env_base A
+A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
+bwrap_sandbox A
+
+exec bwrap "${A[@]}" -- /usr/bin/imv "${ARGS[@]}"
