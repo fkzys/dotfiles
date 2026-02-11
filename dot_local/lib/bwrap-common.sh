@@ -208,9 +208,11 @@ bwrap_env_base() {
 bwrap_sandbox() {
     local -n _arr=$1
     local _net="${2:-no}"
+    local _new_session="${3:-yes}"
     _arr+=(--unshare-all)
     [[ "$_net" == "yes" ]] && _arr+=(--share-net)
-    _arr+=(--new-session --die-with-parent)
+    [[ "$_new_session" == "yes" ]] && _arr+=(--new-session)
+    _arr+=(--die-with-parent)
     return 0
 }
 
