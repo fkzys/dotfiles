@@ -13,38 +13,31 @@ mkdir -p "${HOME}/.config/goldendict" \
          "${HOME}/.cache/goldendict" \
          "${HOME}/.cache/fontconfig"
 
-OPT=(); bwrap_lib64 OPT
-GPU=(); bwrap_gpu GPU
-X11=(); bwrap_x11 X11
-AUDIO=(); bwrap_audio AUDIO
-DBUS=(); bwrap_dbus_session DBUS
-SYSBUS=(); bwrap_dbus_system SYSBUS
-THEMES=(); bwrap_themes THEMES
-BASE=(); bwrap_base BASE OPT
-HOME_FS=(); bwrap_home_tmpfs HOME_FS
-ENV=(); bwrap_env_base ENV
-ENV+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
-SANDBOX=(); bwrap_sandbox SANDBOX yes
-FCITX=(); bwrap_fcitx FCITX
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_gpu A
+bwrap_dbus_system A
 
-exec bwrap \
-    "${BASE[@]}" \
-    "${GPU[@]}" \
-    "${SYSBUS[@]}" \
-    --perms 0755 --dir /run/user \
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    "${HOME_FS[@]}" \
-    --bind "${HOME}/.config/goldendict"         "${HOME}/.config/goldendict" \
-    --bind "${HOME}/.local/share/goldendict"    "${HOME}/.local/share/goldendict" \
-    --bind "${HOME}/.local/share/GoldenDict-ng" "${HOME}/.local/share/GoldenDict-ng" \
-    --bind "${HOME}/.cache/goldendict"          "${HOME}/.cache/goldendict" \
-    --bind "${HOME}/.cache/fontconfig"          "${HOME}/.cache/fontconfig" \
-    --ro-bind "${DICT_DIR}" "${DICT_DIR}" \
-    "${THEMES[@]}" \
-    "${X11[@]}" \
-    "${AUDIO[@]}" \
-    "${DBUS[@]}" \
-    "${FCITX[@]}" \
-    "${ENV[@]}" \
-    "${SANDBOX[@]}" \
-    /usr/bin/goldendict "$@"
+A+=(--perms 0755 --dir /run/user
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+
+bwrap_home_tmpfs A
+
+A+=(--bind "${HOME}/.config/goldendict"         "${HOME}/.config/goldendict"
+    --bind "${HOME}/.local/share/goldendict"    "${HOME}/.local/share/goldendict"
+    --bind "${HOME}/.local/share/GoldenDict-ng" "${HOME}/.local/share/GoldenDict-ng"
+    --bind "${HOME}/.cache/goldendict"          "${HOME}/.cache/goldendict"
+    --bind "${HOME}/.cache/fontconfig"          "${HOME}/.cache/fontconfig"
+    --ro-bind "${DICT_DIR}" "${DICT_DIR}")
+
+bwrap_themes A
+bwrap_x11 A
+bwrap_audio A
+bwrap_dbus_session A
+bwrap_fcitx A
+bwrap_env_base A
+A+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- /usr/bin/goldendict "$@"

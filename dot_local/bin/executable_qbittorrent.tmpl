@@ -26,33 +26,29 @@ fi
 {{ end -}}
 {{ end -}}
 
-OPT=(); bwrap_lib64 OPT; bwrap_resolv OPT
-GPU=(); bwrap_gpu GPU
-WL=(); bwrap_wayland WL
-DBUS=(); bwrap_dbus_session DBUS
-SYSBUS=(); bwrap_dbus_system SYSBUS
-THEMES=(); bwrap_themes THEMES
-BASE=(); bwrap_base BASE OPT
-HOME_FS=(); bwrap_home_tmpfs HOME_FS
-ENV=(); bwrap_env_base ENV
-ENV+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-SANDBOX=(); bwrap_sandbox SANDBOX yes
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_resolv A
+bwrap_gpu A
+bwrap_dbus_system A
 
-exec bwrap \
-    "${BASE[@]}" \
-    "${GPU[@]}" \
-    "${SYSBUS[@]}" \
-    --perms 0755 --dir /run/user \
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}" \
-    "${HOME_FS[@]}" \
-    --bind "${HOME}/.config/qBittorrent"      "${HOME}/.config/qBittorrent" \
-    --bind "${HOME}/.local/share/qBittorrent" "${HOME}/.local/share/qBittorrent" \
-    --bind "${HOME}/.cache/qBittorrent"       "${HOME}/.cache/qBittorrent" \
-    --bind "${HOME}/Downloads"                "${HOME}/Downloads" \
-    "${DATA_BINDS[@]}" \
-    "${THEMES[@]}" \
-    "${WL[@]}" \
-    "${DBUS[@]}" \
-    "${ENV[@]}" \
-    "${SANDBOX[@]}" \
-    /usr/bin/qbittorrent "$@"
+A+=(--perms 0755 --dir /run/user
+    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+
+bwrap_home_tmpfs A
+
+A+=(--bind "${HOME}/.config/qBittorrent"      "${HOME}/.config/qBittorrent"
+    --bind "${HOME}/.local/share/qBittorrent" "${HOME}/.local/share/qBittorrent"
+    --bind "${HOME}/.cache/qBittorrent"       "${HOME}/.cache/qBittorrent"
+    --bind "${HOME}/Downloads"                "${HOME}/Downloads"
+    "${DATA_BINDS[@]}")
+
+bwrap_themes A
+bwrap_wayland A
+bwrap_dbus_session A
+bwrap_env_base A
+A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- /usr/bin/qbittorrent "$@"
