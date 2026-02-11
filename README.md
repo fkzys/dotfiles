@@ -82,6 +82,10 @@ Each machine has its own age key. Keys are stored separately from this repo.
 
 ```yaml
 # secrets.enc.yaml
+sing-box:
+    config_url:
+        hostname1: https://example.com
+        hostname2: https://example.com
 goldendict:
     dict_dir: /path/to/dictionaries
 keepassxc:
