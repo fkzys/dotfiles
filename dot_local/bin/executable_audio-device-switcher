@@ -1,136 +1,171 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
+"""
+Audio Device Switcher
+Switches default audio output using wpctl + wofi
+Usage: DEBUG=1 audio-device-switcher
+"""
 
-set -eo pipefail
+import os
+import re
+import shutil
+import subprocess
+import sys
 
-trap '' PIPE 2>/dev/null || true
-trap 'exit 130' INT TERM HUP
+DEBUG = os.environ.get("DEBUG", "0") == "1"
 
-# ----------------------------------------------------------------------------
-# Audio Device Switcher
-# Switches default audio output using wpctl + wofi
-# Usage: DEBUG=1 audio-device-switcher (for debug output)
-# ----------------------------------------------------------------------------
 
-DEBUG="${DEBUG:-0}"
+def debug(msg: str) -> None:
+    if DEBUG:
+        print(f"[DEBUG] {msg}", file=sys.stderr)
 
-debug() {
-    [[ "$DEBUG" == "1" ]] && echo "[DEBUG] $*" >&2
-    return 0
-}
 
-check_dependencies() {
-    local missing=()
-    for cmd in wpctl wofi; do
-        if ! command -v "$cmd" &>/dev/null; then
-            missing+=("$cmd")
-        fi
-    done
-    
-    if ! command -v notify-send &>/dev/null; then
-        debug "notify-send not found, will use stderr"
-    fi
-    
-    if ((${#missing[@]})); then
-        echo "Error: missing dependencies: ${missing[*]}" >&2
-        exit 1
-    fi
-    
-    if ! wpctl status &>/dev/null; then
-        echo "Error: PipeWire is not running" >&2
-        exit 1
-    fi
-}
+def check_dependencies() -> None:
+    missing = [cmd for cmd in ("wpctl", "wofi") if not shutil.which(cmd)]
 
-get_audio_devices() {
-    local output
-    if output=$(LC_ALL=C wpctl status 2>/dev/null); then
-        echo "$output" | awk '
-        /Audio/,/Video/ {
-            if (/Sinks:/) { capture=1; next }
-            if (/Sources:|Filters:|Streams:/) { capture=0 }
-            if (capture && /^[[:space:]]*[│├└─ ]*\*?[[:space:]]*[0-9]+\./) {
-                gsub(/[│├└─]/, "")
-                gsub(/\*/, "✓ ")
-                gsub(/^\s+/, "")
-                gsub(/\s+$/, "")
-                if (length > 0) print
-            }
-        }'
-    else
-        return 1
-    fi
-}
+    if not shutil.which("notify-send"):
+        debug("notify-send not found, will use stderr")
 
-show_device_menu() {
-    local result
-    if result=$(wofi -dmenu -p "Select audio device" 2>/dev/null); then
-        echo "$result"
-    else
-        return 1
-    fi
-}
+    if missing:
+        print(f"Error: missing dependencies: {' '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
 
-extract_device_id() {
-    local input="$1"
-    if [[ -z "$input" ]]; then
-        return 1
-    fi
-    local id
-    id=$(echo "$input" | sed -n 's/^[[:space:]]*✓\?[[:space:]]*\([0-9]\+\).*/\1/p' | head -n1)
-    if [[ -n "$id" ]]; then
-        echo "$id"
-    else
-        return 1
-    fi
-}
+    r = subprocess.run(["wpctl", "status"], capture_output=True)
+    if r.returncode != 0:
+        print("Error: PipeWire is not running", file=sys.stderr)
+        sys.exit(1)
 
-main() {
-    check_dependencies    
 
-    local devices selected_device device_id current_device
+def get_audio_sinks() -> list[dict]:
+    """Parse wpctl status output into structured device list."""
+    result = subprocess.run(
+        ["wpctl", "status"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "LC_ALL": "C"},
+    )
+    if result.returncode != 0:
+        return []
 
-    if current_device=$(wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null); then
-        current_device=$(echo "$current_device" | sed -n 's/.*node.nick = "\([^"]*\)".*/\1/p')
-        debug "Current device: $current_device"
-    else
-        debug "Could not get current device"
-    fi
+    sinks = []
+    in_audio = False
+    in_sinks = False
 
-    devices=$(get_audio_devices) || {
-        echo "Error: no audio devices found or wpctl not working properly" >&2
-        echo "Try running: wpctl status" >&2
-        exit 1
-    }
-    debug "Devices: $devices"
+    for line in result.stdout.splitlines():
+        stripped = line.strip()
 
-    [[ -z "$devices" ]] && { echo "Error: no devices found" >&2; exit 1; }
+        # Track which top-level section we're in
+        if re.match(r"^Audio\s*$", stripped):
+            in_audio = True
+            continue
+        if re.match(r"^Video\s*$", stripped):
+            break
+        if not in_audio:
+            continue
 
-    if ! selected_device=$(echo "$devices" | show_device_menu); then
-        debug "User cancelled or wofi error"
-        exit 0
-    fi
-    
-    debug "Selected: '$selected_device'"
-    [[ -z "$selected_device" ]] && { debug "No device selected"; exit 0; }
+        # Track sub-sections within Audio
+        bare = re.sub(r"[│├└─\s]", "", line)
+        if bare.endswith(":"):
+            in_sinks = bare == "Sinks:"
+            continue
 
-    if ! device_id=$(extract_device_id "$selected_device"); then
-        echo "Error: could not extract device ID from: $selected_device" >&2
-        exit 1
-    fi
-    debug "ID: '$device_id'"
+        if not in_sinks:
+            continue
 
-    if [[ ! "$device_id" =~ ^[0-9]+$ ]]; then
-        echo "Error: invalid device ID '$device_id'" >&2
-        exit 1
-    fi
+        # Parse device lines:  * 48. Device Name [vol: 0.80]
+        cleaned = re.sub(r"[│├└─]", "", line).strip()
+        if not cleaned:
+            continue
 
-    if wpctl set-default "$device_id"; then
-        notify-send -t 2000 "Audio" "Switched to: ${selected_device#*. }" 2>/dev/null || \
-            echo "Switched to: ${selected_device#*. }" >&2
-    else
-        echo "Error: failed to switch device" >&2
-        exit 1
-    fi
-}
+        m = re.match(r"(\*?)\s*(\d+)\.\s+(.*)", cleaned)
+        if m:
+            sinks.append(
+                {
+                    "id": int(m.group(2)),
+                    "name": m.group(3).strip(),
+                    "default": m.group(1) == "*",
+                }
+            )
 
-main "$@"
+    return sinks
+
+
+def show_menu(sinks: list[dict]) -> dict | None:
+    """Show wofi menu, return chosen device or None."""
+    lines = []
+    for s in sinks:
+        prefix = "✓" if s["default"] else " "
+        lines.append(f"{prefix} {s['id']}. {s['name']}")
+
+    try:
+        r = subprocess.run(
+            ["wofi", "-dmenu", "-p", "Select audio device"],
+            input="\n".join(lines),
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return None
+
+    if r.returncode != 0 or not r.stdout.strip():
+        return None
+
+    # Match the ID back to our structured data
+    m = re.match(r"[✓\s]*(\d+)\.", r.stdout.strip())
+    if not m:
+        return None
+
+    chosen_id = int(m.group(1))
+    return next((s for s in sinks if s["id"] == chosen_id), None)
+
+
+def notify(message: str) -> None:
+    try:
+        subprocess.run(
+            ["notify-send", "-t", "2000", "Audio", message],
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        print(message, file=sys.stderr)
+
+
+def main() -> None:
+    check_dependencies()
+
+    # Log current device
+    r = subprocess.run(
+        ["wpctl", "inspect", "@DEFAULT_AUDIO_SINK@"],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode == 0:
+        m = re.search(r'node\.nick\s*=\s*"([^"]*)"', r.stdout)
+        if m:
+            debug(f"Current device: {m.group(1)}")
+
+    sinks = get_audio_sinks()
+    if not sinks:
+        print("Error: no audio devices found", file=sys.stderr)
+        print("Try running: wpctl status", file=sys.stderr)
+        sys.exit(1)
+
+    debug(f"Found {len(sinks)} device(s)")
+    for s in sinks:
+        debug(f"  {'*' if s['default'] else ' '} {s['id']}. {s['name']}")
+
+    chosen = show_menu(sinks)
+    if chosen is None:
+        debug("No device selected")
+        sys.exit(0)
+
+    debug(f"Switching to: {chosen['id']}. {chosen['name']}")
+
+    r = subprocess.run(["wpctl", "set-default", str(chosen["id"])])
+    if r.returncode == 0:
+        notify(f"Switched to: {chosen['name']}")
+    else:
+        print("Error: failed to switch device", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
