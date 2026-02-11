@@ -16,36 +16,61 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, and filesystem setup.
 
+AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$HOME` as empty tmpfs, preventing PKGBUILD `build()` from accessing SSH keys, configs, or other sensitive data.
+
+Flatpak applications have per-app permission overrides in `~/.local/share/flatpak/overrides/`.
+
 | Application | Display | Network | Notes |
 |---|---|---|---|
 | anki | Wayland | yes | QtWebEngine, Anki2 data dir |
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary dir from secrets |
 | imv | Wayland | no | Read-only file viewer |
+| keepassxc | Wayland | **no** | DB dir from secrets, isolated from network |
 | krita | XWayland | yes | Separate config dir trick |
+| lazygit | terminal | yes | CWD bind, SSH agent forwarding |
 | mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
-| nvim | — (terminal) | yes | CWD + file args, clipboard via Wayland |
+| nvim | terminal | yes | CWD + file args, clipboard via Wayland |
+| obs | Wayland | yes | Camera devices, Videos dir |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
+| swappy | Wayland | no | Screenshots dir |
+| yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
 
 ### Library (`~/.local/lib/bwrap-common.sh`)
 
-Provides functions used by all wrappers:
+Provides functions used by all wrappers. Each function appends bwrap arguments to a nameref array:
 
-- `bwrap_gpu` — DRI + NVIDIA device nodes
+- `bwrap_base` — system skeleton (`/usr`, `/etc`, `/proc`, `/sys`, `/dev`, `/tmp`)
 - `bwrap_lib64` — `/usr/lib64` bind or symlink
-- `bwrap_resolv` — resolv.conf symlink handling
+- `bwrap_resolv` — resolv.conf symlink target
+- `bwrap_gpu` — DRI + NVIDIA device nodes
 - `bwrap_wayland` — Wayland socket (rw for `connect()`)
 - `bwrap_x11` — X11/XWayland socket + Xauthority
 - `bwrap_audio` — PipeWire + PulseAudio sockets
 - `bwrap_dbus_session` / `bwrap_dbus_system` — D-Bus sockets
 - `bwrap_themes` — fontconfig, Qt, GTK, Kvantum, fonts, icons
-- `bwrap_resolve_files` — resolve file args to bind mounts
-- `bwrap_base` — common system mounts (`/usr`, `/etc`, `/proc`, `/sys`, `/dev`)
-- `bwrap_home_tmpfs` — tmpfs `$HOME` skeleton
+- `bwrap_fcitx` — fcitx5 input method sockets + env
+- `bwrap_home_tmpfs` — tmpfs `$HOME` with XDG skeleton
 - `bwrap_env_base` — `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR`
-- `bwrap_sandbox` — `--unshare-all`, optional `--share-net`
+- `bwrap_sandbox` — `--unshare-all`, optional `--share-net`, optional `--new-session`
+- `bwrap_resolve_files` — resolve file arguments to bind mounts
+
+### Wrapper pattern
+
+```bash
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_gpu A
+bwrap_home_tmpfs A
+A+=(--bind "${HOME}/.config/app" "${HOME}/.config/app")
+bwrap_wayland A
+bwrap_env_base A
+bwrap_sandbox A yes
+exec bwrap "${A[@]}" -- /usr/bin/app "$@"
+```
 
 ## Secrets
 
@@ -59,6 +84,8 @@ Each machine has its own age key. Keys are stored separately from this repo.
 # secrets.enc.yaml
 goldendict:
     dict_dir: /path/to/dictionaries
+keepassxc:
+    db_dir: /path/to/database
 mpv:
     hostname1:
         anime: /path/to/anime
