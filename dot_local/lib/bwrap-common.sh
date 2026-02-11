@@ -72,9 +72,9 @@ bwrap_x11() {
 bwrap_audio() {
     local -n _arr=$1
     [[ -S "${XDG_RUNTIME_DIR}/pipewire-0" ]] && \
-        _arr+=(--ro-bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
+        _arr+=(--bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
     [[ -d "${XDG_RUNTIME_DIR}/pulse" ]] && \
-        _arr+=(--ro-bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
+        _arr+=(--bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
     return 0
 }
 
@@ -86,13 +86,13 @@ bwrap_dbus_session() {
         local _bus_path="${_bus#unix:path=}"
         if [[ -S "$_bus_path" ]]; then
             _arr+=(
-                --ro-bind "$_bus_path" "$_bus_path"
+                --bind "$_bus_path" "$_bus_path"
                 --setenv DBUS_SESSION_BUS_ADDRESS "$_bus"
             )
         fi
     elif [[ -S "${XDG_RUNTIME_DIR}/bus" ]]; then
         _arr+=(
-            --ro-bind "${XDG_RUNTIME_DIR}/bus" "${XDG_RUNTIME_DIR}/bus"
+            --bind "${XDG_RUNTIME_DIR}/bus" "${XDG_RUNTIME_DIR}/bus"
             --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
         )
     fi
@@ -106,7 +106,7 @@ bwrap_dbus_system() {
         _arr+=(
             --perms 0755 --dir /run
             --perms 0755 --dir /run/dbus
-            --ro-bind /run/dbus/system_bus_socket /run/dbus/system_bus_socket
+            --bind /run/dbus/system_bus_socket /run/dbus/system_bus_socket
         )
     fi
     return 0
@@ -161,7 +161,6 @@ bwrap_resolve_files() {
 # ── Common base bwrap args ─────────────────────────────────────────
 bwrap_base() {
     local -n _arr=$1
-    local -n _opt=$2
     _arr+=(
         --ro-bind /usr /usr
         "${_opt[@]}"
