@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Sandboxed lazygit via bubblewrap
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+mkdir -p "${HOME}/.config/lazygit" \
+         "${HOME}/.local/state/lazygit"
+
+CWD="$(realpath "$PWD")"
+
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_resolv A
+
+A+=(--dir "${HOME}"
+    --dir "${HOME}/.config"
+    --dir "${HOME}/.local"
+    --dir "${HOME}/.local/share"
+    --dir "${HOME}/.local/state"
+    --bind "${CWD}" "${CWD}"
+    --bind "${HOME}/.config/lazygit"       "${HOME}/.config/lazygit"
+    --bind "${HOME}/.local/state/lazygit"  "${HOME}/.local/state/lazygit"
+    --ro-bind-try "${HOME}/.gitconfig"     "${HOME}/.gitconfig"
+    --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git")
+
+if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
+    A+=(--bind "${SSH_AUTH_SOCK}" "${SSH_AUTH_SOCK}"
+        --setenv SSH_AUTH_SOCK "${SSH_AUTH_SOCK}")
+fi
+
+A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
+
+A+=(--setenv HOME "${HOME}"
+    --setenv TERM "${TERM}"
+    --setenv LANG "${LANG:-en_US.UTF-8}"
+    --setenv PATH "/usr/bin:/bin"
+    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
+    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
+
+# no --new-session: lazygit opens /dev/tty, needs controlling terminal
+bwrap_sandbox A yes no
+
+exec bwrap "${A[@]}" -- /usr/bin/lazygit "$@"
