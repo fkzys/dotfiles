@@ -38,6 +38,7 @@ bwrap_dbus_session A
 bwrap_fcitx A
 bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
+bwrap_no_hardened_malloc A
 bwrap_sandbox A yes
 
 exec bwrap "${A[@]}" -- /usr/bin/goldendict "$@"
