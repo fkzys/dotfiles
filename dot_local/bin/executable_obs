@@ -3,36 +3,19 @@
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-mkdir -p "${HOME}/.config/obs-studio" \
-         "${HOME}/Videos"
-
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_resolv A
-bwrap_gpu A
+bwrap_gui_setup A yes
 bwrap_dbus_system A
 
 # Camera
 for dev in /dev/video*; do
     [[ -e "$dev" ]] && A+=(--dev-bind "$dev" "$dev")
 done
+:
 
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
-bwrap_home_tmpfs A
-
-A+=(--bind "${HOME}/.config/obs-studio" "${HOME}/.config/obs-studio"
-    --bind "${HOME}/Videos"             "${HOME}/Videos")
-
-bwrap_themes A
-bwrap_wayland A
+bwrap_bind_dir A bind "${HOME}/.config/obs-studio" "${HOME}/Videos"
 bwrap_audio A
-bwrap_dbus_session A
-bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_hardened_malloc A default
-bwrap_sandbox A yes
+bwrap_gui_finish A wayland yes
 
 exec bwrap "${A[@]}" -- /usr/bin/obs "$@"

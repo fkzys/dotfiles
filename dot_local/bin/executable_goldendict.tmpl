@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Sandboxed GoldenDict-ng via bubblewrap (XWayland)
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
@@ -7,38 +6,19 @@ set -euo pipefail
 DICT_DIR="$(realpath -m -- "{{ index $s "goldendict" "dict_dir" }}")"
 [[ -d "${DICT_DIR}" ]] || { echo "No dict dir: ${DICT_DIR}" >&2; exit 1; }
 
-mkdir -p "${HOME}/.config/goldendict" \
-         "${HOME}/.local/share/goldendict" \
-         "${HOME}/.local/share/GoldenDict-ng" \
-         "${HOME}/.cache/goldendict" \
-         "${HOME}/.cache/fontconfig"
-
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_gpu A
+bwrap_gui_setup A yes
 bwrap_dbus_system A
-
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
-bwrap_home_tmpfs A
-
-A+=(--bind "${HOME}/.config/goldendict"         "${HOME}/.config/goldendict"
-    --bind "${HOME}/.local/share/goldendict"    "${HOME}/.local/share/goldendict"
-    --bind "${HOME}/.local/share/GoldenDict-ng" "${HOME}/.local/share/GoldenDict-ng"
-    --bind "${HOME}/.cache/goldendict"          "${HOME}/.cache/goldendict"
-    --bind "${HOME}/.cache/fontconfig"          "${HOME}/.cache/fontconfig"
-    --ro-bind "${DICT_DIR}" "${DICT_DIR}")
-
-bwrap_themes A
-bwrap_x11 A
+bwrap_bind_dir A bind \
+    "${HOME}/.config/goldendict" \
+    "${HOME}/.local/share/goldendict" \
+    "${HOME}/.local/share/GoldenDict-ng" \
+    "${HOME}/.cache/goldendict" \
+    "${HOME}/.cache/fontconfig"
+A+=(--ro-bind "${DICT_DIR}" "${DICT_DIR}")
 bwrap_audio A
-bwrap_dbus_session A
 bwrap_fcitx A
-bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_no_hardened_malloc A
-bwrap_sandbox A yes
+bwrap_gui_finish A x11 yes no
 
 exec bwrap "${A[@]}" -- /usr/bin/goldendict "$@"

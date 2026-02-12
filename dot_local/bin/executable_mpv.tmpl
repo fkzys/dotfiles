@@ -3,12 +3,6 @@
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-mkdir -p "${HOME}/Pictures/Screenshots" \
-         "${HOME}/.config/mpv" \
-         "${HOME}/.local/state/mpv/watch_later" \
-         "${HOME}/.local/share/Anki2" \
-         "${HOME}/.cache/fontconfig"
-
 # ── Data dirs from secrets ────────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $host := .chezmoi.hostname -}}
@@ -22,37 +16,21 @@ _real="$(realpath -m -- "$_p")"
 {{ end -}}
 {{ end -}}
 
-FILE_BINDS=()
-ARGS=()
+FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_resolv A
-bwrap_gpu A
+bwrap_gui_setup A yes
 bwrap_dbus_system A
-
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
-bwrap_home_tmpfs A
-
-A+=(--bind "${HOME}/.config/mpv"          "${HOME}/.config/mpv"
-    --bind "${HOME}/.local/state/mpv"     "${HOME}/.local/state/mpv"
-    --bind "${HOME}/.local/share/Anki2"   "${HOME}/.local/share/Anki2"
-    --bind "${HOME}/Pictures/Screenshots" "${HOME}/Pictures/Screenshots"
-    --bind "${HOME}/.cache/fontconfig"    "${HOME}/.cache/fontconfig"
-    "${DATA_BINDS[@]}"
-    "${FILE_BINDS[@]}")
-
-bwrap_themes A
-bwrap_wayland A
+bwrap_bind_dir A bind \
+    "${HOME}/.config/mpv" \
+    "${HOME}/.local/state/mpv/watch_later" \
+    "${HOME}/.local/share/Anki2" \
+    "${HOME}/Pictures/Screenshots" \
+    "${HOME}/.cache/fontconfig"
+A+=("${DATA_BINDS[@]}" "${FILE_BINDS[@]}")
 bwrap_audio A
-bwrap_dbus_session A
-bwrap_env_base A
 A+=(--setenv XDG_STATE_HOME "${HOME}/.local/state")
-bwrap_hardened_malloc A default
-bwrap_sandbox A yes
+bwrap_gui_finish A wayland yes
 
 exec bwrap "${A[@]}" -- /usr/bin/mpv "${ARGS[@]}"

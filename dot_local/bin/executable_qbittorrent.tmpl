@@ -3,11 +3,6 @@
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-mkdir -p "${HOME}/.config/qBittorrent" \
-         "${HOME}/.local/share/qBittorrent" \
-         "${HOME}/.cache/qBittorrent" \
-         "${HOME}/Downloads"
-
 # ── Data dirs from secrets ────────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $host := .chezmoi.hostname -}}
@@ -17,39 +12,21 @@ DATA_BINDS=()
 {{ range $key, $path := index $qbt $host -}}
 _p="{{ $path }}"
 _real="$(realpath -m -- "$_p")"
-if [[ -d "$_real" ]]; then
-  DATA_BINDS+=(--bind "$_real" "$_real")
-else
-  mkdir -p "$_real"
-  DATA_BINDS+=(--bind "$_real" "$_real")
-fi
+mkdir -p "$_real"
+DATA_BINDS+=(--bind "$_real" "$_real")
 {{ end -}}
 {{ end -}}
 
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_resolv A
-bwrap_gpu A
+bwrap_gui_setup A yes
 bwrap_dbus_system A
-
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
-bwrap_home_tmpfs A
-
-A+=(--bind "${HOME}/.config/qBittorrent"      "${HOME}/.config/qBittorrent"
-    --bind "${HOME}/.local/share/qBittorrent" "${HOME}/.local/share/qBittorrent"
-    --bind "${HOME}/.cache/qBittorrent"       "${HOME}/.cache/qBittorrent"
-    --bind "${HOME}/Downloads"                "${HOME}/Downloads"
-    "${DATA_BINDS[@]}")
-
-bwrap_themes A
-bwrap_wayland A
-bwrap_dbus_session A
-bwrap_env_base A
+bwrap_bind_dir A bind \
+    "${HOME}/.config/qBittorrent" \
+    "${HOME}/.local/share/qBittorrent" \
+    "${HOME}/.cache/qBittorrent" \
+    "${HOME}/Downloads"
+A+=("${DATA_BINDS[@]}")
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_hardened_malloc A default
-bwrap_sandbox A yes
+bwrap_gui_finish A wayland yes
 
 exec bwrap "${A[@]}" -- /usr/bin/qbittorrent "$@"
