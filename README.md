@@ -61,7 +61,7 @@ Flatpak applications have per-app permission overrides in `~/.local/share/flatpa
 | goldendict | XWayland | yes | Dictionary dir from secrets |
 | imv | Wayland | no | Read-only file viewer |
 | keepassxc | Wayland | no | DB dir from secrets, isolated from network |
-| krita | XWayland | yes | Separate config dir trick |
+| krita | XWayland | no | Separate config dir trick |
 | lazygit | terminal | yes | CWD bind, SSH agent forwarding |
 | mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
 | nvim | terminal | yes | CWD + file args, clipboard via Wayland |
@@ -74,35 +74,67 @@ Per-host data directories (media paths, download dirs) are configured in `secret
 
 ### Library (`~/.local/lib/bwrap-common.sh`)
 
-Provides functions used by all wrappers. Each function appends bwrap arguments to a nameref array:
+Provides functions used by all wrappers. Each function takes a variable name and appends bwrap arguments to it via nameref:
 
-- `bwrap_base` — system skeleton (`/usr`, `/etc`, `/proc`, `/sys`, `/dev`, `/tmp`)
-- `bwrap_lib64` — `/usr/lib64` bind or symlink
-- `bwrap_resolv` — resolv.conf symlink target
-- `bwrap_gpu` — DRI + NVIDIA device nodes
-- `bwrap_wayland` — Wayland socket (rw for `connect()`)
-- `bwrap_x11` — X11/XWayland socket + Xauthority
-- `bwrap_audio` — PipeWire + PulseAudio sockets
-- `bwrap_dbus_session` / `bwrap_dbus_system` — D-Bus sockets
-- `bwrap_themes` — fontconfig, Qt, GTK, Kvantum, fonts, icons
-- `bwrap_fcitx` — fcitx5 input method sockets + env
-- `bwrap_home_tmpfs` — tmpfs `$HOME` with XDG skeleton
-- `bwrap_env_base` — `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR`
-- `bwrap_sandbox` — `--unshare-all`, optional `--share-net`, optional `--new-session`
-- `bwrap_resolve_files` — resolve file arguments to bind mounts
-- `bwrap_hardened_malloc` — upgrade to default variant via `LD_PRELOAD`
-- `bwrap_no_hardened_malloc` — disable hardened_malloc for incompatible apps
+**Low-level helpers:**
+
+| Function | Purpose |
+|---|---|
+| `bwrap_base` | System skeleton (`/usr`, `/etc`, `/proc`, `/sys`, `/dev`, `/tmp`) |
+| `bwrap_lib64` | `/usr/lib64` bind or symlink |
+| `bwrap_resolv` | resolv.conf symlink target for DNS |
+| `bwrap_gpu` | DRI + NVIDIA device nodes |
+| `bwrap_wayland` | Wayland socket (rw for `connect()`) |
+| `bwrap_x11` | X11/XWayland socket + Xauthority |
+| `bwrap_audio` | PipeWire + PulseAudio sockets |
+| `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets |
+| `bwrap_themes` | fontconfig, Qt, GTK, Kvantum, fonts, icons |
+| `bwrap_fcitx` | fcitx5 input method sockets + env |
+| `bwrap_home_tmpfs` | tmpfs `$HOME` with XDG skeleton |
+| `bwrap_runtime_dir` | XDG_RUNTIME_DIR with correct permissions |
+| `bwrap_env_base` | `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR` |
+| `bwrap_sandbox` | `--unshare-all`, optional `--share-net` / `--new-session` |
+| `bwrap_resolve_files` | Resolve file arguments to bind mounts |
+| `bwrap_bind_dir` | Create dirs on host + add `--bind` / `--ro-bind` |
+| `bwrap_ssh_agent` | SSH agent socket forwarding |
+| `bwrap_hardened_malloc` | Upgrade to default variant via `LD_PRELOAD` |
+| `bwrap_no_hardened_malloc` | Disable hardened_malloc for incompatible apps |
+
+**High-level composites:**
+
+| Function | Purpose |
+|---|---|
+| `bwrap_gui_setup` | `bwrap_base` + `lib64` + `gpu` + optional `resolv` + `runtime_dir` + `home_tmpfs` |
+| `bwrap_gui_finish` | `themes` + `wayland`/`x11` + `dbus_session` + `env_base` + malloc + `sandbox` |
 
 ### Wrapper pattern
+
+Typical GUI wrapper using high-level composites:
+
+```bash
+A=()
+bwrap_gui_setup A yes                    # yes = network (adds resolv)
+bwrap_bind_dir A bind "${HOME}/.config/app" "${HOME}/Data"
+bwrap_audio A
+bwrap_gui_finish A wayland yes           # display, network, malloc=default
+exec bwrap "${A[@]}" -- /usr/bin/app "$@"
+```
+
+Equivalent using low-level helpers:
 
 ```bash
 A=()
 bwrap_base A
 bwrap_lib64 A
 bwrap_gpu A
+bwrap_resolv A
+bwrap_runtime_dir A
 bwrap_home_tmpfs A
-A+=(--bind "${HOME}/.config/app" "${HOME}/.config/app")
+bwrap_bind_dir A bind "${HOME}/.config/app" "${HOME}/Data"
+bwrap_themes A
 bwrap_wayland A
+bwrap_audio A
+bwrap_dbus_session A
 bwrap_env_base A
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes
