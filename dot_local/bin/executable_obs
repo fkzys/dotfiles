@@ -9,6 +9,7 @@ mkdir -p "${HOME}/.config/obs-studio" \
 A=()
 bwrap_base A
 bwrap_lib64 A
+bwrap_resolv A
 bwrap_gpu A
 bwrap_dbus_system A
 

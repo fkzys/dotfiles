@@ -24,18 +24,12 @@ A+=(--dir "${HOME}"
     --ro-bind-try "${HOME}/.gitconfig"     "${HOME}/.gitconfig"
     --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git")
 
-if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
-    A+=(--bind "${SSH_AUTH_SOCK}" "${SSH_AUTH_SOCK}"
-        --setenv SSH_AUTH_SOCK "${SSH_AUTH_SOCK}")
-fi
+bwrap_ssh_agent A
 
 A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
 
-A+=(--setenv HOME "${HOME}"
-    --setenv TERM "${TERM}"
-    --setenv LANG "${LANG:-en_US.UTF-8}"
-    --setenv PATH "/usr/bin:/bin"
-    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
+bwrap_env_base A
+A+=(--setenv TERM "${TERM}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
 # no --new-session: lazygit opens /dev/tty, needs controlling terminal

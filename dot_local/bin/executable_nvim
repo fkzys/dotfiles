@@ -37,17 +37,9 @@ A=()
 bwrap_base A
 bwrap_lib64 A
 bwrap_resolv A
-[[ -d /usr/include ]] && A+=(--ro-bind /usr/include /usr/include)
 
-A+=(--symlink /usr/bin /bin
-    --symlink /usr/bin /sbin
-    --symlink /usr/lib /lib
-    --proc /proc
-    --dev /dev
-    --dev-bind /dev/pts /dev/pts
-    --tmpfs /tmp
-    "${TMP_BINDS[@]}"
-    --ro-bind /etc /etc)
+A+=(--dev-bind /dev/pts /dev/pts
+    "${TMP_BINDS[@]}")
 
 A+=(--dir "${HOME}"
     --dir "${HOME}/.config"
@@ -64,11 +56,8 @@ A+=(--dir "${HOME}"
 A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
 bwrap_wayland A
 
-A+=(--setenv HOME  "${HOME}"
-    --setenv TERM  "${TERM}"
-    --setenv LANG  "${LANG:-en_US.UTF-8}"
-    --setenv PATH  "/usr/bin:/bin"
-    --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
+bwrap_env_base A
+A+=(--setenv TERM "${TERM}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
 bwrap_hardened_malloc A default

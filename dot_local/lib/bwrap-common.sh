@@ -13,7 +13,6 @@ bwrap_gpu() {
         [[ -e "$dev" ]] && _arr+=(--dev-bind "$dev" "$dev")
     done
     [[ -d /dev/nvidia-caps ]] && _arr+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
-    return 0
 }
 
 # ── /usr/lib64 + symlinks ─────────────────────────────────────────
@@ -24,7 +23,6 @@ bwrap_lib64() {
     else
         _arr+=(--symlink /usr/lib /lib64)
     fi
-    return 0
 }
 
 # ── resolv.conf (often symlink into /run) ──────────────────────────
@@ -35,7 +33,6 @@ bwrap_resolv() {
         _rd="$(dirname "$(realpath /etc/resolv.conf)")"
         _arr+=(--ro-bind "$_rd" "$_rd")
     fi
-    return 0
 }
 
 # ── Wayland (native, connect() needs write) ────────────────────────
@@ -49,7 +46,6 @@ bwrap_wayland() {
         )
         [[ -f "${_wl}.lock" ]] && _arr+=(--ro-bind "${_wl}.lock" "${_wl}.lock")
     fi
-    return 0
 }
 
 # ── X11 / XWayland ─────────────────────────────────────────────────
@@ -65,7 +61,6 @@ bwrap_x11() {
                    --setenv XAUTHORITY "${HOME}/.Xauthority")
         fi
     fi
-    return 0
 }
 
 # ── Audio (PipeWire + PulseAudio) ──────────────────────────────────
@@ -75,7 +70,6 @@ bwrap_audio() {
         _arr+=(--bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
     [[ -d "${XDG_RUNTIME_DIR}/pulse" ]] && \
         _arr+=(--bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
-    return 0
 }
 
 # ── D-Bus session ──────────────────────────────────────────────────
@@ -96,7 +90,6 @@ bwrap_dbus_session() {
             --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
         )
     fi
-    return 0
 }
 
 # ── D-Bus system ───────────────────────────────────────────────────
@@ -109,7 +102,6 @@ bwrap_dbus_system() {
             --bind /run/dbus/system_bus_socket /run/dbus/system_bus_socket
         )
     fi
-    return 0
 }
 
 # ── Optional read-only home paths (themes, fonts, Qt) ──────────────
@@ -127,7 +119,6 @@ bwrap_themes() {
         "${HOME}/.icons"; do
         [[ -e "$p" ]] && _arr+=(--ro-bind "$p" "$p")
     done
-    return 0
 }
 
 # ── Resolve file arguments to bind mounts ──────────────────────────
@@ -145,7 +136,6 @@ bwrap_resolve_files() {
             case "$_dir" in
                 /usr/*|/etc/*|/proc/*|/dev/*|/tmp*|/sys/*) ;;
                 "${HOME}")
-                    # File directly in $HOME — bind the file, not all of $HOME
                     _binds+=("$_mode" "$_real" "$_real")
                     ;;
                 *) _binds+=("$_mode" "$_dir" "$_dir") ;;
@@ -155,7 +145,6 @@ bwrap_resolve_files() {
             _args+=("$arg")
         fi
     done
-    return 0
 }
 
 # ── Common base bwrap args ─────────────────────────────────────────
@@ -173,7 +162,6 @@ bwrap_base() {
         --dev-bind /dev/shm /dev/shm
         --ro-bind /etc /etc
     )
-    return 0
 }
 
 # ── Common home tmpfs skeleton ─────────────────────────────────────
@@ -187,7 +175,6 @@ bwrap_home_tmpfs() {
         --perms 0700 --dir "${HOME}/.local/state"
         --perms 0700 --dir "${HOME}/.cache"
     )
-    return 0
 }
 
 # ── Common env vars ────────────────────────────────────────────────
@@ -200,7 +187,6 @@ bwrap_env_base() {
         --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
         --setenv XDG_CACHE_HOME "${HOME}/.cache"
     )
-    return 0
 }
 
 # ── hardened_malloc ────────────────────────────────────────────────
@@ -211,17 +197,13 @@ bwrap_hardened_malloc() {
     if [[ "$_variant" == "light" ]]; then
         _lib="/usr/local/lib/libhardened_malloc-light.so"
     fi
-    if [[ -f "$_lib" ]]; then
-        _arr+=(--setenv LD_PRELOAD "$_lib")
-    fi
-    return 0
+    [[ -f "$_lib" ]] && _arr+=(--setenv LD_PRELOAD "$_lib")
 }
 
 bwrap_no_hardened_malloc() {
     local -n _arr=$1
     _arr+=(--unsetenv LD_PRELOAD
            --ro-bind /dev/null /etc/ld.so.preload)
-    return 0
 }
 
 # ── Common sandbox flags ──────────────────────────────────────────
@@ -233,7 +215,6 @@ bwrap_sandbox() {
     [[ "$_net" == "yes" ]] && _arr+=(--share-net)
     [[ "$_new_session" == "yes" ]] && _arr+=(--new-session)
     _arr+=(--die-with-parent)
-    return 0
 }
 
 # ── fcitx5 input method ───────────────────────────────────────────
@@ -243,11 +224,69 @@ bwrap_fcitx() {
         --setenv QT_IM_MODULE fcitx
         --setenv XMODIFIERS "@im=fcitx"
     )
-    [[ -d "${HOME}/.config/fcitx5" ]] && _arr+=(--ro-bind "${HOME}/.config/fcitx5" "${HOME}/.config/fcitx5")
+    [[ -d "${HOME}/.config/fcitx5" ]] && \
+        _arr+=(--ro-bind "${HOME}/.config/fcitx5" "${HOME}/.config/fcitx5")
     local sock
     for sock in /tmp/fcitx5-*; do
         [[ -e "$sock" ]] && _arr+=(--bind "$sock" "$sock")
     done
-    return 0
 }
 
+# ── XDG_RUNTIME_DIR setup ─────────────────────────────────────────
+bwrap_runtime_dir() {
+    local -n _arr=$1
+    _arr+=(--perms 0755 --dir /run/user
+           --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+}
+
+# ── Create dirs on host + add bind mounts ──────────────────────────
+bwrap_bind_dir() {
+    local -n _arr=$1
+    local _mode="$2"
+    shift 2
+    local _d
+    for _d in "$@"; do
+        mkdir -p "$_d"
+        _arr+=("--${_mode}" "$_d" "$_d")
+    done
+}
+
+# ── SSH agent forwarding ──────────────────────────────────────────
+bwrap_ssh_agent() {
+    local -n _arr=$1
+    if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
+        _arr+=(--bind "${SSH_AUTH_SOCK}" "${SSH_AUTH_SOCK}"
+               --setenv SSH_AUTH_SOCK "${SSH_AUTH_SOCK}")
+    fi
+}
+
+# ── Standard GUI sandbox: setup phase ─────────────────────────────
+bwrap_gui_setup() {
+    local _v=$1 _display="${2:-wayland}" _net="${3:-no}"
+    bwrap_base "$_v"
+    bwrap_lib64 "$_v"
+    bwrap_gpu "$_v"
+    [[ "$_net" == "yes" ]] && bwrap_resolv "$_v"
+    bwrap_runtime_dir "$_v"
+    bwrap_home_tmpfs "$_v"
+}
+
+# ── Standard GUI sandbox: finish phase ────────────────────────────
+bwrap_gui_finish() {
+    local _v=$1 _display="${2:-wayland}" _net="${3:-no}" _malloc="${4:-default}"
+    bwrap_themes "$_v"
+    if [[ "$_display" == "x11" ]]; then
+        bwrap_x11 "$_v"
+    else
+        bwrap_wayland "$_v"
+    fi
+    bwrap_audio "$_v"
+    bwrap_dbus_session "$_v"
+    bwrap_env_base "$_v"
+    if [[ "$_malloc" == "no" ]]; then
+        bwrap_no_hardened_malloc "$_v"
+    else
+        bwrap_hardened_malloc "$_v" "$_malloc"
+    fi
+    bwrap_sandbox "$_v" "$_net"
+}

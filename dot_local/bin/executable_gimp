@@ -3,12 +3,6 @@
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-mkdir -p "${HOME}/.config/GIMP" \
-         "${HOME}/.local/share/GIMP" \
-         "${HOME}/.cache/GIMP" \
-         "${HOME}/Pictures" \
-         "${HOME}/Downloads"
-
 FILE_BINDS=()
 ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
@@ -17,18 +11,16 @@ A=()
 bwrap_base A
 bwrap_lib64 A
 bwrap_gpu A
-
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
+bwrap_runtime_dir A
 bwrap_home_tmpfs A
 
-A+=(--bind "${HOME}/.config/GIMP"      "${HOME}/.config/GIMP"
-    --bind "${HOME}/.local/share/GIMP" "${HOME}/.local/share/GIMP"
-    --bind "${HOME}/.cache/GIMP"       "${HOME}/.cache/GIMP"
-    --bind "${HOME}/Pictures"          "${HOME}/Pictures"
-    --bind "${HOME}/Downloads"         "${HOME}/Downloads"
-    "${FILE_BINDS[@]}")
+bwrap_bind_dir A bind \
+    "${HOME}/.config/GIMP" \
+    "${HOME}/.local/share/GIMP" \
+    "${HOME}/.cache/GIMP" \
+    "${HOME}/Pictures" \
+    "${HOME}/Downloads"
+A+=("${FILE_BINDS[@]}")
 
 bwrap_themes A
 bwrap_wayland A
