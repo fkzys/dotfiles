@@ -41,9 +41,9 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, goldendict, gimp, swappy, makepkg |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg |
 | light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
-| disabled | anki (PartitionAlloc) |
+| disabled | anki, goldendict (PartitionAlloc) |
 | not applicable | flatpak apps (own runtime) |
 
 ## Application sandboxing
