@@ -12,9 +12,24 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 
+## Memory allocator hardening
+
+[hardened_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](link) repository.
+
+The light variant provides zero-on-free, slab canaries, and guard slabs. The default variant adds slot randomization, write-after-free checks, and slab quarantines.
+
+Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc, glycin) have hardened_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
+
+| Allocator | Applications |
+|---|---|
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, goldendict, makepkg |
+| light (system-wide) | hyprland, waybar, kitty, wofi, all other native processes |
+| disabled | anki (PartitionAlloc), gimp (glycin), swappy |
+| not applicable | flatpak apps (own runtime) |
+
 ## Application sandboxing
 
-GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, and filesystem setup.
+GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened_malloc integration.
 
 AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$HOME` as empty tmpfs, preventing PKGBUILD `build()` from accessing SSH keys, configs, or other sensitive data.
 
@@ -26,7 +41,7 @@ Flatpak applications have per-app permission overrides in `~/.local/share/flatpa
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary dir from secrets |
 | imv | Wayland | no | Read-only file viewer |
-| keepassxc | Wayland | **no** | DB dir from secrets, isolated from network |
+| keepassxc | Wayland | no | DB dir from secrets, isolated from network |
 | krita | XWayland | yes | Separate config dir trick |
 | lazygit | terminal | yes | CWD bind, SSH agent forwarding |
 | mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
@@ -56,6 +71,8 @@ Provides functions used by all wrappers. Each function appends bwrap arguments t
 - `bwrap_env_base` — `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR`
 - `bwrap_sandbox` — `--unshare-all`, optional `--share-net`, optional `--new-session`
 - `bwrap_resolve_files` — resolve file arguments to bind mounts
+- `bwrap_hardened_malloc` — upgrade to default variant via `LD_PRELOAD`
+- `bwrap_no_hardened_malloc` — disable hardened_malloc for incompatible apps
 
 ### Wrapper pattern
 
@@ -68,6 +85,7 @@ bwrap_home_tmpfs A
 A+=(--bind "${HOME}/.config/app" "${HOME}/.config/app")
 bwrap_wayland A
 bwrap_env_base A
+bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 exec bwrap "${A[@]}" -- /usr/bin/app "$@"
 ```
