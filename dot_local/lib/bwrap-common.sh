@@ -267,7 +267,7 @@ bwrap_ssh_agent() {
 
 # ── Standard GUI sandbox: setup phase ─────────────────────────────
 bwrap_gui_setup() {
-    local _v=$1 _display="${2:-wayland}" _net="${3:-no}"
+    local _v=$1 _net="${2:-no}"
     bwrap_base "$_v"
     bwrap_lib64 "$_v"
     bwrap_gpu "$_v"
