@@ -18,13 +18,15 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 The light variant provides zero-on-free, slab canaries, and guard slabs. The default variant adds slot randomization, write-after-free checks, and slab quarantines.
 
-Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc, glycin) have hardened_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
+GTK4 uses [glycin](https://gitlab.gnome.org/GNOME/glycin) for image loading, which sets `RLIMIT_AS` on its sandboxed loader processes. This is incompatible with hardened_malloc's large virtual memory reservation (~240 GB `PROT_NONE` guard regions). A `libfake_rlimit.so` shim intercepts `prlimit64(RLIMIT_AS)` calls, returning success without applying the limit.
+
+Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) have hardened_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, goldendict, makepkg |
-| light (system-wide) | hyprland, waybar, kitty, wofi, all other native processes |
-| disabled | anki (PartitionAlloc), gimp (glycin), swappy |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, goldendict, gimp, swappy, makepkg |
+| light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
+| disabled | anki (PartitionAlloc) |
 | not applicable | flatpak apps (own runtime) |
 
 ## Application sandboxing
