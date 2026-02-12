@@ -274,7 +274,9 @@ bwrap_gui_setup() {
     [[ "$_net" == "yes" ]] && bwrap_resolv "$_v"
     bwrap_runtime_dir "$_v"
     bwrap_home_tmpfs "$_v"
+    :
 }
+
 
 # ── Standard GUI sandbox: finish phase ────────────────────────────
 bwrap_gui_finish() {
