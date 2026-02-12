@@ -13,6 +13,7 @@ bwrap_gpu() {
         [[ -e "$dev" ]] && _arr+=(--dev-bind "$dev" "$dev")
     done
     [[ -d /dev/nvidia-caps ]] && _arr+=(--dev-bind /dev/nvidia-caps /dev/nvidia-caps)
+    :
 }
 
 # ── /usr/lib64 + symlinks ─────────────────────────────────────────
@@ -70,6 +71,7 @@ bwrap_audio() {
         _arr+=(--bind "${XDG_RUNTIME_DIR}/pipewire-0" "${XDG_RUNTIME_DIR}/pipewire-0")
     [[ -d "${XDG_RUNTIME_DIR}/pulse" ]] && \
         _arr+=(--bind "${XDG_RUNTIME_DIR}/pulse" "${XDG_RUNTIME_DIR}/pulse")
+    :
 }
 
 # ── D-Bus session ──────────────────────────────────────────────────
@@ -119,6 +121,7 @@ bwrap_themes() {
         "${HOME}/.icons"; do
         [[ -e "$p" ]] && _arr+=(--ro-bind "$p" "$p")
     done
+    :
 }
 
 # ── Resolve file arguments to bind mounts ──────────────────────────
@@ -198,6 +201,7 @@ bwrap_hardened_malloc() {
         _lib="/usr/local/lib/libhardened_malloc-light.so"
     fi
     [[ -f "$_lib" ]] && _arr+=(--setenv LD_PRELOAD "$_lib")
+    :
 }
 
 bwrap_no_hardened_malloc() {
@@ -230,6 +234,7 @@ bwrap_fcitx() {
     for sock in /tmp/fcitx5-*; do
         [[ -e "$sock" ]] && _arr+=(--bind "$sock" "$sock")
     done
+    :
 }
 
 # ── XDG_RUNTIME_DIR setup ─────────────────────────────────────────
