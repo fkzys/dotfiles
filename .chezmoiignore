@@ -3,6 +3,9 @@ README.md
 secrets.enc.yaml
 .envrc
 .sops.yaml
-{{- if eq .chezmoi.hostname "laptop-1" }}
+
+{{- if not .goldendict }}
 .config/goldendict/**
+.local/bin/goldendict
+.local/share/applications/io.github.xiaoyifang.goldendict_ng.desktop
 {{- end }}

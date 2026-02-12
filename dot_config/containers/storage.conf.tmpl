@@ -1,5 +1,9 @@
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $host := .chezmoi.hostname -}}
+{{ $h := index $s "host" -}}
+
 [storage]
 driver = "btrfs"
-{{- if eq .chezmoi.hostname "desktop-1" }}
-graphroot = "/mnt/ssd2/podman_user/$USER/storage"
+{{- if and (hasKey $h $host) (hasKey (index $h $host) "podman_graphroot") }}
+graphroot = "{{ index $h $host "podman_graphroot" }}"
 {{- end }}

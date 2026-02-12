@@ -2,13 +2,17 @@
 # HYPRLAND CONFIG 
 # #######################################################################################
 
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $host := .chezmoi.hostname -}}
+{{ $h := index $s "host" -}}
+
 ################
 ### MONITORS ###
 ################
 
 # See https://wiki.hypr.land/Configuring/Monitors/
-{{- if eq .chezmoi.hostname "desktop-1" }}
-monitor=DP-3,1920x1080@144,0x0,1
+{{- if and (hasKey $h $host) (hasKey (index $h $host) "monitor") }}
+monitor={{ index $h $host "monitor" }}
 {{- end }}
 monitor=,preferred,auto,auto
 
@@ -18,7 +22,7 @@ monitor=,preferred,auto,auto
 
 # See https://wiki.hypr.land/Configuring/Environment-variables/
 # Essential for Nvidia on Wayland
-{{- if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .nvidia true }}
 env = LIBVA_DRIVER_NAME,nvidia
 env = XDG_SESSION_TYPE,wayland
 env = GBM_BACKEND,nvidia-drm
@@ -50,13 +54,13 @@ exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
 exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
 exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
-{{- if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .tablet true }}
 # Tablet Driver
 exec-once = otd-daemon
 {{- end }}
 
-# OCR and Utils
-{{- if eq .chezmoi.hostname "desktop-1" }}
+{{- if eq .ocr true }}
+# OCR
 exec-once = transformers_ocr listen
 {{- end }}
 
@@ -81,19 +85,13 @@ $menu = wofi --show drun --allow-images
 
 # https://wiki.hypr.land/Configuring/Variables/#input
 input {
-    #kb_layout = us,ru,jp
-    
     follow_mouse = 1
-    sensitivity = 0 # -1.0 - 1.0, 0 means no modification. 
+    sensitivity = 0
     accel_profile = flat
     numlock_by_default = true
 
     touchpad {
-	{{- if eq .chezmoi.hostname "desktop-1" }}
-        natural_scroll = false
-	{{- else if eq .chezmoi.hostname "laptop-1" }}
-        natural_scroll = true
-	{{- end }}
+        natural_scroll = {{ .laptop }}
     }
 }
 
@@ -306,9 +304,8 @@ bind = $mainMod, F2, exec, flatpak run org.telegram.desktop
 bind = $mainMod, F3, exec, thunar
 bind = $mainMod, F4, exec, $terminal
 
-{{- if eq .chezmoi.hostname "desktop-1" }}
-# -- Custom Tools (OCR, Cabl, Audio) --
-# OCR
+{{- if eq .ocr true }}
+# -- Custom Tools (OCR) --
 bind = $mainMod, O, exec, transformers_ocr recognize
 bind = $mainMod SHIFT, O, exec, transformers_ocr hold
 {{- end }}

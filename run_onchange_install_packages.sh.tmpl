@@ -38,7 +38,7 @@ NATIVE_PKGS=(
     "ukify" #atomic
     "firewalld"
     "uwsm"
-    {{- if eq .chezmoi.hostname "laptop-1" }}
+    {{- if eq .laptop true }}
     "brightnessctl"
     "tpm2-tss" 
     "tpm2-tools"
@@ -119,7 +119,7 @@ NATIVE_PKGS=(
     "go"
     "podman"
     "podman-compose"
-    {{- if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .virt_manager true }}
     "qemu-base"
     "virt-manager"
     "dnsmasq"
@@ -130,7 +130,7 @@ NATIVE_PKGS=(
     "sops"
     "direnv"
 
-    {{- if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .nvidia true }}
     # === NVIDIA ===
     "nvidia-open"
     "nvidia-settings"
@@ -147,8 +147,10 @@ NATIVE_PKGS=(
 # --- 2. AUR ---
 AUR_PKGS=(
     "kopia-bin"
-    {{- if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .tablet true }}
     "opentabletdriver"
+    {{- end }}
+    {{- if eq .goldendict true }}
     "goldendict-ng"
     {{- end }}
     "coolercontrol-bin"
@@ -162,7 +164,7 @@ FLATPAK_PKGS=(
     "org.gnome.Papers"
     "org.qownnotes.QOwnNotes"
     "org.localsend.localsend_app"
-    {{- if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .portproton true }}
     "ru.linux_gaming.PortProton"
     "runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/25.08"
     {{- end }}

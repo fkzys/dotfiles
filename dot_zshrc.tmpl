@@ -138,7 +138,7 @@ alias glog='git log --oneline --graph --decorate'
 typeset -A flatpak_apps=(
     firefox     "org.mozilla.firefox"
     telegram    "org.telegram.desktop"
-    {{- if eq .chezmoi.hostname "desktop-1" }}
+    {{- if eq .portproton true }}
     portproton  "ru.linux_gaming.PortProton"
     {{- end }}
     flatseal    "com.github.tchx84.Flatseal"
@@ -151,11 +151,15 @@ for app flatpak_id in "${(@kv)flatpak_apps}"; do
     alias "$app"="flatpak run $flatpak_id"
 done
 
-{{- if eq .chezmoi.hostname "desktop-1" }}
-# ── Host-specific ──────────────────────────────────────────
-alias subs='cd -- "/mnt/hdd1/jp/kitsunekko-mirror/subtitles"'
-alias anime='cd -- "/mnt/hdd1/torrents"'
-{{- end }}
+# ── Directory aliases ──────────────────────────────────────
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $host := .chezmoi.hostname -}}
+{{ $da := index $s "dir_aliases" -}}
+{{ if hasKey $da $host -}}
+{{ range $name, $path := index $da $host -}}
+alias {{ $name }}='cd -- "{{ $path }}"'
+{{ end -}}
+{{ end -}}
 
 # ── Keybindings ─────────────────────────────────────────────
 bindkey -s '^o' '^ulf\n'
