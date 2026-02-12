@@ -285,7 +285,6 @@ bwrap_gui_finish() {
     else
         bwrap_wayland "$_v"
     fi
-    bwrap_audio "$_v"
     bwrap_dbus_session "$_v"
     bwrap_env_base "$_v"
     if [[ "$_malloc" == "no" ]]; then
