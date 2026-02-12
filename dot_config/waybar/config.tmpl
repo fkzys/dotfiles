@@ -7,10 +7,10 @@
     // Choose the order of the modules
     "modules-left": ["hyprland/workspaces", "custom/media"],
     "modules-center": ["hyprland/window"],
-    {{- if eq .chezmoi.hostname "desktop-1" }}
-    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/gpu_temp", "custom/cpu_temp", "custom/weather", "clock", "tray"],
-    {{- else if eq .chezmoi.hostname "laptop-1" }}
+    {{- if eq .laptop true }}
     "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk", "custom/cpu_temp", "custom/weather", "backlight", "battery#bat0", "battery#bat1", "clock", "tray"],
+    {{- else }}
+    "modules-right": ["idle_inhibitor", "mpd", "pulseaudio", "cpu", "memory", "disk",{{ if eq .nvidia true }} "custom/gpu_temp",{{ end }} "custom/cpu_temp", "custom/weather", "clock", "tray"],
     {{- end }}
     // Modules configuration
     // "hyprland/workspaces": {
@@ -47,11 +47,11 @@
 
     // --- CPU Temp Module ---
     "custom/cpu_temp": {
-    	{{- if eq .chezmoi.hostname "desktop-1" }}
+        {{- if eq .amd_cpu true }}
         "exec": "sensors | awk '/Tctl/ {tctl=$2} /Tccd1/ {tccd1=$2} END {print tctl \"/\" tccd1}'",
-    	{{- else if eq .chezmoi.hostname "laptop-1" }}
+        {{- else }}
         "exec": "sensors | awk '/CPU/ {cpu=$2} END {print cpu}'",
-    	{{- end }}
+        {{- end }}
         "interval": 5,
         "format": "  {}" 
     },

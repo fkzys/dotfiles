@@ -1,3 +1,12 @@
+{{- $nvidia        := promptBoolOnce . "nvidia"        "NVIDIA GPU" -}}
+{{- $amd_cpu       := promptBoolOnce . "amd_cpu"       "AMD CPU (for temp sensors)" -}}
+{{- $laptop        := promptBoolOnce . "laptop"        "Laptop (battery, backlight, compact fonts)" -}}
+{{- $tablet        := promptBoolOnce . "tablet"        "Drawing tablet (OpenTabletDriver)" -}}
+{{- $ocr           := promptBoolOnce . "ocr"           "OCR (transformers_ocr)" -}}
+{{- $goldendict    := promptBoolOnce . "goldendict"    "GoldenDict" -}}
+{{- $portproton    := promptBoolOnce . "portproton"    "PortProton" -}}
+{{- $virt_manager  := promptBoolOnce . "virt_manager"  "QEMU / virt-manager" -}}
+
 encryption = "age"
 [age]
     identity = "~/.config/chezmoi/key.txt"
@@ -5,3 +14,13 @@ encryption = "age"
         "age1fyc50afgtkrq7xdqr0859ncyrvncxaclvfz83qyp3zq96mg47s5quqmvxt",
 	"age14r9xns8kj0kagv4k7nm8hs85v5utkcw32vwqaczwzs8cz8zrgqeqmeakz0"
     ]
+
+[data]
+    nvidia         = {{ $nvidia }}
+    amd_cpu        = {{ $amd_cpu }}
+    laptop         = {{ $laptop }}
+    tablet         = {{ $tablet }}
+    ocr            = {{ $ocr }}
+    goldendict     = {{ $goldendict }}
+    portproton     = {{ $portproton }}
+    virt_manager   = {{ $virt_manager }}
