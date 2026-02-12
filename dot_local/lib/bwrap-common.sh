@@ -244,6 +244,7 @@ bwrap_fcitx() {
         --setenv QT_IM_MODULE fcitx
         --setenv XMODIFIERS "@im=fcitx"
     )
+    [[ -d "${HOME}/.config/fcitx5" ]] && _arr+=(--ro-bind "${HOME}/.config/fcitx5" "${HOME}/.config/fcitx5")
     local sock
     for sock in /tmp/fcitx5-*; do
         [[ -e "$sock" ]] && _arr+=(--bind "$sock" "$sock")
