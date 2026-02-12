@@ -28,6 +28,7 @@ bwrap_themes A
 bwrap_wayland A
 bwrap_dbus_session A
 bwrap_env_base A
+bwrap_no_hardened_malloc A
 bwrap_sandbox A
 
 exec bwrap "${A[@]}" -- /usr/bin/swappy "${ARGS[@]}"

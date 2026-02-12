@@ -22,6 +22,7 @@ A+=(--perms 0755 --dir /run/user
 bwrap_wayland A
 bwrap_env_base A
 A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
+bwrap_hardened_malloc A default
 bwrap_sandbox A
 
 exec bwrap "${A[@]}" -- /usr/bin/imv "${ARGS[@]}"

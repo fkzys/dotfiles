@@ -34,6 +34,7 @@ bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORM wayland
     --setenv QT_QPA_PLATFORMTHEME qt6ct
     --setenv QTWEBENGINE_DISABLE_SANDBOX 1)
+bwrap_no_hardened_malloc A
 bwrap_sandbox A yes
 
 exec bwrap "${A[@]}" -- /usr/bin/anki "${ARGS[@]}"

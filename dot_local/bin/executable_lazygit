@@ -39,6 +39,7 @@ A+=(--setenv HOME "${HOME}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
 # no --new-session: lazygit opens /dev/tty, needs controlling terminal
+bwrap_hardened_malloc A default
 bwrap_sandbox A yes no
 
 exec bwrap "${A[@]}" -- /usr/bin/lazygit "$@"

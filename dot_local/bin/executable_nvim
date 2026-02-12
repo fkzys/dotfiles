@@ -34,11 +34,7 @@ done
 
 A=()
 
-# nvim: minimal /usr (no full --ro-bind /usr /usr)
-A+=(--ro-bind /usr/bin   /usr/bin
-    --ro-bind /usr/lib   /usr/lib
-    --ro-bind /usr/share /usr/share)
-
+bwrap_base A
 bwrap_lib64 A
 bwrap_resolv A
 [[ -d /usr/include ]] && A+=(--ro-bind /usr/include /usr/include)
@@ -75,6 +71,7 @@ A+=(--setenv HOME  "${HOME}"
     --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
+bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 
 exec bwrap "${A[@]}" -- /usr/bin/nvim "$@"

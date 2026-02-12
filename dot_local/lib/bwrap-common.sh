@@ -204,6 +204,27 @@ bwrap_env_base() {
     return 0
 }
 
+# ── hardened_malloc ────────────────────────────────────────────────
+bwrap_hardened_malloc() {
+    local -n _arr=$1
+    local _variant="${2:-light}"
+    local _lib="/usr/local/lib/libhardened_malloc.so"
+    if [[ "$_variant" == "light" ]]; then
+        _lib="/usr/local/lib/libhardened_malloc-light.so"
+    fi
+    if [[ -f "$_lib" ]]; then
+        _arr+=(--setenv LD_PRELOAD "$_lib")
+    fi
+    return 0
+}
+
+bwrap_no_hardened_malloc() {
+    local -n _arr=$1
+    _arr+=(--unsetenv LD_PRELOAD
+           --ro-bind /dev/null /etc/ld.so.preload)
+    return 0
+}
+
 # ── Common sandbox flags ──────────────────────────────────────────
 bwrap_sandbox() {
     local -n _arr=$1
@@ -229,3 +250,4 @@ bwrap_fcitx() {
     done
     return 0
 }
+

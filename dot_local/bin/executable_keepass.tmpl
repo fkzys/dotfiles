@@ -30,6 +30,7 @@ bwrap_dbus_session A
 bwrap_fcitx A
 bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_sandbox A    # no network — главная защита
+bwrap_hardened_malloc A default
+bwrap_sandbox A 
 
 exec bwrap "${A[@]}" -- /usr/bin/keepassxc "$@"

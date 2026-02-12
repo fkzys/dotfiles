@@ -52,6 +52,7 @@ bwrap_audio A
 bwrap_dbus_session A
 bwrap_env_base A
 A+=(--setenv XDG_STATE_HOME "${HOME}/.local/state")
+bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 
 exec bwrap "${A[@]}" -- /usr/bin/mpv "${ARGS[@]}"

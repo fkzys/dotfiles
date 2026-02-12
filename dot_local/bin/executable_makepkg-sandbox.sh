@@ -29,5 +29,5 @@ A+=(--setenv HOME "${HOME}"
     --unshare-all
     --share-net
     --die-with-parent)
-
+bwrap_hardened_malloc A default
 exec bwrap "${A[@]}" -- /usr/bin/makepkg "$@"
