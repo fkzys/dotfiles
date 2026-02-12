@@ -14,7 +14,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Memory allocator hardening
 
-[hardened_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](link) repository.
+[hardened_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](https://gitlab.com/fkzys/system-config) repository.
 
 The light variant provides zero-on-free, slab canaries, and guard slabs. The default variant adds slot randomization, write-after-free checks, and slab quarantines.
 
