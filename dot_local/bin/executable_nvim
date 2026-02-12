@@ -7,9 +7,7 @@ mkdir -p "${HOME}/.local/share/nvim" \
          "${HOME}/.local/state/nvim" \
          "${HOME}/.cache/nvim"
 
-# ── Bind CWD + file arguments ─────────────────────────────────────
-FILE_BINDS=()
-TMP_BINDS=()
+FILE_BINDS=(); TMP_BINDS=()
 
 _add_bind() {
     local d="$1"
@@ -22,7 +20,6 @@ _add_bind() {
 }
 
 _add_bind "$(realpath "$PWD")"
-
 for arg in "$@"; do
     [[ "$arg" == -* ]] && continue
     if [[ -e "$arg" ]]; then
@@ -33,29 +30,26 @@ for arg in "$@"; do
 done
 
 A=()
-
 bwrap_base A
 bwrap_lib64 A
 bwrap_resolv A
-
 A+=(--dev-bind /dev/pts /dev/pts
     "${TMP_BINDS[@]}")
 
 A+=(--dir "${HOME}"
     --dir "${HOME}/.config"
-    --ro-bind "${HOME}/.config/nvim"      "${HOME}/.config/nvim"
-    --bind    "${HOME}/.local/share/nvim" "${HOME}/.local/share/nvim"
-    --bind    "${HOME}/.local/state/nvim" "${HOME}/.local/state/nvim"
-    --bind    "${HOME}/.cache/nvim"       "${HOME}/.cache/nvim"
-    --ro-bind-try "${HOME}/.gitconfig"             "${HOME}/.gitconfig"
-    --ro-bind-try "${HOME}/.config/git"            "${HOME}/.config/git"
+    --ro-bind "${HOME}/.config/nvim"                  "${HOME}/.config/nvim"
+    --bind    "${HOME}/.local/share/nvim"              "${HOME}/.local/share/nvim"
+    --bind    "${HOME}/.local/state/nvim"              "${HOME}/.local/state/nvim"
+    --bind    "${HOME}/.cache/nvim"                    "${HOME}/.cache/nvim"
+    --ro-bind-try "${HOME}/.gitconfig"                 "${HOME}/.gitconfig"
+    --ro-bind-try "${HOME}/.config/git"                "${HOME}/.config/git"
     --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json"
-    --bind-try    "${HOME}/.local/share/chezmoi"   "${HOME}/.local/share/chezmoi"
+    --bind-try    "${HOME}/.local/share/chezmoi"        "${HOME}/.local/share/chezmoi"
     "${FILE_BINDS[@]}")
 
-A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
+bwrap_runtime_dir A
 bwrap_wayland A
-
 bwrap_env_base A
 A+=(--setenv TERM "${TERM}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})

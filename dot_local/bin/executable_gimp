@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
-# Sandboxed GIMP via bubblewrap
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-FILE_BINDS=()
-ARGS=()
+FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
 
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_gpu A
-bwrap_runtime_dir A
-bwrap_home_tmpfs A
-
+bwrap_gui_setup A
 bwrap_bind_dir A bind \
     "${HOME}/.config/GIMP" \
     "${HOME}/.local/share/GIMP" \
@@ -21,12 +14,6 @@ bwrap_bind_dir A bind \
     "${HOME}/Pictures" \
     "${HOME}/Downloads"
 A+=("${FILE_BINDS[@]}")
-
-bwrap_themes A
-bwrap_wayland A
-bwrap_dbus_session A
-bwrap_env_base A
-bwrap_hardened_malloc A default
-bwrap_sandbox A
+bwrap_gui_finish A
 
 exec bwrap "${A[@]}" -- /usr/bin/gimp "${ARGS[@]}"

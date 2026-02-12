@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Sandboxed KeePassXC via bubblewrap — NO network
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
@@ -7,30 +6,12 @@ set -euo pipefail
 DB_DIR="$(realpath -m -- "{{ index $s "keepassxc" "db_dir" }}")"
 [[ -d "${DB_DIR}" ]] || { echo "No DB dir: ${DB_DIR}" >&2; exit 1; }
 
-mkdir -p "${HOME}/.config/keepassxc" \
-         "${HOME}/.cache/keepassxc"
-
 A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_gpu A
-
-A+=(--perms 0755 --dir /run/user
-    --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
-bwrap_home_tmpfs A
-
-A+=(--bind "${HOME}/.config/keepassxc" "${HOME}/.config/keepassxc"
-    --bind "${HOME}/.cache/keepassxc"  "${HOME}/.cache/keepassxc"
-    --bind "${DB_DIR}" "${DB_DIR}")
-
-bwrap_themes A
-bwrap_wayland A
-bwrap_dbus_session A
+bwrap_gui_setup A
+bwrap_bind_dir A bind "${HOME}/.config/keepassxc" "${HOME}/.cache/keepassxc"
+A+=(--bind "${DB_DIR}" "${DB_DIR}")
 bwrap_fcitx A
-bwrap_env_base A
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_hardened_malloc A default
-bwrap_sandbox A 
+bwrap_gui_finish A
 
 exec bwrap "${A[@]}" -- /usr/bin/keepassxc "$@"

@@ -25,14 +25,11 @@ A+=(--dir "${HOME}"
     --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git")
 
 bwrap_ssh_agent A
-
-A+=(--perms 0700 --dir "${XDG_RUNTIME_DIR}")
-
+bwrap_runtime_dir A
 bwrap_env_base A
 A+=(--setenv TERM "${TERM}"
     ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
-# no --new-session: lazygit opens /dev/tty, needs controlling terminal
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes no
 

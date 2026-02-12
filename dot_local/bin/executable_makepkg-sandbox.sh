@@ -16,4 +16,5 @@ A+=(--ro-bind /var/lib/pacman /var/lib/pacman
 bwrap_env_base A
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes no
+
 exec bwrap "${A[@]}" -- /usr/bin/makepkg "$@"

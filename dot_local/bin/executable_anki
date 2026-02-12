@@ -6,10 +6,11 @@ FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
 A=()
-bwrap_gui_setup A wayland yes
+bwrap_gui_setup A yes
 bwrap_dbus_system A
 bwrap_bind_dir A bind "${HOME}/.local/share/Anki2" "${HOME}/Downloads/anki"
 A+=("${FILE_BINDS[@]}")
+bwrap_audio A
 A+=(--setenv QT_QPA_PLATFORM wayland
     --setenv QT_QPA_PLATFORMTHEME qt6ct
     --setenv QTWEBENGINE_DISABLE_SANDBOX 1)
