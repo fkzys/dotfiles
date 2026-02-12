@@ -163,7 +163,6 @@ bwrap_base() {
     local -n _arr=$1
     _arr+=(
         --ro-bind /usr /usr
-        "${_opt[@]}"
         --symlink /usr/bin /bin
         --symlink /usr/bin /sbin
         --symlink /usr/lib /lib
