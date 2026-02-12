@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=KeePassXC
+Comment=Cross-platform community-driven port of Keepass password manager
+GenericName=Password Manager
+Exec={{ .chezmoi.homeDir }}/.local/bin/keepass %f
+TryExec={{ .chezmoi.homeDir }}/.local/bin/keepass
+Icon=keepassxc
+Categories=Utility;Security;
+Terminal=false
+Type=Application
+Version=1.0
+StartupNotify=true
+MimeType=application/x-keepass2;
