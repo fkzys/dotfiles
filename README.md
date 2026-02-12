@@ -12,6 +12,23 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 
+## Per-host configuration
+
+Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmoi/chezmoi.toml`:
+
+| Variable | Description |
+|---|---|
+| `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu_temp) |
+| `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
+| `laptop` | Battery, backlight, natural scroll, compact fonts |
+| `tablet` | OpenTabletDriver (otd-daemon) |
+| `ocr` | transformers_ocr (autostart + keybind) |
+| `goldendict` | GoldenDict-ng (wrapper, config, package) |
+| `portproton` | PortProton (flatpak + alias) |
+| `virt_manager` | QEMU / virt-manager / dnsmasq |
+
+Per-host data (monitor line, wallpaper path, podman graphroot, directory aliases) is stored in `secrets.enc.yaml` under the `host` and `dir_aliases` keys, keyed by hostname.
+
 ## Memory allocator hardening
 
 [hardened_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](https://gitlab.com/fkzys/system-config) repository.
@@ -106,18 +123,32 @@ sing-box:
     config_url:
         hostname1: https://example.com
         hostname2: https://example.com
+host:
+    hostname1:
+        monitor: "DP-1,1920x1080@144,0x0,1"
+        wallpaper: "~/Downloads/background.jpg"
+        podman_graphroot: "/path/to/storage"
+    hostname2:
+        wallpaper: "/usr/share/hypr/wall2.png"
+dir_aliases:
+    hostname1:
+        subs: /path/to/subtitles
+        anime: /path/to/anime
 goldendict:
     dict_dir: /path/to/dictionaries
 keepassxc:
     db_dir: /path/to/database
 mpv:
     hostname1:
-        anime: /path/to/anime
+        anime_dir: /path/to/anime
     hostname2:
-        videos: /path/to/videos
+        video_dir: /path/to/video
 qbittorrent:
     hostname1:
         anime_dir: /path/to/torrents
+mpd:
+    hostname1:
+        music_dir: /path/to/music
 ```
 
 ### Setup on a new machine
@@ -134,11 +165,19 @@ age-keygen -o ~/.config/chezmoi/key.txt
 sops updatekeys secrets.enc.yaml
 ```
 
+3. Add host data to secrets:
+```bash
+sops secrets.enc.yaml
+# Add entries under host, dir_aliases, and app-specific keys
+```
+
 ## Install
 
 ```bash
 chezmoi init --apply https://gitlab.com/fkzys/dotfiles.git
 ```
+
+During init, chezmoi will prompt for feature flags (nvidia, laptop, etc.).
 
 ## Post-install
 
