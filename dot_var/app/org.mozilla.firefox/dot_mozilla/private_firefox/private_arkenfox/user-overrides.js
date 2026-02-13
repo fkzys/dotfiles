@@ -8,6 +8,9 @@ user_pref("media.ffmpeg.vaapi.enabled", true);
 
 user_pref("ui.key.menuAccessKey", 0);
 
+user_pref("javascript.options.ion", false);
+user_pref("javascript.options.baselinejit", false);
+user_pref("javascript.options.native_regexp", false);
 //https://github.com/arkenfox/user.js/issues/1080
 
 /* override recipe: enable session restore ***/
