@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""
+Bluetooth Audio Toggle
+Connect/disconnect paired BT audio devices via wofi, auto-switch PipeWire sink.
+
+Usage: bt-audio
+       DEBUG=1 bt-audio
+"""
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+DEBUG = os.environ.get("DEBUG", "0") == "1"
+
+# A2DP Sink, A2DP Source, Handsfree, Headset AG, Headset HS
+_AUDIO_UUIDS = {"0000110b", "0000110a", "0000111e", "00001112", "00001108"}
+
+
+def debug(msg: str) -> None:
+    if DEBUG:
+        print(f"[DEBUG] {msg}", file=sys.stderr)
+
+
+def notify(message: str) -> None:
+    try:
+        subprocess.run(
+            ["notify-send", "-t", "3000", "Bluetooth", message],
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        print(message, file=sys.stderr)
+
+
+def check_dependencies() -> None:
+    missing = [c for c in ("bluetoothctl", "wpctl", "wofi") if not shutil.which(c)]
+    if missing:
+        print(f"Error: missing: {' '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
+
+    r = subprocess.run(
+        ["bluetoothctl", "show"], capture_output=True, text=True
+    )
+    if "Powered: yes" not in r.stdout:
+        print("Error: Bluetooth adapter is powered off", file=sys.stderr)
+        print("Run: bluetoothctl power on", file=sys.stderr)
+        sys.exit(1)
+
+
+def get_paired_audio_devices() -> list[dict]:
+    """Return paired BT devices that advertise audio profiles."""
+    r = subprocess.run(
+        ["bluetoothctl", "devices", "Paired"],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        return []
+
+    devices = []
+    for line in r.stdout.strip().splitlines():
+        m = re.match(r"Device\s+([0-9A-Fa-f:]{17})\s+(.*)", line)
+        if not m:
+            continue
+
+        mac, name = m.group(1), m.group(2)
+        info = subprocess.run(
+            ["bluetoothctl", "info", mac], capture_output=True, text=True
+        )
+
+        # Filter by audio-related UUIDs
+        uuids = set(re.findall(r"([0-9a-f]{8})-", info.stdout.lower()))
+        if not uuids & _AUDIO_UUIDS:
+            debug(f"Skipping non-audio: {name} ({mac})")
+            continue
+
+        connected = "Connected: yes" in info.stdout
+        devices.append({"mac": mac, "name": name, "connected": connected})
+        debug(f"  {'●' if connected else '○'} {mac} {name}")
+
+    return devices
+
+
+def show_menu(devices: list[dict]) -> dict | None:
+    lines = []
+    for d in devices:
+        icon = "●" if d["connected"] else "○"
+        action = "disconnect" if d["connected"] else "connect"
+        lines.append(f"{icon} {d['name']} [{action}]")
+
+    r = subprocess.run(
+        ["wofi", "-dmenu", "-p", "Bluetooth audio"],
+        input="\n".join(lines),
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0 or not r.stdout.strip():
+        return None
+
+    chosen = r.stdout.strip()
+    try:
+        return devices[lines.index(chosen)]
+    except ValueError:
+        return None
+
+
+def find_bt_sink(name_hint: str, timeout: int = 8) -> int | None:
+    """Poll wpctl status until a sink matching name_hint appears."""
+    for _ in range(timeout * 4):
+        r = subprocess.run(
+            ["wpctl", "status"],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "LC_ALL": "C"},
+        )
+        if r.returncode != 0:
+            time.sleep(0.25)
+            continue
+
+        in_sinks = False
+        for line in r.stdout.splitlines():
+            bare = re.sub(r"[│├└─\s]", "", line)
+            if bare.endswith(":"):
+                in_sinks = bare == "Sinks:"
+                continue
+            if not in_sinks:
+                continue
+
+            cleaned = re.sub(r"[│├└─]", "", line).strip()
+            m = re.match(r"\*?\s*(\d+)\.\s+(.*)", cleaned)
+            if m and name_hint.lower() in m.group(2).lower():
+                return int(m.group(1))
+
+        time.sleep(0.25)
+    return None
+
+
+def main() -> None:
+    check_dependencies()
+
+    devices = get_paired_audio_devices()
+    if not devices:
+        notify("No paired audio devices")
+        sys.exit(1)
+
+    debug(f"Found {len(devices)} audio device(s)")
+
+    device = show_menu(devices)
+    if device is None:
+        debug("Cancelled")
+        sys.exit(0)
+
+    mac, name = device["mac"], device["name"]
+
+    if device["connected"]:
+        r = subprocess.run(
+            ["bluetoothctl", "disconnect", mac],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if "Successful" in r.stdout:
+            notify(f"Disconnected: {name}")
+        else:
+            notify(f"Failed to disconnect: {name}")
+            debug(r.stdout + r.stderr)
+            sys.exit(1)
+    else:
+        notify(f"Connecting to {name}…")
+        r = subprocess.run(
+            ["bluetoothctl", "connect", mac],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if "Connection successful" not in r.stdout:
+            notify(f"Failed to connect: {name}")
+            debug(r.stdout + r.stderr)
+            sys.exit(1)
+
+        sink_id = find_bt_sink(name)
+        if sink_id:
+            subprocess.run(["wpctl", "set-default", str(sink_id)])
+            notify(f"Connected: {name}")
+            debug(f"Set default sink to {sink_id}")
+        else:
+            notify(f"Connected: {name} (sink not found, check wpctl status)")
+
+
+if __name__ == "__main__":
+    main()
