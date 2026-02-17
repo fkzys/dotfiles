@@ -9,3 +9,7 @@ secrets.enc.yaml
 .local/bin/goldendict
 .local/share/applications/io.github.xiaoyifang.goldendict_ng.desktop
 {{- end }}
+
+{{- if not .laptop }}
+.local/bin/bt-audio
+{{- end }}
