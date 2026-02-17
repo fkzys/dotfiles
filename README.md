@@ -9,8 +9,10 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Editor**: neovim
 - **Files**: lf + thunar
 - **Audio**: mpd + ncmpcpp + mpv
+- **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via wofi, auto-switch PipeWire sink)
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
+- **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 
 ## Per-host configuration
 
@@ -20,7 +22,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 |---|---|
 | `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu_temp) |
 | `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
-| `laptop` | Battery, backlight, natural scroll, compact fonts |
+| `laptop` | Battery, backlight, natural scroll, disable touchpad while typing, compact fonts, bluetooth packages |
 | `tablet` | OpenTabletDriver (otd-daemon) |
 | `ocr` | transformers_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
@@ -140,6 +142,16 @@ bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 exec bwrap "${A[@]}" -- /usr/bin/app "$@"
 ```
+
+## Firefox
+
+Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via chezmoi at `~/.var/app/org.mozilla.firefox/.mozilla/firefox/<profile>/user-overrides.js`.
+
+Custom overrides include:
+- Hardware video acceleration (VA-API)
+- Disabled menu access key
+- JIT disabled (`ion`, `baselinejit`, `native_regexp`) for security hardening
+- Session restore enabled
 
 ## Secrets
 
