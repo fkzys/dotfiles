@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Sandboxed swappy via bubblewrap
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
@@ -9,7 +8,7 @@ bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 A=()
 bwrap_gui_setup A
 bwrap_dbus_system A
-bwrap_bind_dir A bind "${HOME}/Pictures/Screenshots"
+bwrap_bind_dir A "${HOME}/Pictures/Screenshots"
 A+=(--ro-bind-try "${HOME}/.config/swappy" "${HOME}/.config/swappy"
     "${FILE_BINDS[@]}")
 bwrap_gui_finish A

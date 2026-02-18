@@ -10,7 +10,7 @@ bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
 
 A=()
 bwrap_gui_setup A
-bwrap_bind_dir A bind \
+bwrap_bind_dir A \
     "${HOME}/.local/share/krita" \
     "${HOME}/.cache/krita" \
     "${HOME}/Pictures" \

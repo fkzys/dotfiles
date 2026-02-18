@@ -4,7 +4,15 @@
 
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
-# ── GPU + NVIDIA ──────────────────────────────────────────────────
+# ── Validation ───────────────────────────────────────────────
+require_dir() {
+    local _d
+    for _d in "$@"; do
+        [[ -d "$_d" ]] || { echo "Missing dir: $_d" >&2; exit 1; }
+    done
+}
+
+# ── GPU + NVIDIA ──────────────────────────────────────────────
 bwrap_gpu() {
     local -n _arr=$1
     [[ -d /dev/dri ]] && _arr+=(--dev-bind /dev/dri /dev/dri)
@@ -16,7 +24,7 @@ bwrap_gpu() {
     :
 }
 
-# ── /usr/lib64 + symlinks ─────────────────────────────────────────
+# ── /usr/lib64 + symlinks ─────────────────────────────────────
 bwrap_lib64() {
     local -n _arr=$1
     if [[ -d /usr/lib64 && ! -L /usr/lib64 ]]; then
@@ -26,7 +34,7 @@ bwrap_lib64() {
     fi
 }
 
-# ── resolv.conf (often symlink into /run) ──────────────────────────
+# ── resolv.conf (often symlink into /run) ─────────────────────
 bwrap_resolv() {
     local -n _arr=$1
     if [[ -L /etc/resolv.conf ]]; then
@@ -36,7 +44,7 @@ bwrap_resolv() {
     fi
 }
 
-# ── Wayland (native, connect() needs write) ────────────────────────
+# ── Wayland (native, connect() needs write) ───────────────────
 bwrap_wayland() {
     local -n _arr=$1
     local _wl="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-1}"
@@ -49,7 +57,7 @@ bwrap_wayland() {
     fi
 }
 
-# ── X11 / XWayland ─────────────────────────────────────────────────
+# ── X11 / XWayland ────────────────────────────────────────────
 bwrap_x11() {
     local -n _arr=$1
     if [[ -n "${DISPLAY:-}" ]]; then
@@ -64,7 +72,7 @@ bwrap_x11() {
     fi
 }
 
-# ── Audio (PipeWire + PulseAudio) ──────────────────────────────────
+# ── Audio (PipeWire + PulseAudio) ─────────────────────────────
 bwrap_audio() {
     local -n _arr=$1
     [[ -S "${XDG_RUNTIME_DIR}/pipewire-0" ]] && \
@@ -74,7 +82,7 @@ bwrap_audio() {
     :
 }
 
-# ── D-Bus session ──────────────────────────────────────────────────
+# ── D-Bus session ─────────────────────────────────────────────
 bwrap_dbus_session() {
     local -n _arr=$1
     local _bus="${DBUS_SESSION_BUS_ADDRESS:-}"
@@ -94,7 +102,7 @@ bwrap_dbus_session() {
     fi
 }
 
-# ── D-Bus system ───────────────────────────────────────────────────
+# ── D-Bus system ──────────────────────────────────────────────
 bwrap_dbus_system() {
     local -n _arr=$1
     if [[ -S /run/dbus/system_bus_socket ]]; then
@@ -106,7 +114,7 @@ bwrap_dbus_system() {
     fi
 }
 
-# ── Optional read-only home paths (themes, fonts, Qt) ──────────────
+# ── Optional read-only home paths (themes, fonts, Qt) ─────────
 bwrap_themes() {
     local -n _arr=$1
     local p
@@ -124,7 +132,7 @@ bwrap_themes() {
     :
 }
 
-# ── Resolve file arguments to bind mounts ──────────────────────────
+# ── Resolve file arguments to bind mounts ─────────────────────
 bwrap_resolve_files() {
     local -n _binds=$1
     local -n _args=$2
@@ -150,7 +158,7 @@ bwrap_resolve_files() {
     done
 }
 
-# ── Common base bwrap args ─────────────────────────────────────────
+# ── Common base bwrap args ────────────────────────────────────
 bwrap_base() {
     local -n _arr=$1
     _arr+=(
@@ -167,7 +175,7 @@ bwrap_base() {
     )
 }
 
-# ── Common home tmpfs skeleton ─────────────────────────────────────
+# ── Common home tmpfs skeleton ────────────────────────────────
 bwrap_home_tmpfs() {
     local -n _arr=$1
     _arr+=(
@@ -180,7 +188,7 @@ bwrap_home_tmpfs() {
     )
 }
 
-# ── Common env vars ────────────────────────────────────────────────
+# ── Common env vars ───────────────────────────────────────────
 bwrap_env_base() {
     local -n _arr=$1
     _arr+=(
@@ -192,7 +200,7 @@ bwrap_env_base() {
     )
 }
 
-# ── hardened_malloc ────────────────────────────────────────────────
+# ── hardened_malloc ───────────────────────────────────────────
 bwrap_hardened_malloc() {
     local -n _arr=$1
     local _variant="${2:-light}"
@@ -210,7 +218,7 @@ bwrap_no_hardened_malloc() {
            --ro-bind /dev/null /etc/ld.so.preload)
 }
 
-# ── Common sandbox flags ──────────────────────────────────────────
+# ── Common sandbox flags ─────────────────────────────────────
 bwrap_sandbox() {
     local -n _arr=$1
     local _net="${2:-no}"
@@ -221,7 +229,7 @@ bwrap_sandbox() {
     _arr+=(--die-with-parent)
 }
 
-# ── fcitx5 input method ───────────────────────────────────────────
+# ── fcitx5 input method ──────────────────────────────────────
 bwrap_fcitx() {
     local -n _arr=$1
     _arr+=(
@@ -237,26 +245,36 @@ bwrap_fcitx() {
     :
 }
 
-# ── XDG_RUNTIME_DIR setup ─────────────────────────────────────────
+# ── XDG_RUNTIME_DIR setup ────────────────────────────────────
 bwrap_runtime_dir() {
     local -n _arr=$1
     _arr+=(--perms 0755 --dir /run/user
            --perms 0700 --dir "${XDG_RUNTIME_DIR}")
 }
 
-# ── Create dirs on host + add bind mounts ──────────────────────────
+# ── Create state dirs on host + bind-mount ────────────────────
 bwrap_bind_dir() {
     local -n _arr=$1
-    local _mode="$2"
-    shift 2
+    shift
     local _d
     for _d in "$@"; do
         mkdir -p "$_d"
-        _arr+=("--${_mode}" "$_d" "$_d")
+        _arr+=(--bind "$_d" "$_d")
     done
 }
 
-# ── SSH agent forwarding ──────────────────────────────────────────
+# Bind pre-existing dirs read-only, skip missing
+bwrap_ro_bind_dir() {
+    local -n _arr=$1
+    shift
+    local _d
+    for _d in "$@"; do
+        [[ -d "$_d" ]] && _arr+=(--ro-bind "$_d" "$_d")
+    done
+    :
+}
+
+# ── SSH agent forwarding ─────────────────────────────────────
 bwrap_ssh_agent() {
     local -n _arr=$1
     if [[ -n "${SSH_AUTH_SOCK:-}" && -S "${SSH_AUTH_SOCK}" ]]; then
@@ -265,7 +283,7 @@ bwrap_ssh_agent() {
     fi
 }
 
-# ── Standard GUI sandbox: setup phase ─────────────────────────────
+# ── Standard GUI sandbox: setup phase ─────────────────────────
 bwrap_gui_setup() {
     local _v=$1 _net="${2:-no}"
     bwrap_base "$_v"
@@ -277,8 +295,7 @@ bwrap_gui_setup() {
     :
 }
 
-
-# ── Standard GUI sandbox: finish phase ────────────────────────────
+# ── Standard GUI sandbox: finish phase ────────────────────────
 bwrap_gui_finish() {
     local _v=$1 _display="${2:-wayland}" _net="${3:-no}" _malloc="${4:-default}"
     bwrap_themes "$_v"

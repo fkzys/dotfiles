@@ -1,26 +1,22 @@
 #!/usr/bin/env bash
-# Sandboxed qBittorrent via bubblewrap (native Wayland)
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-# ── Data dirs from secrets ────────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $host := .chezmoi.hostname -}}
 {{ $qbt := index $s "qbittorrent" -}}
 DATA_BINDS=()
 {{ if hasKey $qbt $host -}}
 {{ range $key, $path := index $qbt $host -}}
-_p="{{ $path }}"
-_real="$(realpath -m -- "$_p")"
-mkdir -p "$_real"
-DATA_BINDS+=(--bind "$_real" "$_real")
+mkdir -p "{{ $path }}"
+DATA_BINDS+=(--bind "{{ $path }}" "{{ $path }}")
 {{ end -}}
 {{ end -}}
 
 A=()
 bwrap_gui_setup A yes
 bwrap_dbus_system A
-bwrap_bind_dir A bind \
+bwrap_bind_dir A \
     "${HOME}/.config/qBittorrent" \
     "${HOME}/.local/share/qBittorrent" \
     "${HOME}/.cache/qBittorrent" \

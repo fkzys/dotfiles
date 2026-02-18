@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
-# Sandboxed mpv via bubblewrap (native Wayland)
 set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
-# ── Data dirs from secrets ────────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $host := .chezmoi.hostname -}}
 {{ $mpv := index $s "mpv" -}}
 DATA_BINDS=()
 {{ if hasKey $mpv $host -}}
 {{ range $key, $path := index $mpv $host -}}
-_p="{{ $path }}"
-_real="$(realpath -m -- "$_p")"
-[[ -d "$_real" ]] && DATA_BINDS+=(--ro-bind "$_real" "$_real")
+[[ -d "{{ $path }}" ]] && DATA_BINDS+=(--ro-bind "{{ $path }}" "{{ $path }}")
 {{ end -}}
 {{ end -}}
 
@@ -22,7 +18,7 @@ bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 A=()
 bwrap_gui_setup A yes
 bwrap_dbus_system A
-bwrap_bind_dir A bind \
+bwrap_bind_dir A \
     "${HOME}/.config/mpv" \
     "${HOME}/.local/state/mpv/watch_later" \
     "${HOME}/.local/share/Anki2" \
