@@ -13,6 +13,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
+- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode)
 
 ## Per-host configuration
 
@@ -20,11 +21,11 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 
 | Variable | Description |
 |---|---|
-| `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu_temp) |
+| `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu\_temp) |
 | `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
 | `laptop` | Battery, backlight, natural scroll, disable touchpad while typing, compact fonts, bluetooth packages |
 | `tablet` | OpenTabletDriver (otd-daemon) |
-| `ocr` | transformers_ocr (autostart + keybind) |
+| `ocr` | transformers\_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
@@ -33,13 +34,13 @@ Per-host data (monitor line, wallpaper path, podman graphroot, directory aliases
 
 ## Memory allocator hardening
 
-[hardened_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](https://gitlab.com/fkzys/system-config) repository.
+[hardened\_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Built from source in the [root-chezmoi](https://gitlab.com/fkzys/system-config) repository.
 
 The light variant provides zero-on-free, slab canaries, and guard slabs. The default variant adds slot randomization, write-after-free checks, and slab quarantines.
 
-GTK4 uses [glycin](https://gitlab.gnome.org/GNOME/glycin) for image loading, which sets `RLIMIT_AS` on its sandboxed loader processes. This is incompatible with hardened_malloc's large virtual memory reservation (~240 GB `PROT_NONE` guard regions). A `libfake_rlimit.so` shim intercepts `prlimit64(RLIMIT_AS)` calls, returning success without applying the limit.
+GTK4 uses [glycin](https://gitlab.gnome.org/GNOME/glycin) for image loading, which sets `RLIMIT_AS` on its sandboxed loader processes. This is incompatible with hardened\_malloc's large virtual memory reservation (~240 GB `PROT_NONE` guard regions). A `libfake_rlimit.so` shim intercepts `prlimit64(RLIMIT_AS)` calls, returning success without applying the limit.
 
-Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) have hardened_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
+Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) have hardened\_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
 
 | Allocator | Applications |
 |---|---|
@@ -50,7 +51,7 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 ## Application sandboxing
 
-GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened_malloc integration.
+GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened\_malloc integration.
 
 AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$HOME` as empty tmpfs, preventing PKGBUILD `build()` from accessing SSH keys, configs, or other sensitive data.
 
@@ -58,9 +59,9 @@ Flatpak applications have per-app permission overrides in `~/.local/share/flatpa
 
 | Application | Display | Network | Notes |
 |---|---|---|---|
-| anki | Wayland | yes | QtWebEngine, Anki2 data dir |
+| anki | Wayland | yes | QtWebEngine, Anki2 data dir, audio sources dir from secrets |
 | gimp | Wayland | no | Pictures/Downloads rw |
-| goldendict | XWayland | yes | Dictionary dir from secrets |
+| goldendict | XWayland | yes | Dictionary + audio dirs from secrets |
 | imv | Wayland | no | Read-only file viewer |
 | keepassxc | Wayland | no | DB dir from secrets, isolated from network |
 | krita | XWayland | no | Separate config dir trick |
@@ -93,14 +94,16 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | `bwrap_themes` | fontconfig, Qt, GTK, Kvantum, fonts, icons |
 | `bwrap_fcitx` | fcitx5 input method sockets + env |
 | `bwrap_home_tmpfs` | tmpfs `$HOME` with XDG skeleton |
-| `bwrap_runtime_dir` | XDG_RUNTIME_DIR with correct permissions |
+| `bwrap_runtime_dir` | XDG\_RUNTIME\_DIR with correct permissions |
 | `bwrap_env_base` | `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR` |
 | `bwrap_sandbox` | `--unshare-all`, optional `--share-net` / `--new-session` |
 | `bwrap_resolve_files` | Resolve file arguments to bind mounts |
-| `bwrap_bind_dir` | Create dirs on host + add `--bind` / `--ro-bind` |
+| `bwrap_bind_dir` | Create state dirs on host + add `--bind` |
+| `bwrap_ro_bind_dir` | Bind pre-existing dirs read-only, skip missing |
 | `bwrap_ssh_agent` | SSH agent socket forwarding |
 | `bwrap_hardened_malloc` | Upgrade to default variant via `LD_PRELOAD` |
-| `bwrap_no_hardened_malloc` | Disable hardened_malloc for incompatible apps |
+| `bwrap_no_hardened_malloc` | Disable hardened\_malloc for incompatible apps |
+| `require_dir` | Validate that directories exist, exit on missing |
 
 **High-level composites:**
 
@@ -116,7 +119,8 @@ Typical GUI wrapper using high-level composites:
 ```bash
 A=()
 bwrap_gui_setup A yes                    # yes = network (adds resolv)
-bwrap_bind_dir A bind "${HOME}/.config/app" "${HOME}/Data"
+bwrap_bind_dir A "${HOME}/.config/app" "${HOME}/Data"
+bwrap_ro_bind_dir A "${MEDIA_DIR}"
 bwrap_audio A
 bwrap_gui_finish A wayland yes           # display, network, malloc=default
 exec bwrap "${A[@]}" -- /usr/bin/app "$@"
@@ -132,7 +136,8 @@ bwrap_gpu A
 bwrap_resolv A
 bwrap_runtime_dir A
 bwrap_home_tmpfs A
-bwrap_bind_dir A bind "${HOME}/.config/app" "${HOME}/Data"
+bwrap_bind_dir A "${HOME}/.config/app" "${HOME}/Data"
+bwrap_ro_bind_dir A "${MEDIA_DIR}"
 bwrap_themes A
 bwrap_wayland A
 bwrap_audio A
@@ -142,6 +147,15 @@ bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 exec bwrap "${A[@]}" -- /usr/bin/app "$@"
 ```
+
+## Standalone scripts (`~/.local/bin/`)
+
+| Script | Description |
+|---|---|
+| `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. |
+| `rename_subs` | Rename subtitle files (`.srt`, `.ass`) to match video filenames by episode number (`S01E01`). Supports `--dry-run`. |
+
+Both are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
 
 ## Firefox
 
@@ -180,6 +194,9 @@ dir_aliases:
         anime: /path/to/anime
 goldendict:
     dict_dir: /path/to/dictionaries
+    audio_dir: /path/to/audio
+anki:
+    audio_sources_dir: /path/to/audio/sources
 keepassxc:
     db_dir: /path/to/database
 mpv:
