@@ -148,6 +148,29 @@ bwrap_sandbox A yes
 exec bwrap "${A[@]}" -- /usr/bin/app "$@"
 ```
 
+## lf file manager
+
+### Previews
+
+Video and image previews use kitty's `icat` protocol. Videos get cached thumbnails via `ffmpegthumbnailer`.
+
+For videos with saved mpv playback position, the resume point and total duration are overlaid on the thumbnail (e.g. `⏸ 12:34 / 25:20`). The previewer reads mpv's `watch_later` state files (MD5 of the file path) and annotates via ImageMagick. Font is auto-detected from common system paths with `fc-match` as fallback.
+
+The previewer runs inside a bwrap sandbox with read-only access to the video directory, lf config, vidthumb cache, and mpv watch\_later state. Only the vidthumb cache is writable.
+
+### Status bar
+
+An `on-select` hook displays the mpv resume position in the lf status bar when navigating to a video with saved state.
+
+### Keybindings
+
+| Key | Action |
+|---|---|
+| `m` | Play with mpv |
+| `n` | Edit with nvim |
+| `o` | Extract Japanese audio (ffmpeg\_jp) |
+| `Ctrl-B` | Rename subtitles to match videos |
+
 ## Standalone scripts (`~/.local/bin/`)
 
 | Script | Description |
