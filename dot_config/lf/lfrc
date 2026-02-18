@@ -6,9 +6,9 @@ map m $mpv "$f" #>/dev/null 2>&1 &
 # Edit with nvim
 map n $nvim "$f"
 
-cmd ffmpeg_jp %sh ~/.config/lf/ffmpeg_jp "$f"
+cmd ffmpeg_jp %sh ffmpeg_jp "$f"
 map o ffmpeg_jp
 
-cmd rename_subs %sh ~/.config/lf/rename_subs && lf -remote "send $id reload"
+cmd rename_subs %sh rename_subs && lf -remote "send $id reload"
 
 map <c-b> rename_subs
