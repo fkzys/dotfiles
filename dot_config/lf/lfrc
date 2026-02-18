@@ -1,14 +1,31 @@
 set previewer ~/.config/lf/previewer_sandbox
 set cleaner ~/.config/lf/cleaner
 
-# Play with mpv
-map m $mpv "$f" #>/dev/null 2>&1 &
-# Edit with nvim
+map m $mpv "$f"
 map n $nvim "$f"
 
 cmd ffmpeg_jp %sh ffmpeg_jp "$f"
 map o ffmpeg_jp
 
 cmd rename_subs %sh rename_subs && lf -remote "send $id reload"
-
 map <c-b> rename_subs
+
+# ── Watch status in status bar ──
+cmd on-select &{{
+    real=$(realpath -- "$f" 2>/dev/null) || exit 0
+    hash=$(printf '%s' "$real" | md5sum | awk '{print toupper($1)}')
+    wf="$HOME/.local/state/mpv/watch_later/$hash"
+    if [ -f "$wf" ]; then
+        pos=$(sed -n 's/^start=//p' "$wf")
+        if [ -n "$pos" ]; then
+            s="${pos%.*}"
+            h=$((s / 3600)); m=$(((s % 3600) / 60)); sec=$((s % 60))
+            [ "$h" -gt 0 ] \
+                && ts=$(printf '%d:%02d:%02d' "$h" "$m" "$sec") \
+                || ts=$(printf '%d:%02d' "$m" "$sec")
+            lf -remote "send $id echomsg \"⏸ $ts\""
+            exit 0
+        fi
+    fi
+    lf -remote "send $id echomsg"
+}}

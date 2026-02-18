@@ -1,24 +1,52 @@
-#!/bin/sh
-# lf previewer: images via kitty icat, video thumbnails via vidthumb,
-# text fallback via bat.
-#
-# Large images are resized to preview pane dimensions before streaming
-# to avoid hitting tty buffer limits with --transfer-mode=stream.
+#!/usr/bin/env bash
+
+fmt_time() {
+    local s="${1%.*}"
+    local h=$((s / 3600)) m=$(((s % 3600) / 60)) sec=$((s % 60))
+    if (( h > 0 )); then printf '%d:%02d:%02d' "$h" "$m" "$sec"
+    else printf '%d:%02d' "$m" "$sec"; fi
+}
+
+get_watch_pos() {
+    local hash
+    hash=$(printf '%s' "$1" | md5sum | awk '{print toupper($1)}')
+    local wf="${HOME}/.local/state/mpv/watch_later/${hash}"
+    [[ -f "$wf" ]] && sed -n 's/^start=//p' "$wf"
+}
+
+find_font() {
+    local f
+    for f in \
+        /usr/share/fonts/TTF/DejaVuSans.ttf \
+        /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf \
+        /usr/share/fonts/noto/NotoSans-Regular.ttf \
+        /usr/share/fonts/TTF/NotoSans-Regular.ttf; do
+        [[ -f "$f" ]] && { echo "$f"; return; }
+    done
+    fc-match -f '%{file}' 2>/dev/null
+}
 
 draw() {
-    src="$1"
-    resized="/tmp/lf_preview.png"
+    local src="$1" label="${2:-}"
+    local resized="/tmp/lf_preview.png"
+    local pw=$((w * 10)) ph=$((h * 20))
 
-    # Approximate preview pane pixel dimensions from cell count
-    pw=$((w * 10))
-    ph=$((h * 20))
-
-    # Resize to preview pane dimensions and convert to PNG for kitty's
-    # native format. The ">" flag only shrinks, never enlarges.
-    if command -v magick >/dev/null 2>&1 &&
-       magick "$src" -auto-orient -resize "${pw}x${ph}>" "PNG8:$resized" 2>/dev/null &&
-       [ -s "$resized" ]; then
-        src="$resized"
+    if command -v magick >/dev/null 2>&1; then
+        local -a ma=("$src" -auto-orient -resize "${pw}x${ph}>")
+        if [[ -n "$label" ]]; then
+            local font
+            font="$(find_font)"
+            [[ -n "$font" ]] && ma+=(-font "$font")
+            ma+=(
+                -gravity SouthWest -pointsize 18
+                -fill white -undercolor '#000000AA'
+                -annotate +8+8 " ${label} "
+            )
+        fi
+        ma+=("PNG8:${resized}")
+        if magick "${ma[@]}" 2>/dev/null && [[ -s "$resized" ]]; then
+            src="$resized"
+        fi
     fi
 
     kitten icat --stdin no --transfer-mode stream \
@@ -28,20 +56,26 @@ draw() {
     exit 1
 }
 
-file="$1"
-w="$2"
-h="$3"
-x="$4"
-y="$5"
+file="$1"; w="$2"; h="$3"; x="$4"; y="$5"
 
 case "$(file -Lb --mime-type "$file")" in
     image/*)
         draw "$file"
         ;;
     video/*)
-        # vidthumb generates and caches a thumbnail for the video
-        # https://raw.githubusercontent.com/duganchen/kitty-pistol-previewer/main/vidthumb
-        draw "$(~/.config/lf/vidthumb "$file")"
+        thumb="$("${HOME}/.config/lf/vidthumb" "$file")"
+        real="$(realpath -- "$file")"
+        pos="$(get_watch_pos "$real")"
+
+        label=""
+        if [[ -n "$pos" ]]; then
+            label="⏸ $(fmt_time "$pos")"
+            dur=$(timeout 2 ffprobe -v quiet \
+                -show_entries format=duration -of csv=p=0 "$file" 2>/dev/null)
+            [[ -n "$dur" && "$dur" != "N/A" ]] && label+=" / $(fmt_time "$dur")"
+        fi
+
+        draw "$thumb" "$label"
         ;;
 esac
 
