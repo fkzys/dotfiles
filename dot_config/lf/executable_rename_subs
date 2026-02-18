@@ -1,0 +1,26 @@
+#!/bin/bash
+# Rename subtitle files to match video filenames by episode number (S01E01).
+# Usage: rename_subs [-n|--dry-run]
+
+set -euo pipefail
+
+DRY_RUN=0
+[[ "${1:-}" == "-n" || "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+
+for video in *.mkv *.mp4; do
+    [[ -e "$video" ]] || continue
+    episode=$(grep -o 'S[0-9]\+E[0-9]\+' <<< "$video") || continue
+
+    for sub in *.srt *.ass; do
+        [[ -e "$sub" ]] || continue
+        [[ "$sub" == *"$episode"* ]] || continue
+
+        new_name="${video%.*}.${sub##*.}"
+        if [[ "$DRY_RUN" -eq 1 ]]; then
+            echo "[dry-run] $sub -> $new_name"
+        else
+            echo "$sub -> $new_name"
+            mv "$sub" "$new_name"
+        fi
+    done
+done

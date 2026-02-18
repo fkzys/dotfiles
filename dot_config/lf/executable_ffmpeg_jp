@@ -1,0 +1,81 @@
+#!/bin/bash
+# Extract Japanese audio track from video files as opus.
+# Usage: ffmpeg_jp <file|directory>
+# Also works with $LF_SELECTED_FILES from lf.
+
+set -euo pipefail
+
+find_japanese_track() {
+    local input="$1"
+    ffprobe -v error -select_streams a \
+        -show_entries stream=index:stream_tags=language:stream_tags=title \
+        -of csv=p=0 "$input" | while IFS=, read -r index lang title; do
+        if [[ "$lang" == "ja" || "$lang" == "jpn" ||
+              "$title" =~ [Jj]apanese || "$title" =~ 日本語 ]]; then
+            echo "$index"
+            return 0
+        fi
+    done
+    echo "-1"
+}
+
+process_file() {
+    local input="$1"
+    local output="${input%.*}.opus"
+
+    if [[ -f "$output" ]]; then
+        echo "SKIP: $(basename "$input") (already exists)"
+        return 0
+    fi
+
+    local track_index
+    track_index=$(find_japanese_track "$input")
+
+    if [[ "$track_index" -eq -1 ]]; then
+        local count
+        count=$(ffprobe -v error -select_streams a \
+            -show_entries stream=index -of csv=p=0 "$input" | wc -l)
+        if [[ "$count" -eq 1 ]]; then
+            track_index=$(ffprobe -v error -select_streams a \
+                -show_entries stream=index -of csv=p=0 "$input")
+            echo "INFO: single audio track, using index $track_index"
+        else
+            echo "FAIL: no Japanese track in $(basename "$input")"
+            ffprobe -v error -select_streams a \
+                -show_entries stream=index:stream_tags=language:stream_tags=title \
+                -of csv=p=0 "$input" | while IFS=, read -r idx lang title; do
+                echo "  #$idx: lang=[$lang] title=[$title]"
+            done
+            return 1
+        fi
+    fi
+
+    echo "CONV: $(basename "$input") (track $track_index)"
+    if ffmpeg -i "$input" -map 0:"$track_index" -c:a libopus -b:a 96k -v 0 -stats "$output"; then
+        echo "  OK: $(basename "$output")"
+    else
+        echo "  FAIL: $(basename "$input")"
+        rm -f "$output"
+        return 1
+    fi
+}
+
+if [[ -n "${LF_SELECTED_FILES:-}" ]]; then
+    while IFS= read -r file; do
+        [[ -f "$file" ]] && process_file "$file"
+    done <<< "$LF_SELECTED_FILES"
+elif [[ -n "${1:-}" ]]; then
+    if [[ -f "$1" ]]; then
+        process_file "$1"
+    elif [[ -d "$1" ]]; then
+        find "$1" -type f \( -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \) | while read -r file; do
+            process_file "$file"
+        done
+    else
+        echo "ERROR: invalid path: $1" >&2
+        exit 1
+    fi
+else
+    echo "Usage: $0 <file|directory>" >&2
+    exit 1
+fi
