@@ -1,12 +1,15 @@
 # ── Prompt (robbyrussell) ───────────────────────────────────
 _git_prompt() {
-    local branch
-    branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+    local ref
+    ref=$(git symbolic-ref --short HEAD 2>/dev/null) \
+        || ref=$(git describe --tags --exact-match 2>/dev/null) \
+        || ref=$(git rev-parse --short HEAD 2>/dev/null) \
+        || return
     local dirty=''
     if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
         dirty=' %F{yellow}✗'
     fi
-    echo -n "%B%F{blue}git:(%F{red}${branch}%F{blue})${dirty}%f%b "
+    echo -n "%B%F{blue}git:(%F{red}${ref}%F{blue})${dirty}%f%b "
 }
 
 setopt prompt_subst
