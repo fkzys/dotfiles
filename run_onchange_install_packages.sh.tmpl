@@ -35,9 +35,10 @@ NATIVE_PKGS=(
     "btrbk"
     "qt5ct"
     "qt6ct"
-    "ukify" #atomic
+    "systemd-ukify"
     "firewalld"
     "uwsm"
+    "wl-clipboard"
     {{- if eq .laptop true }}
     "brightnessctl"
     "tpm2-tss" 
@@ -95,7 +96,6 @@ NATIVE_PKGS=(
     "man-db"
     "git"
     "htop"
-    "wl-clipboard"
     "grim"
     "slurp"
     "lf"
@@ -119,6 +119,7 @@ NATIVE_PKGS=(
     "git-filter-repo"
     "lego"
     "dnsproxy"
+    "namcap"
 
     # === DEV & VIRTUALIZATION ===
     "base-devel"
