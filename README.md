@@ -45,7 +45,7 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs |
 | light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
 | disabled | anki, goldendict (PartitionAlloc) |
 | not applicable | flatpak apps (own runtime) |
@@ -77,6 +77,7 @@ Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/
 | otd-daemon | — | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, network isolated |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting |
+| subs2srs | XWayland | no | Mono/.NET app, media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir |
 | transformers\_ocr | Wayland | yes | OCR daemon with GPU access, Python venv bind, IPC commands run unsandboxed; PID namespace not isolated (breaks PID file) |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
@@ -99,7 +100,7 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | `bwrap_x11` | X11/XWayland socket + Xauthority |
 | `bwrap_audio` | PipeWire + PulseAudio sockets |
 | `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets |
-| `bwrap_themes` | fontconfig, Qt, GTK, Kvantum, fonts, icons |
+| `bwrap_themes` | GTK2/3, fontconfig, Qt, Kvantum, fonts, icons |
 | `bwrap_fcitx` | fcitx5 input method sockets + env |
 | `bwrap_home_tmpfs` | tmpfs `$HOME` with XDG skeleton |
 | `bwrap_runtime_dir` | XDG\_RUNTIME\_DIR with correct permissions |
@@ -232,6 +233,8 @@ keepassxc:
     db_dir: /path/to/database
 nextcloud:
     sync_dir: /path/to/sync
+subs2srs:
+    media_dir: /path/to/anime
 mpv:
     hostname1:
         anime_dir: /path/to/anime
