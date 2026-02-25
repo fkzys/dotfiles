@@ -21,3 +21,7 @@ secrets.enc.yaml
 {{- if not .laptop }}
 .local/bin/bt-audio
 {{- end }}
+
+{{- if not .tablet }}
+.local/bin/otd-daemon
+{{- end }}
