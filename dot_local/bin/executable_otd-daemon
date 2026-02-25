@@ -21,6 +21,8 @@ bwrap_home_tmpfs A
 
 bwrap_bind_dir A "${HOME}/.config/OpenTabletDriver"
 
+bwrap_wayland A
+
 bwrap_env_base A
 bwrap_hardened_malloc A default
 
