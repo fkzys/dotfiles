@@ -10,6 +10,10 @@ secrets.enc.yaml
 .local/share/applications/io.github.xiaoyifang.goldendict_ng.desktop
 {{- end }}
 
+{{- if not .subs2srs }}
+.local/bin/subs2srs
+{{- end }}
+
 {{- if not .laptop }}
 .local/bin/bt-audio
 {{- end }}
