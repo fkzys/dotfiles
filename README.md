@@ -29,6 +29,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `ocr` | transformers\_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
 | `subs2srs` | subs2srs (wrapper, package) |
+| `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
 
