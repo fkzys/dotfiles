@@ -61,7 +61,7 @@ exec-once = otd-daemon
 
 {{- if eq .ocr true }}
 # OCR
-exec-once = transformers_ocr listen
+exec-once = transformers_ocr start --foreground
 {{- end }}
 
 # Input Method

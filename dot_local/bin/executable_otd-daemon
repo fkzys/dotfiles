@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+A=()
+A+=(
+    --ro-bind /usr /usr
+    --symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --ro-bind /sys /sys
+    --dev-bind /dev /dev
+    --bind /tmp /tmp
+    --ro-bind /etc /etc
+    --ro-bind /run/udev /run/udev
+)
+bwrap_lib64 A
+bwrap_runtime_dir A
+bwrap_home_tmpfs A
+
+bwrap_bind_dir A "${HOME}/.config/OpenTabletDriver"
+
+bwrap_env_base A
+bwrap_hardened_malloc A default
+
+A+=(
+    --unshare-ipc
+    --unshare-uts
+    --unshare-cgroup
+    --unshare-net
+    --die-with-parent
+)
+
+exec bwrap "${A[@]}" -- /usr/lib/opentabletdriver/OpenTabletDriver.Daemon "$@"

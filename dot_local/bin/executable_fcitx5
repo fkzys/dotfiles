@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+FCITX_SOCK_DIR="/tmp/fcitx5-$(id -u)"
+mkdir -p "$FCITX_SOCK_DIR"
+
+A=()
+A+=(
+    --ro-bind /usr /usr
+    --symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --ro-bind /sys /sys
+    --dev /dev
+    --tmpfs /tmp
+    --bind "$FCITX_SOCK_DIR" "$FCITX_SOCK_DIR"
+    --dev-bind /dev/shm /dev/shm
+    --ro-bind /etc /etc
+)
+bwrap_lib64 A
+bwrap_gpu A
+bwrap_runtime_dir A
+bwrap_home_tmpfs A
+
+bwrap_bind_dir A \
+    "${HOME}/.config/fcitx5" \
+    "${HOME}/.local/share/fcitx5" \
+    "${HOME}/.cache/fcitx5"
+
+bwrap_themes A
+bwrap_wayland A
+bwrap_x11 A
+bwrap_dbus_session A
+
+bwrap_env_base A
+A+=(
+    --setenv QT_IM_MODULE fcitx
+    --setenv XMODIFIERS "@im=fcitx"
+)
+
+bwrap_hardened_malloc A default
+bwrap_sandbox A no
+
+exec bwrap "${A[@]}" -- /usr/bin/fcitx5 "$@"
