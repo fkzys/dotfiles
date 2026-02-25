@@ -119,6 +119,8 @@ bwrap_themes() {
     local -n _arr=$1
     local p
     for p in \
+        "${HOME}/.gtkrc-2.0" \
+        "${HOME}/.config/gtk-2.0" \
         "${HOME}/.config/fontconfig" \
         "${HOME}/.config/qt6ct" \
         "${HOME}/.config/qt5ct" \
