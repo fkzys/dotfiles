@@ -5,6 +5,7 @@
 {{- $ocr           := promptBoolOnce . "ocr"           "OCR (transformers_ocr)" -}}
 {{- $goldendict    := promptBoolOnce . "goldendict"    "GoldenDict" -}}
 {{- $subs2srs      := promptBoolOnce . "subs2srs"      "subs2srs" -}}
+{{- $sparrow       := promptBoolOnce . "sparrow"       "sparrow-wallet" -}}
 {{- $portproton    := promptBoolOnce . "portproton"    "PortProton" -}}
 {{- $virt_manager  := promptBoolOnce . "virt_manager"  "QEMU / virt-manager" -}}
 
@@ -24,5 +25,6 @@ encryption = "age"
     ocr            = {{ $ocr }}
     goldendict     = {{ $goldendict }}
     subs2srs       = {{ $subs2srs }}
+    sparrow        = {{ $sparrow }}
     portproton     = {{ $portproton }}
     virt_manager   = {{ $virt_manager }}

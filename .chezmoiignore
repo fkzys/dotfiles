@@ -14,6 +14,10 @@ secrets.enc.yaml
 .local/bin/subs2srs
 {{- end }}
 
+{{- if not .sparrow }}
+.local/bin/sparrow
+{{- end }}
+
 {{- if not .laptop }}
 .local/bin/bt-audio
 {{- end }}
