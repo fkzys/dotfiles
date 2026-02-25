@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+VENV="${HOME}/.local/share/manga_ocr/pyenv"
+REAL="/usr/bin/transformers_ocr"
+
+# IPC commands run unsandboxed (they just write to FIFO or check PID)
+case "${1:-}" in
+    recognize|hold|status|stop|ocr|download|purge|nuke)
+        exec "$VENV/bin/python3" "$REAL" "$@"
+        ;;
+esac
+
+# Daemon (start/listen) runs sandboxed
+A=()
+A+=(
+    --ro-bind /usr /usr
+    --symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --ro-bind /sys /sys
+    --dev /dev
+    --bind /tmp /tmp
+    --dev-bind /dev/shm /dev/shm
+    --ro-bind /etc /etc
+)
+bwrap_lib64 A
+bwrap_gpu A
+bwrap_resolv A
+bwrap_runtime_dir A
+bwrap_home_tmpfs A
+
+bwrap_bind_dir A \
+    "${HOME}/.config/transformers_ocr" \
+    "${HOME}/.cache/huggingface" \
+    "${HOME}/.cache/transformers_ocr" \
+    "${HOME}/.cache/torch"
+
+A+=(--ro-bind "$VENV" "$VENV")
+
+bwrap_wayland A
+bwrap_dbus_session A
+
+bwrap_env_base A
+A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
+
+bwrap_hardened_malloc A default
+
+# No --unshare-user (breaks CUDA/nvidia), no --unshare-pid (breaks PID file)
+A+=(
+    --unshare-ipc
+    --unshare-uts
+    --unshare-cgroup
+    --die-with-parent
+)
+
+exec bwrap "${A[@]}" -- "$VENV/bin/python3" "$REAL" "$@"

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+A=()
+A+=(
+    --ro-bind /usr /usr
+    --symlink /usr/bin /bin
+    --symlink /usr/bin /sbin
+    --symlink /usr/lib /lib
+    --proc /proc
+    --ro-bind /sys /sys
+    --dev-bind /dev /dev
+    --tmpfs /tmp
+    --ro-bind /etc /etc
+    --ro-bind /opt/sparrow /opt/sparrow
+)
+bwrap_lib64 A
+bwrap_resolv A
+bwrap_runtime_dir A
+bwrap_home_tmpfs A
+
+bwrap_bind_dir A "${HOME}/.sparrow"
+
+bwrap_themes A
+bwrap_x11 A
+bwrap_dbus_session A
+
+bwrap_env_base A
+A+=(--setenv _JAVA_AWT_WM_NONREPARENTING 1)
+
+bwrap_hardened_malloc A default
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- /opt/sparrow/bin/Sparrow "$@"

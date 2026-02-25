@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "${HOME}/.local/lib/bwrap-common.sh"
+
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+SYNC_DIR="{{ index $s "nextcloud" "sync_dir" }}"
+
+A=()
+bwrap_gui_setup A yes
+bwrap_dbus_system A
+
+bwrap_bind_dir A \
+    "${HOME}/.config/Nextcloud" \
+    "${HOME}/.local/share/Nextcloud" \
+    "${HOME}/.cache/Nextcloud" \
+    "${SYNC_DIR}"
+
+[[ -d "${XDG_RUNTIME_DIR}/keyring" ]] && \
+    A+=(--ro-bind "${XDG_RUNTIME_DIR}/keyring" "${XDG_RUNTIME_DIR}/keyring")
+
+A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
+bwrap_gui_finish A wayland yes
+
+exec bwrap "${A[@]}" -- /usr/bin/nextcloud "$@"
