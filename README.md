@@ -13,6 +13,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
+- **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode)
 
 ## Per-host configuration
@@ -44,7 +45,7 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr |
 | light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
 | disabled | anki, goldendict (PartitionAlloc) |
 | not applicable | flatpak apps (own runtime) |
@@ -57,9 +58,12 @@ AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$H
 
 Flatpak applications have per-app permission overrides in `~/.local/share/flatpak/overrides/`.
 
+Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/autostart/`) instead of systemd user services. The desktop entries use templated paths pointing to the bwrap wrappers.
+
 | Application | Display | Network | Notes |
 |---|---|---|---|
 | anki | Wayland | yes | QtWebEngine, Anki2 data dir, audio sources dir from secrets |
+| fcitx5 | Wayland | no | Input method daemon, socket dir shared via `/tmp/fcitx5-$UID`, D-Bus session access |
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary + audio dirs from secrets |
 | imv | Wayland | no | Read-only file viewer |
@@ -67,10 +71,14 @@ Flatpak applications have per-app permission overrides in `~/.local/share/flatpa
 | krita | XWayland | no | Separate config dir trick |
 | lazygit | terminal | yes | CWD bind, SSH agent forwarding |
 | mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
+| nextcloud | Wayland | yes | Sync dir from secrets, D-Bus system access for status notifications, GNOME keyring forwarding |
 | nvim | terminal | yes | CWD + file args, clipboard via Wayland |
 | obs | Wayland | yes | Camera devices, Videos dir |
+| otd-daemon | — | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, network isolated |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
+| sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting |
 | swappy | Wayland | no | Screenshots dir |
+| transformers\_ocr | Wayland | yes | OCR daemon with GPU access, Python venv bind, IPC commands run unsandboxed; PID namespace not isolated (breaks PID file) |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
@@ -222,6 +230,8 @@ anki:
     audio_sources_dir: /path/to/audio/sources
 keepassxc:
     db_dir: /path/to/database
+nextcloud:
+    sync_dir: /path/to/sync
 mpv:
     hostname1:
         anime_dir: /path/to/anime
