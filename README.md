@@ -28,7 +28,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `tablet` | OpenTabletDriver (otd-daemon) |
 | `ocr` | transformers\_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
-| `subs2srs` | subs2srs (wrapper, package) |
+| `subs2srs` | [subs2srs](https://gitlab.com/fkzys/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
@@ -47,7 +47,7 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer |
 | light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
 | disabled | anki, goldendict (PartitionAlloc) |
 | not applicable | flatpak apps (own runtime) |
@@ -61,6 +61,8 @@ AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$H
 Flatpak applications have per-app permission overrides in `~/.local/share/flatpak/overrides/`.
 
 Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/autostart/`) instead of systemd user services. The desktop entries use templated paths pointing to the bwrap wrappers.
+
+subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/`) for launcher integration.
 
 | Application | Display | Network | Notes |
 |---|---|---|---|
@@ -80,6 +82,7 @@ Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting |
 | subs2srs | XWayland | no | Mono/.NET app, media dir read-only from secrets, output dir writable, fcitx5 input |
+| subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir |
 | transformers\_ocr | Wayland | yes | OCR daemon with GPU access, Python venv bind, IPC commands run unsandboxed; PID namespace not isolated (breaks PID file) |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
