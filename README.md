@@ -33,7 +33,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
 
-Per-host data (monitor line, wallpaper path, podman graphroot, directory aliases) is stored in `secrets.enc.yaml` under the `host` and `dir_aliases` keys, keyed by hostname.
+Per-host data (monitor line, wallpaper path, container graphroot, directory aliases) is stored in `secrets.enc.yaml` under each application's key, keyed by hostname.
 
 ## Memory allocator hardening
 
@@ -211,43 +211,52 @@ Each machine has its own age key. Keys are stored separately from this repo.
 
 ```yaml
 # secrets.enc.yaml
+
+# Per-host (application → hostname → keys)
+hyprland:
+    hostname1:
+        monitor: "DP-1,1920x1080@144,0x0,1"
+hyprpaper:
+    hostname1:
+        wallpaper: "~/Downloads/background.jpg"
+    hostname2:
+        wallpaper: "/usr/share/hypr/wall2.png"
+containers:
+    hostname1:
+        graphroot: "/path/to/storage"
 sing-box:
     config_url:
         hostname1: https://example.com
         hostname2: https://example.com
-host:
+mpv:
     hostname1:
-        monitor: "DP-1,1920x1080@144,0x0,1"
-        wallpaper: "~/Downloads/background.jpg"
-        podman_graphroot: "/path/to/storage"
-    hostname2:
-        wallpaper: "/usr/share/hypr/wall2.png"
+        anime_dir: /path/to/anime
+mpd:
+    hostname1:
+        music_dir: /path/to/music
+qbittorrent:
+    hostname1:
+        anime_dir: /path/to/torrents
 dir_aliases:
     hostname1:
         subs: /path/to/subtitles
         anime: /path/to/anime
+PortProton:
+    hostname1:
+        games_dir: /path/to/games
+
+# Global (application → keys)
+keepassxc:
+    db_dir: /path/to/database
+nextcloud:
+    sync_dir: /path/to/sync
 goldendict:
     dict_dir: /path/to/dictionaries
     audio_dir: /path/to/audio
 anki:
     audio_sources_dir: /path/to/audio/sources
-keepassxc:
-    db_dir: /path/to/database
-nextcloud:
-    sync_dir: /path/to/sync
 subs2srs:
     media_dir: /path/to/anime
-mpv:
-    hostname1:
-        anime_dir: /path/to/anime
-    hostname2:
-        video_dir: /path/to/video
-qbittorrent:
-    hostname1:
-        anime_dir: /path/to/torrents
-mpd:
-    hostname1:
-        music_dir: /path/to/music
 ```
 
 ### Setup on a new machine
@@ -267,7 +276,7 @@ sops updatekeys secrets.enc.yaml
 3. Add host data to secrets:
 ```bash
 sops secrets.enc.yaml
-# Add entries under host, dir_aliases, and app-specific keys
+# Add entries under the relevant application keys
 ```
 
 ## Install
