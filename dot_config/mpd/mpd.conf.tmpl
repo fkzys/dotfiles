@@ -1,9 +1,13 @@
 # Per-user configuration
 # https://wiki.archlinux.org/index.php/Music_Player_Daemon#Per-user_configuration
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $mpd := index $s "mpd" -}}
 
 db_file			"~/.config/mpd/database"
 log_file		"syslog"
-music_directory		"/mnt/hdd1/torrents/anime_tracks"
+{{- if and (hasKey $mpd .chezmoi.hostname) (hasKey (index $mpd .chezmoi.hostname) "music_dir") }}
+music_directory		"{{ index $mpd .chezmoi.hostname "music_dir" }}"
+{{- end }}
 playlist_directory	"~/.config/mpd/playlists"
 pid_file		"~/.config/mpd/pid"
 state_file		"~/.config/mpd/state"
