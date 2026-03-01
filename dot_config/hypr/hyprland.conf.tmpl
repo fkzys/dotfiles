@@ -3,16 +3,15 @@
 # #######################################################################################
 
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
-{{ $host := .chezmoi.hostname -}}
-{{ $h := index $s "host" -}}
+{{ $hyprland := index $s "hyprland" -}}
 
 ################
 ### MONITORS ###
 ################
 
 # See https://wiki.hypr.land/Configuring/Monitors/
-{{- if and (hasKey $h $host) (hasKey (index $h $host) "monitor") }}
-monitor={{ index $h $host "monitor" }}
+{{- if and (hasKey $hyprland .chezmoi.hostname) (hasKey (index $hyprland .chezmoi.hostname) "monitor") }}
+monitor={{ index $hyprland .chezmoi.hostname "monitor" }}
 {{- end }}
 monitor=,preferred,auto,auto
 

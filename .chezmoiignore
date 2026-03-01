@@ -25,3 +25,7 @@ secrets.enc.yaml
 {{- if not .tablet }}
 .local/bin/otd-daemon
 {{- end }}
+
+{{- if not .portproton }}
+.local/share/flatpak/overrides/ru.linux_gaming.PortProton
+{{- end }}

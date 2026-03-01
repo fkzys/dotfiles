@@ -1,11 +1,10 @@
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
-{{ $host := .chezmoi.hostname -}}
-{{ $h := index $s "host" -}}
+{{ $hyprpaper := index $s "hyprpaper" -}}
 
 wallpaper {
     monitor =
-    {{- if and (hasKey $h $host) (hasKey (index $h $host) "wallpaper") }}
-    path = {{ index $h $host "wallpaper" }}
+    {{- if and (hasKey $hyprpaper .chezmoi.hostname) (hasKey (index $hyprpaper .chezmoi.hostname) "wallpaper") }}
+    path = {{ index $hyprpaper .chezmoi.hostname "wallpaper" }}
     {{- else }}
     path = /usr/share/hypr/wall2.png
     {{- end }}
