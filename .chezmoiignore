@@ -12,6 +12,9 @@ secrets.enc.yaml
 
 {{- if not .subs2srs }}
 .local/bin/subs2srs
+.local/bin/subsretimer
+.local/share/applications/subs2srs.desktop
+.local/share/applications/subsretimer.desktop
 {{- end }}
 
 {{- if not .sparrow }}
