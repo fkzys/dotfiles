@@ -1,0 +1,7 @@
+{{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $PortProton := index $s "PortProton" -}}
+
+[Context]
+{{- if and (hasKey $PortProton .chezmoi.hostname) (hasKey (index $PortProton .chezmoi.hostname) "games_dir") }}
+filesystems={{ index $PortProton .chezmoi.hostname "games_dir" }};!host
+{{- end }}
