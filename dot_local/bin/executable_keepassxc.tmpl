@@ -3,7 +3,7 @@ set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
-DB_DIR="{{ index $s "keepassxc" "db_dir" }}"
+DB_DIR="{{ index $s "keepassxc" "db_dir" | replace "$HOME" .chezmoi.homeDir -}}"
 require_dir "${DB_DIR}"
 
 A=()

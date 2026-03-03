@@ -6,18 +6,15 @@ set -euo pipefail
 MEDIA_DIR="{{ index $s "subs2srs" "media_dir" }}"
 
 CONF_DIR="${HOME}/.config/subs2srs"
+LOG_DIR="${HOME}/.local/share/subs2srs"
 OUTPUT_DIR="${HOME}/subs2srs"
 
 mkdir -p "$CONF_DIR"
-[[ -f "${CONF_DIR}/preferences.txt" ]] || \
-    cp /opt/subs2srs/preferences.txt "${CONF_DIR}/"
 
 A=()
 bwrap_gui_setup A
 
-A+=(--ro-bind /opt/subs2srs /opt/subs2srs)
-
-bwrap_bind_dir A "$CONF_DIR" "$OUTPUT_DIR"
+bwrap_bind_dir A "$CONF_DIR" "$OUTPUT_DIR" "$LOG_DIR"
 bwrap_ro_bind_dir A "$MEDIA_DIR"
 
 bwrap_audio A
@@ -25,6 +22,7 @@ bwrap_fcitx A
 
 A+=(--chdir "$CONF_DIR")
 
-bwrap_gui_finish A x11 no
+bwrap_gtk_theme_env A
+bwrap_gui_finish A wayland no
 
-exec bwrap "${A[@]}" -- /usr/bin/mono /opt/subs2srs/subs2srs.exe "$@"
+exec bwrap "${A[@]}" -- /usr/bin/subs2srs "$@"
