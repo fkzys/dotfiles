@@ -119,6 +119,7 @@ alias lt='eza -T --color=always --group-directories-first --level=2'
 alias l.='eza -d .* --color=always --group-directories-first'
 
 alias cat='bat --paging=never'
+alias ccat='bat --paging=never --style=full --color=never --decorations=always'
 alias catp='bat'
 alias rg='rg --smart-case'
 
@@ -153,6 +154,11 @@ typeset -A flatpak_apps=(
 for app flatpak_id in "${(@kv)flatpak_apps}"; do
     alias "$app"="flatpak run $flatpak_id"
 done
+
+#Functions
+bcat() {
+  bat --paging=never --style=full --color=never --decorations=always "$@" | wl-copy
+}
 
 # ── Directory aliases ──────────────────────────────────────
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
