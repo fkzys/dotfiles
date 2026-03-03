@@ -134,6 +134,21 @@ bwrap_themes() {
     :
 }
 
+# ── GTK theme env (dconf unavailable in sandbox) ─────────
+bwrap_gtk_theme_env() {
+    local -n _arr=$1
+    local _theme
+    _theme=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'") || true
+    [[ -n "$_theme" ]] && _arr+=(--setenv GTK_THEME "$_theme")
+    local _icons
+    _icons=$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'") || true
+    [[ -n "$_icons" ]] && _arr+=(--setenv GTK_ICON_THEME "$_icons")
+    local _cursor
+    _cursor=$(gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null | tr -d "'") || true
+    [[ -n "$_cursor" ]] && _arr+=(--setenv XCURSOR_THEME "$_cursor")
+    :
+}
+
 # ── Resolve file arguments to bind mounts ─────────────────────
 bwrap_resolve_files() {
     local -n _binds=$1
