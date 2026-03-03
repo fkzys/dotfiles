@@ -3,7 +3,10 @@ set -euo pipefail
 . "${HOME}/.local/lib/bwrap-common.sh"
 
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
-AUDIO_DIR="{{ index $s "anki" "audio_sources_dir" }}"
+{{ $audioDir := index $s "anki" "audio_sources_dir" | replace "$HOME" .chezmoi.homeDir -}}
+{{ $subs2srsDir := index $s "anki" "subs2srs_dir" | replace "$HOME" .chezmoi.homeDir -}}
+AUDIO_DIR="{{ $audioDir }}"
+SUBS2SRS_DIR="{{ $subs2srsDir }}"
 
 FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
@@ -12,7 +15,7 @@ A=()
 bwrap_gui_setup A yes
 bwrap_dbus_system A
 bwrap_bind_dir A "${HOME}/.local/share/Anki2" "${HOME}/Downloads/anki"
-bwrap_ro_bind_dir A "${AUDIO_DIR}"
+bwrap_ro_bind_dir A "${AUDIO_DIR}" "${SUBS2SRS_DIR}"
 A+=("${FILE_BINDS[@]}")
 bwrap_audio A
 A+=(--setenv QT_QPA_PLATFORM wayland
