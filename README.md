@@ -66,7 +66,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 
 | Application | Display | Network | Notes |
 |---|---|---|---|
-| anki | Wayland | yes | QtWebEngine, Anki2 data dir, audio sources dir from secrets |
+| anki | Wayland | yes | QtWebEngine, Anki2 data dir, audio sources dir + subs2srs dir from secrets |
 | fcitx5 | Wayland | no | Input method daemon, socket dir shared via `/tmp/fcitx5-$UID`, D-Bus session access |
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary + audio dirs from secrets |
@@ -81,7 +81,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | otd-daemon | — | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, network isolated |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting |
-| subs2srs | XWayland | no | Mono/.NET app, media dir read-only from secrets, output dir writable, fcitx5 input |
+| subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, GTK theme via env, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir |
 | transformers\_ocr | Wayland | yes | OCR daemon with GPU access, Python venv bind, IPC commands run unsandboxed; PID namespace not isolated (breaks PID file) |
@@ -106,6 +106,7 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | `bwrap_audio` | PipeWire + PulseAudio sockets |
 | `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets |
 | `bwrap_themes` | GTK2/3, fontconfig, Qt, Kvantum, fonts, icons |
+| `bwrap_gtk_theme_env` | Set `GTK_THEME`, `GTK_ICON_THEME`, `XCURSOR_THEME` from host gsettings (for sandboxes without dconf) |
 | `bwrap_fcitx` | fcitx5 input method sockets + env |
 | `bwrap_home_tmpfs` | tmpfs `$HOME` with XDG skeleton |
 | `bwrap_runtime_dir` | XDG\_RUNTIME\_DIR with correct permissions |
@@ -185,6 +186,74 @@ An `on-select` hook displays the mpv resume position in the lf status bar when n
 | `o` | Extract Japanese audio (ffmpeg\_jp) |
 | `Ctrl-B` | Rename subtitles to match videos |
 
+## Shell (zsh)
+
+No framework (oh-my-zsh, etc.) — prompt, completions, keybindings are configured manually.
+
+### Prompt
+
+robbyrussell-style prompt with inline git branch + dirty indicator (`✗`), implemented as a shell function (no plugin).
+
+### Plugins
+
+- [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) — fish-like suggestions
+- [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) — command highlighting
+
+### Tools
+
+- [zoxide](https://github.com/ajeetdsouza/zoxide) — smart `cd`
+- [fzf](https://github.com/junegunn/fzf) — fuzzy finder (`Ctrl-T` files, `Alt-C` dirs, `Ctrl-R` history)
+- [direnv](https://direnv.net/) — per-directory env
+
+FZF uses `fd` for file/dir discovery and `bat`/`eza` for previews.
+
+### Completion
+
+Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, grouped by type.
+
+### Aliases
+
+| Alias | Expands to |
+|---|---|
+| `ls`, `ll`, `la`, `lt`, `l.` | `eza` variants (color, dirs first, git status, tree) |
+| `cat` | `bat --paging=never` |
+| `ccat` | `bat` with full decorations, no color |
+| `catp` | `bat` with pager |
+| `rg` | `ripgrep --smart-case` |
+| `vi`, `vim` | `nvim` |
+| `lg` | `lazygit` |
+| `g`, `ga`, `gc`, `gco`, `gd`, `gl`, `gp`, `gst`, `glog` | git shorthands |
+| Flatpak apps | `firefox`, `telegram`, etc. → `flatpak run <id>` (generated from a map, conditional on feature flags) |
+| Directory aliases | Per-host `cd` shortcuts from `secrets.enc.yaml` (e.g. `anime`, `subs`) |
+
+### Functions
+
+| Function | Description |
+|---|---|
+| `bcat` | `bat` with decorations → `wl-copy` (copy file with line numbers to clipboard) |
+
+### Keybindings
+
+| Key | Action |
+|---|---|
+| `Ctrl-O` | Launch `lf` |
+| `Ctrl-F` | `fzf-cd-widget` (fuzzy cd) |
+| `Ctrl-N` | Launch `ncmpcpp` |
+| `Ctrl-T` | fzf file search |
+| `Alt-C` | fzf directory search |
+| `Up` / `Down` | History search by prefix |
+| `Ctrl-Left` / `Ctrl-Right` | Word navigation |
+| `Ctrl-Backspace` / `Ctrl-Delete` | Kill word backward/forward |
+
+### Environment
+
+| Variable | Value |
+|---|---|
+| `EDITOR` | `nvim` |
+| `MANPAGER` | `bat` as man pager (with `col -bx`) |
+| `MAKEFLAGS` etc. | Parallel builds (`-j$(nproc)`) for make, cmake, ninja, meson, dpkg |
+| `SOPS_AGE_KEY_FILE` | Age key path for sops decryption |
+
 ## Standalone scripts (`~/.local/bin/`)
 
 | Script | Description |
@@ -258,6 +327,7 @@ goldendict:
     audio_dir: /path/to/audio
 anki:
     audio_sources_dir: /path/to/audio/sources
+    subs2srs_dir: /path/to/subs2srs
 subs2srs:
     media_dir: /path/to/anime
 ```
