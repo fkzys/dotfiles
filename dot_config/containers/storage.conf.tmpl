@@ -1,8 +1,7 @@
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $containers := index $s "containers" -}}
-
 [storage]
 driver = "btrfs"
 {{- if and (hasKey $containers .chezmoi.hostname) (hasKey (index $containers .chezmoi.hostname) "graphroot") }}
-graphroot = "{{ index $containers .chezmoi.hostname "graphroot" }}"
+graphroot = "{{ index $containers .chezmoi.hostname "graphroot" | replace "$USER" .chezmoi.username -}}"
 {{- end }}
