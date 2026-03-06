@@ -214,6 +214,6 @@ echo "--- Flatpak ---"
 flatpak install "${FLATPAK_PKGS[@]}"
 
 echo "--- gitpkg ---"
-sudo gitpkg install "${GITPKG_PKGS[@]}"
+sudo gitpkg install --needed "${GITPKG_PKGS[@]}"
 
 echo "Done"
