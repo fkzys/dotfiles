@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 set -e  
 
 echo "Checking AUR helper..."
@@ -13,6 +12,22 @@ if ! command -v yay &> /dev/null; then
     cd -
     rm -rf /tmp/yay
 fi
+
+GITPKG_PRIMARY="https://gitlab.com/fkzys"
+GITPKG_FALLBACK="https://github.com/rpPH4kQocMjkm2Ve"
+
+echo "Checking gitpkg"
+if ! command -v gitpkg &> /dev/null; then
+    echo "gitpkg not found. Bootstrapping..."
+    BOOTSTRAP_DIR=$(mktemp -d)
+    git clone "${GITPKG_PRIMARY}/gitpkg.git" "$BOOTSTRAP_DIR" 2>/dev/null || \
+        git clone "${GITPKG_FALLBACK}/gitpkg.git" "$BOOTSTRAP_DIR"
+    cd "$BOOTSTRAP_DIR"
+    sudo make install
+    cd -
+    rm -rf "$BOOTSTRAP_DIR"
+fi
+
 
 # --- 1. Pacman ---
 NATIVE_PKGS=(
@@ -161,12 +176,10 @@ AUR_PKGS=(
     {{- if eq .goldendict true }}
     "goldendict-ng"
     {{- end }}
-    {{- if eq .subs2srs true }}
-    "subs2srs"
-    {{- end }}
     "coolercontrol-bin"
 )
 
+# --- 3. Flatpak ---
 FLATPAK_PKGS=(
     "com.github.tchx84.Flatseal"
     "org.mozilla.firefox"
@@ -181,6 +194,16 @@ FLATPAK_PKGS=(
     {{- end }}
 )
 
+# --- 4. gitpkg ---
+
+GITPKG_PKGS=(
+    "gitpkg"
+    "atomic-upgrade"
+    {{- if eq .subs2srs true }}
+    "subs2srs-gtk3"
+    {{- end }}
+)
+
 echo "--- Installing Native Packages ---"
 sudo pacman -S --needed "${NATIVE_PKGS[@]}"
 
@@ -189,5 +212,8 @@ yay -S --needed "${AUR_PKGS[@]}"
 
 echo "--- Flatpak ---"
 flatpak install "${FLATPAK_PKGS[@]}"
+
+echo "--- gitpkg ---"
+sudo gitpkg install "${GITPKG_PKGS[@]}"
 
 echo "Done"
