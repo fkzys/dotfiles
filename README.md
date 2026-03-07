@@ -1,5 +1,7 @@
 # Dotfiles
 
+![screenshot](assets/screenshot.png)
+
 Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## What's included
