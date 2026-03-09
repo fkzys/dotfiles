@@ -86,7 +86,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, GTK theme via env, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir |
-| transformers\_ocr | Wayland | yes | OCR daemon with GPU access, Python venv bind, IPC commands run unsandboxed; PID namespace not isolated (breaks PID file) |
+| transformers\_ocr | Wayland | yes | OCR daemon (foreground) sandboxed with GPU access, Python venv read-only; IPC runtime dir bind-mounted for host↔sandbox FIFO/PID visibility; client commands (recognize, hold, stop) run unsandboxed on host |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
