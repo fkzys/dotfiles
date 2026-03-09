@@ -4,56 +4,57 @@ set -euo pipefail
 
 VENV="${HOME}/.local/share/manga_ocr/pyenv"
 REAL="/usr/bin/transformers_ocr"
+RUNTIME_SUBDIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/transformers_ocr"
 
-# IPC commands run unsandboxed (they just write to FIFO or check PID)
-case "${1:-}" in
-    recognize|hold|status|stop|ocr|download|purge|nuke)
-        exec "$VENV/bin/python3" "$REAL" "$@"
-        ;;
-esac
+# ── Foreground daemon → sandboxed ────────────────────────────
+if [[ "${1:-}" == "start" && "${2:-}" == "--foreground" ]]; then
+    A=()
+    A+=(
+        --ro-bind /usr /usr
+        --symlink /usr/bin /bin
+        --symlink /usr/bin /sbin
+        --symlink /usr/lib /lib
+        --proc /proc
+        --ro-bind /sys /sys
+        --dev /dev
+        --bind /tmp /tmp
+        --dev-bind /dev/shm /dev/shm
+        --ro-bind /etc /etc
+    )
+    bwrap_lib64 A
+    bwrap_gpu A
+    bwrap_resolv A
+    bwrap_runtime_dir A
+    bwrap_home_tmpfs A
 
-# Daemon (start/listen) runs sandboxed
-A=()
-A+=(
-    --ro-bind /usr /usr
-    --symlink /usr/bin /bin
-    --symlink /usr/bin /sbin
-    --symlink /usr/lib /lib
-    --proc /proc
-    --ro-bind /sys /sys
-    --dev /dev
-    --bind /tmp /tmp
-    --dev-bind /dev/shm /dev/shm
-    --ro-bind /etc /etc
-)
-bwrap_lib64 A
-bwrap_gpu A
-bwrap_resolv A
-bwrap_runtime_dir A
-bwrap_home_tmpfs A
+    mkdir -p "$RUNTIME_SUBDIR"
+    A+=(--bind "$RUNTIME_SUBDIR" "$RUNTIME_SUBDIR")
 
-bwrap_bind_dir A \
-    "${HOME}/.config/transformers_ocr" \
-    "${HOME}/.cache/huggingface" \
-    "${HOME}/.cache/transformers_ocr" \
-    "${HOME}/.cache/torch"
+    bwrap_bind_dir A \
+        "${HOME}/.config/transformers_ocr" \
+        "${HOME}/.cache/huggingface" \
+        "${HOME}/.cache/transformers_ocr" \
+        "${HOME}/.cache/torch"
 
-A+=(--ro-bind "$VENV" "$VENV")
+    A+=(--ro-bind "$VENV" "$VENV")
 
-bwrap_wayland A
-bwrap_dbus_session A
+    bwrap_wayland A
+    bwrap_dbus_session A
 
-bwrap_env_base A
-A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
+    bwrap_env_base A
+    A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
 
-bwrap_hardened_malloc A default
+    bwrap_hardened_malloc A default
 
-# No --unshare-user (breaks CUDA/nvidia), no --unshare-pid (breaks PID file)
-A+=(
-    --unshare-ipc
-    --unshare-uts
-    --unshare-cgroup
-    --die-with-parent
-)
+    A+=(
+        --unshare-ipc
+        --unshare-uts
+        --unshare-cgroup
+        --die-with-parent
+    )
 
-exec bwrap "${A[@]}" -- "$VENV/bin/python3" "$REAL" "$@"
+    exec bwrap "${A[@]}" -- "$VENV/bin/python3" "$REAL" start --foreground
+fi
+
+# ── Everything else: IPC clients on host ─────────────────────
+exec "$VENV/bin/python3" "$REAL" "$@"
