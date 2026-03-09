@@ -206,6 +206,9 @@ GITPKG_PKGS=(
     {{- if eq .subs2srs true }}
     "subs2srs-gtk3"
     {{- end }}
+    {{- if eq .ocr true }}
+    "transformers_ocr"
+    {{- end }}
 )
 
 echo "--- Installing Native Packages ---"
