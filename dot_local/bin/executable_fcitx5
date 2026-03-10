@@ -31,6 +31,7 @@ bwrap_bind_dir A \
 
 bwrap_themes A
 bwrap_wayland A
+
 bwrap_dbus_session A
 
 bwrap_env_base A

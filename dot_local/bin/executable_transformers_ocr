@@ -39,7 +39,7 @@ if [[ "${1:-}" == "start" && "${2:-}" == "--foreground" ]]; then
     A+=(--ro-bind "$VENV" "$VENV")
 
     bwrap_wayland A
-    bwrap_dbus_session A
+    bwrap_dbus_common A
 
     bwrap_env_base A
     A+=(--setenv XDG_SESSION_TYPE "${XDG_SESSION_TYPE:-wayland}")
@@ -53,7 +53,7 @@ if [[ "${1:-}" == "start" && "${2:-}" == "--foreground" ]]; then
         --die-with-parent
     )
 
-    exec bwrap "${A[@]}" -- "$VENV/bin/python3" "$REAL" start --foreground
+    bwrap_exec "${A[@]}" -- "$VENV/bin/python3" "$REAL" start --foreground
 fi
 
 # ── Everything else: IPC clients on host ─────────────────────

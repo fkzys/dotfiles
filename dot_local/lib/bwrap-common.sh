@@ -2,6 +2,9 @@
 # Common bubblewrap helpers
 # Source this file: . "${HOME}/.local/lib/bwrap-common.sh"
 
+[[ -n "${_BWRAP_COMMON_LOADED:-}" ]] && return 0
+_BWRAP_COMMON_LOADED=1
+
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 # ── Validation ───────────────────────────────────────────────
@@ -10,6 +13,23 @@ require_dir() {
     for _d in "$@"; do
         [[ -d "$_d" ]] || { echo "Missing dir: $_d" >&2; exit 1; }
     done
+}
+
+# ── Common base bwrap args ────────────────────────────────────
+bwrap_base() {
+    local -n _arr=$1
+    _arr+=(
+        --ro-bind /usr /usr
+        --symlink /usr/bin /bin
+        --symlink /usr/bin /sbin
+        --symlink /usr/lib /lib
+        --proc /proc
+        --ro-bind /sys /sys
+        --dev /dev
+        --tmpfs /tmp
+        --dev-bind /dev/shm /dev/shm
+        --ro-bind /etc /etc
+    )
 }
 
 # ── GPU + NVIDIA ──────────────────────────────────────────────
@@ -82,7 +102,7 @@ bwrap_audio() {
     :
 }
 
-# ── D-Bus session ─────────────────────────────────────────────
+# ── D-Bus session (unfiltered) ────────────────────────────────
 bwrap_dbus_session() {
     local -n _arr=$1
     local _bus="${DBUS_SESSION_BUS_ADDRESS:-}"
@@ -175,23 +195,6 @@ bwrap_resolve_files() {
     done
 }
 
-# ── Common base bwrap args ────────────────────────────────────
-bwrap_base() {
-    local -n _arr=$1
-    _arr+=(
-        --ro-bind /usr /usr
-        --symlink /usr/bin /bin
-        --symlink /usr/bin /sbin
-        --symlink /usr/lib /lib
-        --proc /proc
-        --ro-bind /sys /sys
-        --dev /dev
-        --tmpfs /tmp
-        --dev-bind /dev/shm /dev/shm
-        --ro-bind /etc /etc
-    )
-}
-
 # ── Common home tmpfs skeleton ────────────────────────────────
 bwrap_home_tmpfs() {
     local -n _arr=$1
@@ -205,6 +208,13 @@ bwrap_home_tmpfs() {
     )
 }
 
+# ── XDG_RUNTIME_DIR setup ────────────────────────────────────
+bwrap_runtime_dir() {
+    local -n _arr=$1
+    _arr+=(--perms 0755 --dir /run/user
+           --perms 0700 --dir "${XDG_RUNTIME_DIR}")
+}
+
 # ── Common env vars ───────────────────────────────────────────
 bwrap_env_base() {
     local -n _arr=$1
@@ -215,6 +225,28 @@ bwrap_env_base() {
         --setenv XDG_RUNTIME_DIR "${XDG_RUNTIME_DIR}"
         --setenv XDG_CACHE_HOME "${HOME}/.cache"
     )
+}
+
+# ── Create state dirs on host + bind-mount ────────────────────
+bwrap_bind_dir() {
+    local -n _arr=$1
+    shift
+    local _d
+    for _d in "$@"; do
+        mkdir -p "$_d"
+        _arr+=(--bind "$_d" "$_d")
+    done
+}
+
+# Bind pre-existing dirs read-only, skip missing
+bwrap_ro_bind_dir() {
+    local -n _arr=$1
+    shift
+    local _d
+    for _d in "$@"; do
+        [[ -d "$_d" ]] && _arr+=(--ro-bind "$_d" "$_d")
+    done
+    :
 }
 
 # ── hardened_malloc ───────────────────────────────────────────
@@ -262,35 +294,6 @@ bwrap_fcitx() {
     :
 }
 
-# ── XDG_RUNTIME_DIR setup ────────────────────────────────────
-bwrap_runtime_dir() {
-    local -n _arr=$1
-    _arr+=(--perms 0755 --dir /run/user
-           --perms 0700 --dir "${XDG_RUNTIME_DIR}")
-}
-
-# ── Create state dirs on host + bind-mount ────────────────────
-bwrap_bind_dir() {
-    local -n _arr=$1
-    shift
-    local _d
-    for _d in "$@"; do
-        mkdir -p "$_d"
-        _arr+=(--bind "$_d" "$_d")
-    done
-}
-
-# Bind pre-existing dirs read-only, skip missing
-bwrap_ro_bind_dir() {
-    local -n _arr=$1
-    shift
-    local _d
-    for _d in "$@"; do
-        [[ -d "$_d" ]] && _arr+=(--ro-bind "$_d" "$_d")
-    done
-    :
-}
-
 # ── SSH agent forwarding ─────────────────────────────────────
 bwrap_ssh_agent() {
     local -n _arr=$1
@@ -313,15 +316,21 @@ bwrap_gui_setup() {
 }
 
 # ── Standard GUI sandbox: finish phase ────────────────────────
+# $4 = malloc variant (default/light/no)
+# $5 = dbus mode: "unfiltered" (default), "filtered", or "none"
 bwrap_gui_finish() {
-    local _v=$1 _display="${2:-wayland}" _net="${3:-no}" _malloc="${4:-default}"
+    local _v=$1 _display="${2:-wayland}" _net="${3:-no}" _malloc="${4:-default}" _dbus="${5:-unfiltered}"
     bwrap_themes "$_v"
     if [[ "$_display" == "x11" ]]; then
         bwrap_x11 "$_v"
     else
         bwrap_wayland "$_v"
     fi
-    bwrap_dbus_session "$_v"
+    case "$_dbus" in
+        filtered)   bwrap_dbus_common "$_v" ;;
+        unfiltered) bwrap_dbus_session "$_v" ;;
+        none)       ;;
+    esac
     bwrap_env_base "$_v"
     if [[ "$_malloc" == "no" ]]; then
         bwrap_no_hardened_malloc "$_v"
@@ -329,4 +338,141 @@ bwrap_gui_finish() {
         bwrap_hardened_malloc "$_v" "$_malloc"
     fi
     bwrap_sandbox "$_v" "$_net"
+}
+
+# ══════════════════════════════════════════════════════════════
+# ── D-Bus filtered proxy ─────────────────────────────────────
+# ══════════════════════════════════════════════════════════════
+
+_BWRAP_DBUS_PROXY_PIDS=()
+_BWRAP_DBUS_PROXY_SOCKETS=()
+
+_bwrap_dbus_cleanup() {
+    local pid sock
+    for pid in "${_BWRAP_DBUS_PROXY_PIDS[@]}"; do
+        kill "$pid" 2>/dev/null || true
+        wait "$pid" 2>/dev/null || true
+    done
+    for sock in "${_BWRAP_DBUS_PROXY_SOCKETS[@]}"; do
+        rm -f "$sock"
+    done
+    _BWRAP_DBUS_PROXY_PIDS=()
+    _BWRAP_DBUS_PROXY_SOCKETS=()
+}
+
+# xdg-dbus-proxy rules: XDG portals
+_dbus_portal_rules() {
+    local -n _pr=$1
+    _pr+=(--talk=org.freedesktop.portal.Desktop)
+    _pr+=(--talk=org.freedesktop.portal.Documents)
+}
+
+# xdg-dbus-proxy rules: common GUI services
+_dbus_gui_service_rules() {
+    local -n _gr=$1
+    _gr+=(--talk=org.freedesktop.Notifications)
+    _gr+=(--talk=org.kde.StatusNotifierWatcher)
+    _gr+=(--talk=org.freedesktop.ScreenSaver)
+    _gr+=(--talk=org.freedesktop.login1)
+    _gr+=(--talk=org.a11y.Bus)
+}
+
+# xdg-dbus-proxy rules: fcitx5 (own bus names)
+_dbus_fcitx5_rules() {
+    local -n _fr=$1
+    _fr+=(
+        --own="org.fcitx.Fcitx5*"
+        --talk=org.freedesktop.IBus
+    )
+}
+
+# Start xdg-dbus-proxy with filter rules, bind socket into sandbox.
+# Must be paired with bwrap_exec (not raw `exec bwrap`).
+bwrap_dbus_filtered() {
+    local _arrname="$1"; shift
+    local -n _df="$_arrname"
+
+    local bus_addr="${DBUS_SESSION_BUS_ADDRESS:-}"
+    if [[ -z "$bus_addr" ]]; then
+        if [[ -S "${XDG_RUNTIME_DIR}/bus" ]]; then
+            bus_addr="unix:path=${XDG_RUNTIME_DIR}/bus"
+        else
+            echo "bwrap_dbus_filtered: no session bus found, skipping" >&2
+            return 0
+        fi
+    fi
+
+    if ! command -v xdg-dbus-proxy >/dev/null 2>&1; then
+        echo "bwrap_dbus_filtered: xdg-dbus-proxy not found, falling back to unfiltered" >&2
+        bwrap_dbus_session "$_arrname"
+        return 0
+    fi
+
+    local proxy_sock="${XDG_RUNTIME_DIR}/bwrap-dbus-proxy-$$-${RANDOM}.sock"
+
+    xdg-dbus-proxy "$bus_addr" "$proxy_sock" --filter "$@" &
+    local proxy_pid=$!
+    _BWRAP_DBUS_PROXY_PIDS+=("$proxy_pid")
+    _BWRAP_DBUS_PROXY_SOCKETS+=("$proxy_sock")
+
+    trap '_bwrap_dbus_cleanup' EXIT
+
+    local _attempts=0
+    while [[ ! -S "$proxy_sock" ]]; do
+        if ! kill -0 "$proxy_pid" 2>/dev/null; then
+            echo "bwrap_dbus_filtered: proxy exited prematurely" >&2
+            return 1
+        fi
+        if (( ++_attempts > 50 )); then
+            echo "bwrap_dbus_filtered: timeout waiting for proxy socket" >&2
+            kill "$proxy_pid" 2>/dev/null || true
+            return 1
+        fi
+        sleep 0.1
+    done
+
+    _df+=(
+        --bind "$proxy_sock" "${XDG_RUNTIME_DIR}/bus"
+        --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=${XDG_RUNTIME_DIR}/bus"
+    )
+}
+
+# Filtered D-Bus for typical GUI apps (portals + common services).
+# Usage: bwrap_dbus_common ARRAYNAME [EXTRA_RULES...]
+bwrap_dbus_common() {
+    local _arrname="$1"; shift
+    local rules=()
+    _dbus_portal_rules rules
+    _dbus_gui_service_rules rules
+    rules+=("$@")
+    bwrap_dbus_filtered "$_arrname" "${rules[@]}"
+}
+
+# Run bwrap as foreground child, clean up proxies on exit.
+# Use instead of `exec bwrap` when using bwrap_dbus_filtered.
+bwrap_exec() {
+    if [[ ${#_BWRAP_DBUS_PROXY_PIDS[@]} -eq 0 ]]; then
+        exec bwrap "$@"
+    fi
+
+    local _bwrap_pid _rc=0
+
+    bwrap "$@" &
+    _bwrap_pid=$!
+
+    _bwrap_on_signal() {
+        kill "$_bwrap_pid" 2>/dev/null || true
+        wait "$_bwrap_pid" 2>/dev/null || true
+        _bwrap_dbus_cleanup
+    }
+    trap '_bwrap_on_signal; exit 143' TERM
+    trap '_bwrap_on_signal; exit 130' INT
+    trap '_bwrap_on_signal; exit 129' HUP
+    trap '' EXIT
+
+    wait "$_bwrap_pid" || _rc=$?
+
+    _bwrap_dbus_cleanup
+
+    exit "$_rc"
 }
