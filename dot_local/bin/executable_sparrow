@@ -24,7 +24,7 @@ bwrap_bind_dir A "${HOME}/.sparrow"
 
 bwrap_themes A
 bwrap_x11 A
-bwrap_dbus_session A
+bwrap_dbus_common A
 
 bwrap_env_base A
 A+=(--setenv _JAVA_AWT_WM_NONREPARENTING 1)
@@ -32,4 +32,4 @@ A+=(--setenv _JAVA_AWT_WM_NONREPARENTING 1)
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes
 
-exec bwrap "${A[@]}" -- /opt/sparrow/bin/Sparrow "$@"
+bwrap_exec "${A[@]}" -- /opt/sparrow/bin/Sparrow "$@"
