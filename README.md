@@ -30,7 +30,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `tablet` | OpenTabletDriver (otd-daemon) |
 | `ocr` | transformers\_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
-| `subs2srs` | [subs2srs](https://gitlab.com/fkzys/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
+| `subs2srs` | [subs2srs-gtk3](https://gitlab.com/fkzys/subs2srs-gtk3) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
@@ -77,23 +77,25 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | krita | XWayland | no | Separate config dir trick |
 | lazygit | terminal | yes | CWD bind, SSH agent forwarding |
 | mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
-| nextcloud | Wayland | yes | Sync dir from secrets, D-Bus system access for status notifications, GNOME keyring forwarding |
+| nextcloud | Wayland | yes | Sync dir from secrets, filtered D-Bus (secrets + kwallet), GNOME keyring forwarding |
 | nvim | terminal | yes | CWD + file args, clipboard via Wayland |
 | obs | Wayland | yes | Camera devices, Videos dir |
 | otd-daemon | — | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, network isolated |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
-| sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting |
+| sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
 | subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, GTK theme via env, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir |
-| transformers\_ocr | Wayland | yes | OCR daemon (foreground) sandboxed with GPU access, Python venv read-only; IPC runtime dir bind-mounted for host↔sandbox FIFO/PID visibility; client commands (recognize, hold, stop) run unsandboxed on host |
+| transformers\_ocr | Wayland | yes | OCR daemon (foreground) sandboxed with GPU access, Python venv read-only; IPC runtime dir bind-mounted for host↔sandbox FIFO/PID visibility; filtered D-Bus; client commands (recognize, hold, stop) run unsandboxed on host |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
 
 ### Library (`~/.local/lib/bwrap-common.sh`)
 
-Provides functions used by all wrappers. Each function takes a variable name and appends bwrap arguments to it via nameref:
+Provides functions used by all wrappers. Each function takes a variable name and appends bwrap arguments to it via nameref.
+
+The library uses an include guard (`_BWRAP_COMMON_LOADED`) to allow safe sourcing from multiple files.
 
 **Low-level helpers:**
 
@@ -106,7 +108,9 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | `bwrap_wayland` | Wayland socket (rw for `connect()`) |
 | `bwrap_x11` | X11/XWayland socket + Xauthority |
 | `bwrap_audio` | PipeWire + PulseAudio sockets |
-| `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets |
+| `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets (unfiltered) |
+| `bwrap_dbus_filtered` | Filtered D-Bus via `xdg-dbus-proxy` with custom rules; falls back to unfiltered if proxy is unavailable |
+| `bwrap_dbus_common` | Pre-configured filtered D-Bus for typical GUI apps (XDG portals, notifications, status notifier, screen saver, login1, a11y); accepts extra rules |
 | `bwrap_themes` | GTK2/3, fontconfig, Qt, Kvantum, fonts, icons |
 | `bwrap_gtk_theme_env` | Set `GTK_THEME`, `GTK_ICON_THEME`, `XCURSOR_THEME` from host gsettings (for sandboxes without dconf) |
 | `bwrap_fcitx` | fcitx5 input method sockets + env |
@@ -120,6 +124,7 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | `bwrap_ssh_agent` | SSH agent socket forwarding |
 | `bwrap_hardened_malloc` | Upgrade to default variant via `LD_PRELOAD` |
 | `bwrap_no_hardened_malloc` | Disable hardened\_malloc for incompatible apps |
+| `bwrap_exec` | Run bwrap as foreground child and clean up D-Bus proxy processes on exit; falls back to `exec bwrap` when no proxies are active |
 | `require_dir` | Validate that directories exist, exit on missing |
 
 **High-level composites:**
@@ -127,7 +132,27 @@ Provides functions used by all wrappers. Each function takes a variable name and
 | Function | Purpose |
 |---|---|
 | `bwrap_gui_setup` | `bwrap_base` + `lib64` + `gpu` + optional `resolv` + `runtime_dir` + `home_tmpfs` |
-| `bwrap_gui_finish` | `themes` + `wayland`/`x11` + `dbus_session` + `env_base` + malloc + `sandbox` |
+| `bwrap_gui_finish` | `themes` + `wayland`/`x11` + D-Bus (mode: `unfiltered`/`filtered`/`none`) + `env_base` + malloc + `sandbox` |
+
+#### D-Bus filtering
+
+`bwrap_dbus_filtered` starts an `xdg-dbus-proxy` instance with `--filter` and the provided rules, waits for the proxy socket, and binds it into the sandbox as `$XDG_RUNTIME_DIR/bus`. Proxy processes are tracked and cleaned up automatically by `bwrap_exec`.
+
+`bwrap_dbus_common` wraps `bwrap_dbus_filtered` with a default rule set suitable for most GUI applications:
+
+| Rule group | Bus names |
+|---|---|
+| XDG portals | `org.freedesktop.portal.Desktop`, `org.freedesktop.portal.Documents` |
+| GUI services | `org.freedesktop.Notifications`, `org.kde.StatusNotifierWatcher`, `org.freedesktop.ScreenSaver`, `org.freedesktop.login1`, `org.a11y.Bus` |
+
+Extra `--talk`/`--own` rules can be appended per-app (e.g. `--talk=org.freedesktop.secrets` for Nextcloud).
+
+`bwrap_gui_finish` accepts a 5th parameter (`dbus` mode) controlling which D-Bus helper is used:
+- `unfiltered` (default) — `bwrap_dbus_session` (full session bus access)
+- `filtered` — `bwrap_dbus_common`
+- `none` — no D-Bus access
+
+When using filtered D-Bus, wrappers must call `bwrap_exec` instead of `exec bwrap` to ensure proxy cleanup.
 
 ### Wrapper pattern
 
@@ -139,8 +164,8 @@ bwrap_gui_setup A yes                    # yes = network (adds resolv)
 bwrap_bind_dir A "${HOME}/.config/app" "${HOME}/Data"
 bwrap_ro_bind_dir A "${MEDIA_DIR}"
 bwrap_audio A
-bwrap_gui_finish A wayland yes           # display, network, malloc=default
-exec bwrap "${A[@]}" -- /usr/bin/app "$@"
+bwrap_gui_finish A wayland yes default filtered  # display, network, malloc, dbus
+bwrap_exec "${A[@]}" -- /usr/bin/app "$@"
 ```
 
 Equivalent using low-level helpers:
@@ -158,11 +183,11 @@ bwrap_ro_bind_dir A "${MEDIA_DIR}"
 bwrap_themes A
 bwrap_wayland A
 bwrap_audio A
-bwrap_dbus_session A
+bwrap_dbus_common A
 bwrap_env_base A
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes
-exec bwrap "${A[@]}" -- /usr/bin/app "$@"
+bwrap_exec "${A[@]}" -- /usr/bin/app "$@"
 ```
 
 ## lf file manager
