@@ -5,22 +5,40 @@
 set -euo pipefail
 
 DRY_RUN=0
-[[ "${1:-}" == "-n" || "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -n|--dry-run) DRY_RUN=1; shift ;;
+        *)
+            echo "Usage: $0 [-n|--dry-run]" >&2
+            exit 1
+            ;;
+    esac
+done
+
+found=0
 
 for video in *.mkv *.mp4; do
     [[ -e "$video" ]] || continue
-    episode=$(grep -o 'S[0-9]\+E[0-9]\+' <<< "$video") || continue
+    episode=$(grep -oiE 'S[0-9]+E[0-9]+' <<< "$video") || continue
 
     for sub in *.srt *.ass; do
         [[ -e "$sub" ]] || continue
-        [[ "$sub" == *"$episode"* ]] || continue
+        [[ "${sub,,}" == *"${episode,,}"* ]] || continue
 
         new_name="${video%.*}.${sub##*.}"
+        [[ "$sub" == "$new_name" ]] && continue
+
+        found=1
         if [[ "$DRY_RUN" -eq 1 ]]; then
             echo "[dry-run] $sub -> $new_name"
         else
             echo "$sub -> $new_name"
-            mv "$sub" "$new_name"
+            mv -n "$sub" "$new_name"
         fi
     done
 done
+
+if [[ "$found" -eq 0 ]]; then
+    echo "No subtitles to rename."
+fi
