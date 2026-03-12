@@ -196,9 +196,13 @@ bwrap_exec "${A[@]}" -- /usr/bin/app "$@"
 
 Video and image previews use kitty's `icat` protocol. Videos get cached thumbnails via `ffmpegthumbnailer`.
 
-For videos with saved mpv playback position, the resume point and total duration are overlaid on the thumbnail (e.g. `⏸ 12:34 / 25:20`). The previewer reads mpv's `watch_later` state files (MD5 of the file path) and annotates via ImageMagick. Font is auto-detected from common system paths with `fc-match` as fallback.
+For videos with saved mpv playback position, the resume point and total duration are overlaid on the thumbnail (e.g. `⏸ 12:34 / 25:20`). Fully watched videos (no `watch_later` entry but a marker in `~/.local/state/lf/watched/`) show a `▣` badge with total duration. The previewer reads mpv's `watch_later` state files and the watched markers (both keyed by MD5 of the absolute path) and annotates via ImageMagick. Font is auto-detected from common system paths with `fc-match` as fallback.
 
-The previewer runs inside a bwrap sandbox with read-only access to the video directory, lf config, vidthumb cache, and mpv watch\_later state. Only the vidthumb cache is writable.
+The previewer runs inside a bwrap sandbox with read-only access to the video directory, lf config, vidthumb cache, mpv watch\_later state, and lf watched markers. Only the vidthumb cache is writable.
+
+### Watch tracking
+
+After mpv exits, the preview is refreshed automatically. An `on-select` hook displays the mpv resume position in the lf status bar when navigating to a video with saved state, or `▣ watched` for fully watched videos.
 
 ### Status bar
 
@@ -208,7 +212,7 @@ An `on-select` hook displays the mpv resume position in the lf status bar when n
 
 | Key | Action |
 |---|---|
-| `m` | Play with mpv |
+| `m` | Play with mpv (auto-refreshes preview on exit) |
 | `n` | Edit with nvim |
 | `o` | Extract Japanese audio (ffmpeg\_jp) |
 | `Ctrl-B` | Rename subtitles to match videos |
