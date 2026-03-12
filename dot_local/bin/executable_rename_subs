@@ -1,5 +1,6 @@
 #!/bin/bash
-# Rename subtitle files to match video filenames by episode number (S01E01).
+# Rename subtitle files to match video filenames by episode number.
+# Supports: S01E05, 1x05, E05, Ep05, Ep.05, Episode 05, bare "05", etc.
 # Usage: rename_subs [-n|--dry-run]
 
 set -euo pipefail
@@ -16,21 +17,70 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Extract season and episode from a filename.
+# Prints "SEASON EPISODE" (season=-1 if absent).
+extract_episode() {
+    local name="${1,,}"
+    name="${name%.*}"
+
+    # S01E05
+    if [[ "$name" =~ s([0-9]+)e([0-9]+) ]]; then
+        echo "$(( 10#${BASH_REMATCH[1]} )) $(( 10#${BASH_REMATCH[2]} ))"
+        return
+    fi
+
+    # 1x05, 01x05
+    if [[ "$name" =~ ([0-9]+)x([0-9]+) ]]; then
+        echo "$(( 10#${BASH_REMATCH[1]} )) $(( 10#${BASH_REMATCH[2]} ))"
+        return
+    fi
+
+    # Episode 05, Episode.05, Ep05, Ep.05, Ep-05
+    if [[ "$name" =~ (episode|ep)[._[:space:]-]*([0-9]+) ]]; then
+        echo "-1 $(( 10#${BASH_REMATCH[2]} ))"
+        return
+    fi
+
+    # Standalone E05 (not part of a word)
+    if [[ "$name" =~ (^|[^a-z])e([0-9]+)($|[^0-9]) ]]; then
+        echo "-1 $(( 10#${BASH_REMATCH[2]} ))"
+        return
+    fi
+
+    # Bare number as last resort (e.g. "Show Name 05 blah.srt")
+    # Strip N.N patterns first (audio channels: 5.1, 7.1, etc.)
+    local cleaned
+    cleaned=$(sed -E 's/[0-9]+\.[0-9]+//g' <<< "$name")
+    if [[ "$cleaned" =~ (^|[[:space:]._-])([0-9]{1,3})([[:space:]._-]|$) ]]; then
+        local num=$(( 10#${BASH_REMATCH[2]} ))
+        if (( num > 0 )); then
+            echo "-1 $num"
+            return
+        fi
+    fi
+
+    return 1
+}
+
 found=0
 
-for video in *.mkv *.mp4; do
+for video in *.mkv *.mp4 *.avi; do
     [[ -e "$video" ]] || continue
-    episode=$(grep -oiE 'S[0-9]+E[0-9]+' <<< "$video") || continue
+    read -r vs ve < <(extract_episode "$video") || continue
 
-    for sub in *.srt *.ass; do
+    for sub in *.srt *.ass *.sub; do
         [[ -e "$sub" ]] || continue
-        [[ "${sub,,}" == *"${episode,,}"* ]] || continue
+        read -r ss se < <(extract_episode "$sub") || continue
+
+        # Episode must match; if both have season, season must match too
+        (( ve == se )) || continue
+        (( vs == -1 || ss == -1 || vs == ss )) || continue
 
         new_name="${video%.*}.${sub##*.}"
         [[ "$sub" == "$new_name" ]] && continue
 
         found=1
-        if [[ "$DRY_RUN" -eq 1 ]]; then
+        if (( DRY_RUN )); then
             echo "[dry-run] $sub -> $new_name"
         else
             echo "$sub -> $new_name"
@@ -39,6 +89,6 @@ for video in *.mkv *.mp4; do
     done
 done
 
-if [[ "$found" -eq 0 ]]; then
+if (( ! found )); then
     echo "No subtitles to rename."
 fi
