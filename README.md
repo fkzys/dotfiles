@@ -286,7 +286,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | Script | Description |
 |---|---|
 | `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. |
-| `rename_subs` | Rename subtitle files (`.srt`, `.ass`) to match video filenames by episode number (`S01E01`). Supports `--dry-run`. |
+| rename_subs | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
 
 Both are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
 
