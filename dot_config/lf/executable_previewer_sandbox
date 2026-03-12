@@ -35,5 +35,10 @@ bwrap_args=(
               "$HOME/.local/state/mpv/watch_later"
 )
 
+[[ -d "$HOME/.local/state/lf/watched" ]] && bwrap_args+=(
+    --ro-bind "$HOME/.local/state/lf/watched" \
+              "$HOME/.local/state/lf/watched"
+)
+
 exec bwrap "${bwrap_args[@]}" \
     /usr/bin/bash "$HOME/.config/lf/previewer" "$real_file" "$@"

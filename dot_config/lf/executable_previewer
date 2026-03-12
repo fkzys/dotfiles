@@ -65,6 +65,7 @@ case "$(file -Lb --mime-type "$file")" in
     video/*)
         thumb="$("${HOME}/.config/lf/vidthumb" "$file")"
         real="$(realpath -- "$file")"
+        hash=$(printf '%s' "$real" | md5sum | awk '{print toupper($1)}')
         pos="$(get_watch_pos "$real")"
 
         label=""
@@ -73,6 +74,11 @@ case "$(file -Lb --mime-type "$file")" in
             dur=$(timeout 2 ffprobe -v quiet \
                 -show_entries format=duration -of csv=p=0 "$file" 2>/dev/null)
             [[ -n "$dur" && "$dur" != "N/A" ]] && label+=" / $(fmt_time "$dur")"
+        elif [[ -f "${HOME}/.local/state/lf/watched/${hash}" ]]; then
+            label="▣"
+            dur=$(timeout 2 ffprobe -v quiet \
+                -show_entries format=duration -of csv=p=0 "$file" 2>/dev/null)
+            [[ -n "$dur" && "$dur" != "N/A" ]] && label+=" $(fmt_time "$dur")"
         fi
 
         draw "$thumb" "$label"
