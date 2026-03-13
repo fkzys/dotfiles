@@ -319,3 +319,7 @@ Some configs based on [tatsumoto-ren/dotfiles](https://github.com/tatsumoto-ren/
 - `.local/bin/cabl`
 - `.local/bin/dmenu`
 - mpd, ncmpcpp, lf, fontconfig, mpv/input.conf
+
+## License
+
+AGPL-3.0-or-later
