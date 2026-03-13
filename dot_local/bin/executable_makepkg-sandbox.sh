@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Sandboxed makepkg — called by yay via $MAKEPKG
 set -euo pipefail
-. "${HOME}/.local/lib/bwrap-common.sh"
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
 BUILD_DIR="$(realpath "$PWD")"
 
