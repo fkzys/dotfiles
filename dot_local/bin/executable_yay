@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 # Sandboxed yay: makepkg builds isolated from $HOME
 set -euo pipefail
-export MAKEPKG="${HOME}/.local/lib/makepkg-sandbox.sh"
+export MAKEPKG="${HOME}/.local/bin/makepkg-sandbox.sh"
 exec /usr/bin/yay "$@"
