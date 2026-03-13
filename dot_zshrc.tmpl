@@ -87,6 +87,7 @@ source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 export EDITOR=nvim
 export PATH="${HOME}/.local/bin:${PATH}"
 export SOPS_AGE_KEY_FILE="$HOME/keys/age-key.txt"
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
 
 export MAKEFLAGS="-j$(nproc)"
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)

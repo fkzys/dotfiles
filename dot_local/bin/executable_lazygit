@@ -23,7 +23,8 @@ A+=(--dir "${HOME}"
     --bind "${HOME}/.config/lazygit"       "${HOME}/.config/lazygit"
     --bind "${HOME}/.local/state/lazygit"  "${HOME}/.local/state/lazygit"
     --ro-bind-try "${HOME}/.gitconfig"     "${HOME}/.gitconfig"
-    --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git")
+    --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git"
+    --ro-bind-try "${HOME}/.ssh/id_ed25519.pub" "${HOME}/.ssh/id_ed25519.pub")
 
 bwrap_ssh_agent A
 bwrap_runtime_dir A

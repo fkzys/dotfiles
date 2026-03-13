@@ -1,0 +1,16 @@
+[user]
+{{- if eq .chezmoi.hostname "desktop-1" }}
+	name = linux_name2
+	email = linux2@email.org
+{{- end }}
+{{- if eq .chezmoi.hostname "laptop-1" }}
+	name = linux_name3
+	email = linux3@email.org
+{{- end }}
+	signingKey = /home/user/.ssh/id_ed25519.pub
+[pull]
+	rebase = true
+[gpg]
+	format = ssh
+[commit]
+	gpgSign = true
