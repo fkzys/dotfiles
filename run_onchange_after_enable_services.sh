@@ -2,7 +2,7 @@
 set -e
 
 echo "--- User services ---"
-systemctl --user enable hypridle hyprpaper hyprpolkitagent hyprsunset waybar mpd
+systemctl --user enable hypridle hyprpaper hyprpolkitagent hyprsunset waybar mpd ssh-agent
 
 echo "--- System services ---"
 sudo systemctl enable firewalld
