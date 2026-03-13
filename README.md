@@ -56,7 +56,14 @@ Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) h
 
 ## Application sandboxing
 
-GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library `~/.local/lib/bwrap-common.sh` provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened\_malloc integration.
+GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library [bwrap-common](https://gitlab.com/fkzys/bwrap-common) (`/usr/lib/bwrap-common/bwrap-common.sh`) provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened\_malloc integration.
+
+Before sourcing, each wrapper validates the library with [verify-lib](https://gitlab.com/fkzys/verify-lib) — a compiled binary that checks file ownership, permissions, and symlink integrity:
+
+```sh
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+```
 
 AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$HOME` as empty tmpfs, preventing PKGBUILD `build()` from accessing SSH keys, configs, or other sensitive data.
 
@@ -91,104 +98,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
 
-### Library (`~/.local/lib/bwrap-common.sh`)
-
-Provides functions used by all wrappers. Each function takes a variable name and appends bwrap arguments to it via nameref.
-
-The library uses an include guard (`_BWRAP_COMMON_LOADED`) to allow safe sourcing from multiple files.
-
-**Low-level helpers:**
-
-| Function | Purpose |
-|---|---|
-| `bwrap_base` | System skeleton (`/usr`, `/etc`, `/proc`, `/sys`, `/dev`, `/tmp`) |
-| `bwrap_lib64` | `/usr/lib64` bind or symlink |
-| `bwrap_resolv` | resolv.conf symlink target for DNS |
-| `bwrap_gpu` | DRI + NVIDIA device nodes |
-| `bwrap_wayland` | Wayland socket (rw for `connect()`) |
-| `bwrap_x11` | X11/XWayland socket + Xauthority |
-| `bwrap_audio` | PipeWire + PulseAudio sockets |
-| `bwrap_dbus_session` / `bwrap_dbus_system` | D-Bus sockets (unfiltered) |
-| `bwrap_dbus_filtered` | Filtered D-Bus via `xdg-dbus-proxy` with custom rules; falls back to unfiltered if proxy is unavailable |
-| `bwrap_dbus_common` | Pre-configured filtered D-Bus for typical GUI apps (XDG portals, notifications, status notifier, screen saver, login1, a11y); accepts extra rules |
-| `bwrap_themes` | GTK2/3, fontconfig, Qt, Kvantum, fonts, icons |
-| `bwrap_gtk_theme_env` | Set `GTK_THEME`, `GTK_ICON_THEME`, `XCURSOR_THEME` from host gsettings (for sandboxes without dconf) |
-| `bwrap_fcitx` | fcitx5 input method sockets + env |
-| `bwrap_home_tmpfs` | tmpfs `$HOME` with XDG skeleton |
-| `bwrap_runtime_dir` | XDG\_RUNTIME\_DIR with correct permissions |
-| `bwrap_env_base` | `HOME`, `LANG`, `PATH`, `XDG_RUNTIME_DIR` |
-| `bwrap_sandbox` | `--unshare-all`, optional `--share-net` / `--new-session` |
-| `bwrap_resolve_files` | Resolve file arguments to bind mounts |
-| `bwrap_bind_dir` | Create state dirs on host + add `--bind` |
-| `bwrap_ro_bind_dir` | Bind pre-existing dirs read-only, skip missing |
-| `bwrap_ssh_agent` | SSH agent socket forwarding |
-| `bwrap_hardened_malloc` | Upgrade to default variant via `LD_PRELOAD` |
-| `bwrap_no_hardened_malloc` | Disable hardened\_malloc for incompatible apps |
-| `bwrap_exec` | Run bwrap as foreground child and clean up D-Bus proxy processes on exit; falls back to `exec bwrap` when no proxies are active |
-| `require_dir` | Validate that directories exist, exit on missing |
-
-**High-level composites:**
-
-| Function | Purpose |
-|---|---|
-| `bwrap_gui_setup` | `bwrap_base` + `lib64` + `gpu` + optional `resolv` + `runtime_dir` + `home_tmpfs` |
-| `bwrap_gui_finish` | `themes` + `wayland`/`x11` + D-Bus (mode: `unfiltered`/`filtered`/`none`) + `env_base` + malloc + `sandbox` |
-
-#### D-Bus filtering
-
-`bwrap_dbus_filtered` starts an `xdg-dbus-proxy` instance with `--filter` and the provided rules, waits for the proxy socket, and binds it into the sandbox as `$XDG_RUNTIME_DIR/bus`. Proxy processes are tracked and cleaned up automatically by `bwrap_exec`.
-
-`bwrap_dbus_common` wraps `bwrap_dbus_filtered` with a default rule set suitable for most GUI applications:
-
-| Rule group | Bus names |
-|---|---|
-| XDG portals | `org.freedesktop.portal.Desktop`, `org.freedesktop.portal.Documents` |
-| GUI services | `org.freedesktop.Notifications`, `org.kde.StatusNotifierWatcher`, `org.freedesktop.ScreenSaver`, `org.freedesktop.login1`, `org.a11y.Bus` |
-
-Extra `--talk`/`--own` rules can be appended per-app (e.g. `--talk=org.freedesktop.secrets` for Nextcloud).
-
-`bwrap_gui_finish` accepts a 5th parameter (`dbus` mode) controlling which D-Bus helper is used:
-- `unfiltered` (default) — `bwrap_dbus_session` (full session bus access)
-- `filtered` — `bwrap_dbus_common`
-- `none` — no D-Bus access
-
-When using filtered D-Bus, wrappers must call `bwrap_exec` instead of `exec bwrap` to ensure proxy cleanup.
-
-### Wrapper pattern
-
-Typical GUI wrapper using high-level composites:
-
-```bash
-A=()
-bwrap_gui_setup A yes                    # yes = network (adds resolv)
-bwrap_bind_dir A "${HOME}/.config/app" "${HOME}/Data"
-bwrap_ro_bind_dir A "${MEDIA_DIR}"
-bwrap_audio A
-bwrap_gui_finish A wayland yes default filtered  # display, network, malloc, dbus
-bwrap_exec "${A[@]}" -- /usr/bin/app "$@"
-```
-
-Equivalent using low-level helpers:
-
-```bash
-A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_gpu A
-bwrap_resolv A
-bwrap_runtime_dir A
-bwrap_home_tmpfs A
-bwrap_bind_dir A "${HOME}/.config/app" "${HOME}/Data"
-bwrap_ro_bind_dir A "${MEDIA_DIR}"
-bwrap_themes A
-bwrap_wayland A
-bwrap_audio A
-bwrap_dbus_common A
-bwrap_env_base A
-bwrap_hardened_malloc A default
-bwrap_sandbox A yes
-bwrap_exec "${A[@]}" -- /usr/bin/app "$@"
-```
+For the full list of bwrap-common functions and wrapper patterns, see [bwrap-common](https://gitlab.com/fkzys/bwrap-common).
 
 ## lf file manager
 
