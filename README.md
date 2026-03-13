@@ -6,17 +6,20 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## What's included
 
-- **WM**: Hyprland + waybar + hyprpaper + hypridle/hyprlock
+- **WM**: Hyprland (via [uwsm](https://github.com/Vladimir-csp/uwsm)) + waybar + hyprpaper + hypridle/hyprlock + hyprsunset
 - **Terminal**: kitty + zsh
-- **Editor**: neovim
+- **Editor**: neovim + lazygit
 - **Files**: lf + thunar
 - **Audio**: mpd + ncmpcpp + mpv
+- **Audio switching**: audio-device-switcher (PipeWire sink selection via wpctl + wofi)
 - **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via wofi, auto-switch PipeWire sink)
+- **Screenshots**: swappy (annotation tool)
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
-- **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry)
-- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode)
+- **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
+- **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
+- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via wofi), dmenu (wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
 
@@ -45,13 +48,13 @@ The light variant provides zero-on-free, slab canaries, and guard slabs. The def
 
 GTK4 uses [glycin](https://gitlab.gnome.org/GNOME/glycin) for image loading, which sets `RLIMIT_AS` on its sandboxed loader processes. This is incompatible with hardened\_malloc's large virtual memory reservation (~240 GB `PROT_NONE` guard regions). A `libfake_rlimit.so` shim intercepts `prlimit64(RLIMIT_AS)` calls, returning success without applying the limit.
 
-Applications with incompatible custom allocators (PartitionAlloc, mozjemalloc) have hardened\_malloc disabled inside their bwrap namespace via `--ro-bind /dev/null /etc/ld.so.preload`.
+Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEngine) have hardened\_malloc disabled inside their bwrap namespace via `--unsetenv LD_PRELOAD` and `--ro-bind /dev/null /etc/ld.so.preload`.
 
 | Allocator | Applications |
 |---|---|
 | default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer |
 | light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
-| disabled | anki, goldendict (PartitionAlloc) |
+| disabled | anki, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
 
 ## Application sandboxing
@@ -67,32 +70,34 @@ _src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
 AUR builds via `yay` are also sandboxed — `makepkg` runs inside bwrap with `$HOME` as empty tmpfs, preventing PKGBUILD `build()` from accessing SSH keys, configs, or other sensitive data.
 
+System desktop entries are overridden in `~/.local/share/applications/` to redirect `Exec=` to the bwrap wrappers, ensuring applications launch sandboxed from application launchers and file associations.
+
 Flatpak applications have per-app permission overrides in `~/.local/share/flatpak/overrides/`.
 
-Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/autostart/`) instead of systemd user services. The desktop entries use templated paths pointing to the bwrap wrappers.
+Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/autostart/`) instead of systemd user services. The desktop entries use templated paths pointing to the bwrap wrappers. Nextcloud also has a D-Bus activation service (`~/.local/share/dbus-1/services/`) for on-demand startup.
 
 subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/`) for launcher integration.
 
 | Application | Display | Network | Notes |
 |---|---|---|---|
-| anki | Wayland | yes | QtWebEngine, Anki2 data dir, audio sources dir + subs2srs dir from secrets |
+| anki | Wayland | yes | QtWebEngine, Anki2 data dir, Downloads/anki, audio sources dir + subs2srs dir from secrets |
 | fcitx5 | Wayland | no | Input method daemon, socket dir shared via `/tmp/fcitx5-$UID`, D-Bus session access |
 | gimp | Wayland | no | Pictures/Downloads rw |
-| goldendict | XWayland | yes | Dictionary + audio dirs from secrets |
-| imv | Wayland | no | Read-only file viewer |
-| keepassxc | Wayland | no | DB dir from secrets, isolated from network |
-| krita | XWayland | no | Separate config dir trick |
+| goldendict | XWayland | yes | Dictionary + audio dirs from secrets, fcitx5 input |
+| imv | Wayland | no | Read-only file viewer, fontconfig |
+| keepassxc | Wayland | no | DB dir from secrets, fcitx5 input, isolated from network |
+| krita | XWayland | no | Separate config dir trick, Pictures/Downloads rw, audio, fcitx5 input |
 | lazygit | terminal | yes | CWD bind, SSH agent forwarding |
-| mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration |
+| mpv | Wayland | yes | subs2srs/mpvacious, Anki2 integration, watch\_later + watched state dirs, Screenshots |
 | nextcloud | Wayland | yes | Sync dir from secrets, filtered D-Bus (secrets + kwallet), GNOME keyring forwarding |
 | nvim | terminal | yes | CWD + file args, clipboard via Wayland |
 | obs | Wayland | yes | Camera devices, Videos dir |
-| otd-daemon | — | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, network isolated |
+| otd-daemon | Wayland (no GUI) | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, Wayland socket for tablet mapping |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
-| subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, GTK theme via env, fcitx5 input |
+| subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, GTK theme via env, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
-| swappy | Wayland | no | Screenshots dir |
+| swappy | Wayland | no | Screenshots dir, D-Bus system access |
 | transformers\_ocr | Wayland | yes | OCR daemon (foreground) sandboxed with GPU access, Python venv read-only; IPC runtime dir bind-mounted for host↔sandbox FIFO/PID visibility; filtered D-Bus; client commands (recognize, hold, stop) run unsandboxed on host |
 | yay (makepkg) | — | yes | `$HOME` is tmpfs, only build dir writable |
 
@@ -112,11 +117,9 @@ The previewer runs inside a bwrap sandbox with read-only access to the video dir
 
 ### Watch tracking
 
-After mpv exits, the preview is refreshed automatically. An `on-select` hook displays the mpv resume position in the lf status bar when navigating to a video with saved state, or `▣ watched` for fully watched videos.
+An mpv script (`mark-watched.lua`) creates watched markers on playback completion (EOF) and removes them when a file is replayed.
 
-### Status bar
-
-An `on-select` hook displays the mpv resume position in the lf status bar when navigating to a video with saved state.
+After mpv exits, lf auto-refreshes the preview. An `on-select` hook displays the mpv resume position in the status bar when navigating to a video with saved state (e.g. `⏸ 12:34`), or `▣ watched` for fully watched videos.
 
 ### Keybindings
 
@@ -158,11 +161,12 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 |---|---|
 | `ls`, `ll`, `la`, `lt`, `l.` | `eza` variants (color, dirs first, git status, tree) |
 | `cat` | `bat --paging=never` |
-| `ccat` | `bat` with full decorations, no color |
+| `ccat` | `bat --paging=never --style=full --color=never` |
 | `catp` | `bat` with pager |
 | `rg` | `ripgrep --smart-case` |
 | `vi`, `vim` | `nvim` |
 | `lg` | `lazygit` |
+| `start-hyprland` | `exec uwsm start start-hyprland` |
 | `g`, `ga`, `gc`, `gco`, `gd`, `gl`, `gp`, `gst`, `glog` | git shorthands |
 | Flatpak apps | `firefox`, `telegram`, etc. → `flatpak run <id>` (generated from a map, conditional on feature flags) |
 | Directory aliases | Per-host `cd` shortcuts from `secrets.enc.yaml` (e.g. `anime`, `subs`) |
@@ -199,10 +203,14 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 
 | Script | Description |
 |---|---|
-| `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. |
-| rename_subs | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
+| `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. Two-phase pipeline: demux (I/O-bound, low parallelism) → encode (CPU-bound, high parallelism). |
+| `rename_subs` | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
+| `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `wofi`. |
+| `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `wofi`, auto-switch PipeWire sink on connect. |
+| `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `wofi`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
+| `dmenu` | `wofi` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`). |
 
-Both are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
+`ffmpeg_jp` and `rename_subs` are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
 
 ## Firefox
 
