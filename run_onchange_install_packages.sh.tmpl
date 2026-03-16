@@ -1,22 +1,49 @@
 #!/bin/bash
 
-set -e  
+set -e
 
-echo "Checking AUR helper..."
-if ! command -v yay &> /dev/null; then
-    echo "Yay not found. Installing..."
-    sudo pacman -S --needed base-devel git
-    git clone https://aur.archlinux.org/yay.git /tmp/yay
-    cd /tmp/yay
-    makepkg -si 
-    cd -
-    rm -rf /tmp/yay
-fi
+# ─── Config ───
+REPO_NAME="custom"
+REPO_DIR="/var/cache/pacman/${REPO_NAME}"
 
 GITPKG_PRIMARY="https://gitlab.com/fkzys"
 GITPKG_FALLBACK="https://github.com/rpPH4kQocMjkm2Ve"
 
-echo "Checking gitpkg"
+# ─── Bootstrap aurutils ───
+echo "Checking aurutils..."
+if ! command -v aur &> /dev/null; then
+    echo "aurutils not found. Installing..."
+    sudo pacman -S --needed base-devel git
+    BOOTSTRAP_DIR=$(mktemp -d)
+    git clone https://aur.archlinux.org/aurutils.git "$BOOTSTRAP_DIR/aurutils"
+    cd "$BOOTSTRAP_DIR/aurutils"
+    makepkg -si --noconfirm
+    cd -
+    rm -rf "$BOOTSTRAP_DIR"
+fi
+
+# ─── Bootstrap local repo (runs once, self-heals if cache is lost) ───
+if [[ ! -f "${REPO_DIR}/${REPO_NAME}.db.tar.gz" ]]; then
+    echo "Creating local AUR repository at ${REPO_DIR}..."
+    sudo install -d "$REPO_DIR" -o "$(whoami)"
+    repo-add "${REPO_DIR}/${REPO_NAME}.db.tar.gz"
+
+    # Append repo to pacman.conf if not already present
+    if ! grep -q "^\[${REPO_NAME}\]" /etc/pacman.conf; then
+        echo "Adding [${REPO_NAME}] to pacman.conf..."
+        sudo tee -a /etc/pacman.conf > /dev/null <<EOF
+
+[${REPO_NAME}]
+SigLevel = Optional TrustAll
+Server = file://${REPO_DIR}
+EOF
+    fi
+
+    sudo pacman -Sy
+fi
+
+# ─── Bootstrap gitpkg ───
+echo "Checking gitpkg..."
 if ! command -v gitpkg &> /dev/null; then
     echo "gitpkg not found. Bootstrapping..."
     BOOTSTRAP_DIR=$(mktemp -d)
@@ -28,8 +55,7 @@ if ! command -v gitpkg &> /dev/null; then
     rm -rf "$BOOTSTRAP_DIR"
 fi
 
-
-# --- 1. Pacman ---
+# ─── 1. Native packages (official repos) ───
 NATIVE_PKGS=(
     # === SYSTEM & HYPRLAND ===
     "hyprland"
@@ -56,7 +82,7 @@ NATIVE_PKGS=(
     "wl-clipboard"
     {{- if eq .laptop true }}
     "brightnessctl"
-    "tpm2-tss" 
+    "tpm2-tss"
     "tpm2-tools"
     "bluez"
     "bluez-utils"
@@ -127,7 +153,7 @@ NATIVE_PKGS=(
     "swappy"
     "git-delta"
     "lazygit"
-    "zsh-autosuggestions" 
+    "zsh-autosuggestions"
     "zsh-syntax-highlighting"
     "bind"
     "imagemagick"
@@ -162,14 +188,14 @@ NATIVE_PKGS=(
     "nvidia-utils"
     "libva-nvidia-driver"
     {{- end }}
-    
+
     # === THEMES ===
     "materia-gtk-theme"
     "papirus-icon-theme"
     "kvantum"
 )
 
-# --- 2. AUR ---
+# ─── 2. AUR packages ───
 AUR_PKGS=(
     "kopia-bin"
     {{- if eq .tablet true }}
@@ -177,11 +203,18 @@ AUR_PKGS=(
     {{- end }}
     {{- if eq .goldendict true }}
     "goldendict-ng"
+    "gd-tools-git"
     {{- end }}
     "coolercontrol-bin"
+    "aurutils"
+    "cf-terraforming"
+    "hunspell-ja-git"
+    "mecab-git"
+    "siji-git"
+    "ventoy-bin"
 )
 
-# --- 3. Flatpak ---
+# ─── 3. Flatpak packages ───
 FLATPAK_PKGS=(
     "com.github.tchx84.Flatseal"
     "org.mozilla.firefox"
@@ -196,8 +229,7 @@ FLATPAK_PKGS=(
     {{- end }}
 )
 
-# --- 4. gitpkg ---
-
+# ─── 4. gitpkg packages ───
 GITPKG_PKGS=(
     "verify-lib"
     "gitpkg"
@@ -214,16 +246,20 @@ GITPKG_PKGS=(
     {{- end }}
 )
 
+# ─── Install ───
+
 echo "--- Installing Native Packages ---"
 sudo pacman -S --needed "${NATIVE_PKGS[@]}"
 
 echo "--- Installing AUR Packages ---"
-yay -S --needed "${AUR_PKGS[@]}"
 
-echo "--- Flatpak ---"
+aur sync --no-view -n "${AUR_PKGS[@]}"
+sudo pacman -S --needed "${AUR_PKGS[@]}"
+
+echo "--- Installing Flatpak Packages ---"
 flatpak install "${FLATPAK_PKGS[@]}"
 
-echo "--- gitpkg ---"
+echo "--- Installing gitpkg Packages ---"
 sudo gitpkg install --needed "${GITPKG_PKGS[@]}"
 
 echo "Done"
