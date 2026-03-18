@@ -11,15 +11,15 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Editor**: neovim + lazygit
 - **Files**: lf + thunar
 - **Audio**: mpd + ncmpcpp + mpv
-- **Audio switching**: audio-device-switcher (PipeWire sink selection via wpctl + wofi)
-- **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via wofi, auto-switch PipeWire sink)
+- **Audio switching**: audio-device-switcher (PipeWire sink selection via wpctl + dmenu)
+- **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via dmenu, auto-switch PipeWire sink)
 - **Screenshots**: swappy (annotation tool)
 - **Input**: fcitx5 + kkc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 - **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
-- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via wofi), dmenu (wofi wrapper for dmenu compatibility)
+- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
 
@@ -52,8 +52,8 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer |
-| light (system-wide) | hyprland, waybar, kitty, wofi, thunar, all other native processes |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
+| light (system-wide) | hyprland, waybar, kitty, thunar, all other native processes |
 | disabled | anki, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
 
@@ -81,6 +81,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | Application | Display | Network | Notes |
 |---|---|---|---|
 | anki | Wayland | yes | QtWebEngine, Anki2 data dir, Downloads/anki, audio sources dir + subs2srs dir from secrets |
+| dmenu (wofi) | Wayland | no | Sandboxed wofi --dmenu wrapper, config/cache dirs |
 | fcitx5 | Wayland | no | Input method daemon, socket dir shared via `/tmp/fcitx5-$UID`, D-Bus session access |
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary + audio dirs from secrets, fcitx5 input |
@@ -95,10 +96,11 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | otd-daemon | Wayland (no GUI) | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, Wayland socket for tablet mapping |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
-| subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, GTK theme via env, fcitx5 input |
+| subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir, D-Bus system access |
 | transformers\_ocr | Wayland | yes | OCR daemon (foreground) sandboxed with GPU access, Python venv read-only; IPC runtime dir bind-mounted for host↔sandbox FIFO/PID visibility; filtered D-Bus; client commands (recognize, hold, stop) run unsandboxed on host |
+| wofi-launcher | Wayland | no | Application launcher; .desktop parsing + icon lookup on host, wofi display inside sandbox; icon dirs read-only, usage cache writable |
 | yay / aurutils (makepkg) | — | yes | `$HOME` is tmpfs, `-s`→`-d` / `-r` stripped (no\_new\_privs blocks sudo), no-op fakeroot shim (hardened\_malloc compat), build dir + `PKGDEST`/`SRCPKGDEST`/`LOGDEST`/`BUILDDIR` writable |
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
@@ -205,10 +207,11 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 |---|---|
 | `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. Two-phase pipeline: demux (I/O-bound, low parallelism) → encode (CPU-bound, high parallelism). |
 | `rename_subs` | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
-| `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `wofi`. |
-| `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `wofi`, auto-switch PipeWire sink on connect. |
-| `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `wofi`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
-| `dmenu` | `wofi` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`). |
+| `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
+| `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
+| `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `dmenu`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
+| `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
+| `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
 
 `ffmpeg_jp` and `rename_subs` are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
 
