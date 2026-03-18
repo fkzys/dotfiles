@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Bluetooth Audio Toggle
-Connect/disconnect paired BT audio devices via wofi, auto-switch PipeWire sink.
+Connect/disconnect paired BT audio devices via dmenu, auto-switch PipeWire sink.
 
 Usage: bt-audio
        DEBUG=1 bt-audio
@@ -50,7 +50,7 @@ def btctl(*commands: str) -> str:
 
 
 def check_dependencies() -> None:
-    missing = [c for c in ("bluetoothctl", "wpctl", "wofi") if not shutil.which(c)]
+    missing = [c for c in ("bluetoothctl", "wpctl", "dmenu") if not shutil.which(c)]
     if missing:
         print(f"Error: missing: {' '.join(missing)}", file=sys.stderr)
         sys.exit(1)
@@ -94,7 +94,7 @@ def show_menu(devices: list[dict]) -> dict | None:
         lines.append(f"{icon} {d['name']} [{action}]")
 
     r = subprocess.run(
-        ["wofi", "-dmenu", "-p", "Bluetooth audio"],
+        ["dmenu", "-p", "Bluetooth audio"],
         input="\n".join(lines),
         capture_output=True,
         text=True,

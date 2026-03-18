@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Audio Device Switcher
-Switches default audio output using wpctl + wofi
+Switches default audio output using wpctl + dmenu
 Usage: DEBUG=1 audio-device-switcher
 """
 
@@ -20,7 +20,7 @@ def debug(msg: str) -> None:
 
 
 def check_dependencies() -> None:
-    missing = [cmd for cmd in ("wpctl", "wofi") if not shutil.which(cmd)]
+    missing = [cmd for cmd in ("wpctl", "dmenu") if not shutil.which(cmd)]
 
     if not shutil.which("notify-send"):
         debug("notify-send not found, will use stderr")
@@ -90,7 +90,7 @@ def get_audio_sinks() -> list[dict]:
 
 
 def show_menu(sinks: list[dict]) -> dict | None:
-    """Show wofi menu, return chosen device or None."""
+    """Show dmenu menu, return chosen device or None."""
     lines = []
     for s in sinks:
         prefix = "✓" if s["default"] else " "
@@ -98,7 +98,7 @@ def show_menu(sinks: list[dict]) -> dict | None:
 
     try:
         r = subprocess.run(
-            ["wofi", "-dmenu", "-p", "Select audio device"],
+            ["dmenu", "-p", "Select audio device"],
             input="\n".join(lines),
             capture_output=True,
             text=True,

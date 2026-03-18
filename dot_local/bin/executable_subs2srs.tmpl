@@ -23,7 +23,6 @@ bwrap_fcitx A
 
 A+=(--chdir "$CONF_DIR")
 
-bwrap_gtk_theme_env A
 bwrap_gui_finish A wayland no
 
 exec bwrap "${A[@]}" -- /usr/bin/subs2srs "$@"

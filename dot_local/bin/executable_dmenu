@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# dmenu-compatible wrapper for wofi
-# Translates common dmenu options to wofi equivalents
+# dmenu-compatible wrapper: sandboxed wofi --dmenu
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
 wofi_args=(--dmenu --location 2)
 
@@ -9,10 +11,21 @@ while [[ $# -gt 0 ]]; do
         -p) wofi_args+=(--prompt "$2"); shift 2 ;;
         -i) wofi_args+=(--insensitive); shift ;;
         -l) wofi_args+=(--lines "$2"); shift 2 ;;
-        -fn|-nb|-nf|-sb|-sf) shift 2 ;;  # skip dmenu appearance options
+        -fn|-nb|-nf|-sb|-sf) shift 2 ;;
         *) wofi_args+=("$1"); shift ;;
     esac
 done
 
-exec wofi "${wofi_args[@]}"
+A=()
+bwrap_gui_setup A
 
+bwrap_ro_bind_dir A "${HOME}/.config/wofi"
+bwrap_bind_dir    A "${HOME}/.cache/wofi"
+
+bwrap_themes          A
+bwrap_wayland         A
+bwrap_env_base        A
+bwrap_hardened_malloc A default
+bwrap_sandbox         A no no
+
+exec bwrap "${A[@]}" -- /usr/bin/wofi "${wofi_args[@]}"

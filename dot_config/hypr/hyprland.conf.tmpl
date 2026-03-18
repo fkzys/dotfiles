@@ -1,5 +1,5 @@
 # #######################################################################################
-# HYPRLAND CONFIG 
+# HYPRLAND CONFIG
 # #######################################################################################
 
 {{ $s := output "sops" "-d" (joinPath .chezmoi.sourceDir "secrets.enc.yaml") | fromYaml -}}
@@ -76,7 +76,7 @@ exec-once = fcitx5 -dr
 $mainMod = SUPER
 $terminal = kitty
 $fileManager = thunar
-$menu = wofi --show drun --allow-images 
+$menu = wofi-launcher
 
 #############
 ### INPUT ###
@@ -131,9 +131,9 @@ permission = /usr/bin/hyprlock, screencopy, allow
 # https://wiki.hypr.land/Configuring/Variables/#general
 general {
     gaps_in = 5
-    gaps_out = 15 
+    gaps_out = 15
     border_size = 2
-    
+
     # https://wiki.hypr.land/Configuring/Variables/#variable-types for info about colors
     col.active_border = rgba(33ccffee) rgba(00ff99ee) 45deg
     col.inactive_border = rgba(595959aa)
@@ -252,7 +252,7 @@ misc {
 group {
     col.border_active = rgba(ca9ee6ff) rgba(f2d5cfff) 45deg
     col.border_inactive = rgba(b4befecc) rgba(6c7086cc) 45deg
-    
+
     groupbar {
         enabled = true
         font_size = 10
@@ -263,7 +263,7 @@ group {
 }
 
 # -----------------------------------------------------
-# KEYBINDINGS 
+# KEYBINDINGS
 # -----------------------------------------------------
 
 # Alt+Space → enter IM select mode → press 1/2/3 → done
@@ -293,10 +293,10 @@ bind = $mainMod SHIFT, Tab, changegroupactive, b
 
 # -- System and Windows --
 bind = $mainMod, Return, exec, $terminal
-bind = $mainMod SHIFT, Q, killactive 
+bind = $mainMod SHIFT, Q, killactive
 bind = $mainMod SHIFT, E, exec, uwsm stop
-bind = $mainMod SHIFT, SPACE, togglefloating, 
-bind = $mainMod, D, exec, $menu 
+bind = $mainMod SHIFT, SPACE, togglefloating,
+bind = $mainMod, D, exec, $menu
 bind = $mainMod, F, fullscreen,
 
 bind = $mainMod, W, togglegroup
@@ -323,7 +323,7 @@ bind = $mainMod, B, exec, bt-audio
 bind = $mainMod, C, exec, cabl
 bind = $mainMod SHIFT, V, exec, cabl clip
 
-# Screenshots 
+# Screenshots
 bind = $mainMod SHIFT, F, exec, ~/.config/hypr/scripts/screenshot.sh
 
 # -- Focus (Vim Keys - HJKL) --
@@ -399,7 +399,7 @@ binde = , right, resizeactive, 10 0
 binde = , left, resizeactive, -10 0
 binde = , up, resizeactive, 0 -10
 binde = , down, resizeactive, 0 10
-bind = , escape, submap, reset 
+bind = , escape, submap, reset
 bind = , return, submap, reset
 bind = $mainMod, R, submap, reset
 submap = reset
