@@ -312,10 +312,6 @@ chezmoi init --apply https://gitlab.com/fkzys/dotfiles.git
 
 During init, chezmoi will prompt for feature flags (nvidia, laptop, etc.).
 
-## Post-install
-
-- Set Kvantum theme to `KvGnomeDark` in kvantummanager
-
 ## Credits
 
 Some configs based on [tatsumoto-ren/dotfiles](https://github.com/tatsumoto-ren/dotfiles):
