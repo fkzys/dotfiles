@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+_map=$(mktemp)
+_list=$(mktemp)
+_usage="${HOME}/.cache/wofi-launcher-usage"
+trap 'rm -f "$_map" "$_list"' EXIT
+
+mkdir -p "$(dirname "$_usage")"
+touch "$_usage"
+
+# ── Icon lookup: match GTK icon theme resolution ─────────────
+_get_icon_theme() {
+    gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'" || echo "hicolor"
+}
+
+find_icon() {
+    local name="$1"
+    [[ -z "$name" ]] && return 1
+    [[ "$name" == /* && -f "$name" ]] && { realpath "$name"; return 0; }
+
+    local base="$name"
+    case "$base" in
+        *.png|*.svg|*.xpm) base="${base%.*}" ;;
+    esac
+    local theme
+    theme=$(_get_icon_theme)
+
+    local themes=("$theme" "hicolor")
+    local icon_roots=(
+        "${HOME}/.local/share/icons"
+        "${HOME}/.icons"
+        /usr/share/icons
+        /var/lib/flatpak/exports/share/icons
+        "${HOME}/.local/share/flatpak/exports/share/icons"
+    )
+    local sizes=(48x48 64x64 scalable 128x128 256x256 32x32 24x24 22x22 16x16 512x512)
+    local cats=(apps categories devices)
+
+    local root t s cat ext
+    for t in "${themes[@]}"; do
+        for root in "${icon_roots[@]}"; do
+            [[ -d "$root/$t" ]] || continue
+            for s in "${sizes[@]}"; do
+                for cat in "${cats[@]}"; do
+                    for ext in svg png; do
+                        [[ -f "$root/$t/$s/$cat/$base.$ext" ]] && \
+                            { realpath "$root/$t/$s/$cat/$base.$ext"; return 0; }
+                    done
+                done
+            done
+        done
+    done
+
+    local ext
+    for ext in svg png xpm; do
+        [[ -f "/usr/share/pixmaps/$base.$ext" ]] && \
+            { realpath "/usr/share/pixmaps/$base.$ext"; return 0; }
+    done
+    return 1
+}
+
+# ── Fallback icon ────────────────────────────────────────────
+_fallback_icon=""
+_find_fallback() {
+    [[ -n "$_fallback_icon" ]] && return 0
+    local theme
+    theme=$(_get_icon_theme)
+    local roots=(
+        /usr/share/icons
+        "${HOME}/.local/share/icons"
+        "${HOME}/.icons"
+    )
+    local names=(application-x-executable applications-system preferences-system application-x-addon)
+    local root t s name ext
+    for name in "${names[@]}"; do
+        for t in "$theme" "hicolor"; do
+            for root in "${roots[@]}"; do
+                [[ -d "$root/$t" ]] || continue
+                for s in 48x48 64x64 scalable 32x32; do
+                    for ext in svg png; do
+                        if [[ -f "$root/$t/$s/apps/$name.$ext" ]]; then
+                            _fallback_icon=$(realpath "$root/$t/$s/apps/$name.$ext")
+                            return 0
+                        fi
+                        if [[ -f "$root/$t/$s/categories/$name.$ext" ]]; then
+                            _fallback_icon=$(realpath "$root/$t/$s/categories/$name.$ext")
+                            return 0
+                        fi
+                    done
+                done
+            done
+        done
+    done
+    return 1
+}
+
+# ── Load usage counts ────────────────────────────────────────
+declare -A _counts
+while IFS=$'\t' read -r cnt nm; do
+    [[ -n "$nm" ]] && _counts["$nm"]=$cnt
+done < "$_usage"
+
+# ── Parse .desktop files ─────────────────────────────────────
+build_list() {
+    local dirs=(
+        "${HOME}/.local/share/applications"
+        /usr/share/applications
+        /usr/local/share/applications
+    )
+    [[ -d /var/lib/flatpak/exports/share/applications ]] && \
+        dirs+=(/var/lib/flatpak/exports/share/applications)
+    [[ -d "${HOME}/.local/share/flatpak/exports/share/applications" ]] && \
+        dirs+=("${HOME}/.local/share/flatpak/exports/share/applications")
+
+    declare -A seen
+    local dir df name exec_cmd icon skip in_entry line clean ipath
+
+    for dir in "${dirs[@]}"; do
+        [[ -d "$dir" ]] || continue
+        for df in "$dir"/*.desktop; do
+            [[ -f "$df" ]] || continue
+            name="" exec_cmd="" icon="" skip=false in_entry=false
+
+            while IFS= read -r line; do
+                case "$line" in
+                    "[Desktop Entry]") in_entry=true;  continue ;;
+                    "["*"]")           in_entry=false; continue ;;
+                esac
+                $in_entry || continue
+                case "$line" in
+                    Name=*)         [[ -z "$name" ]]     && name="${line#Name=}" ;;
+                    Exec=*)         [[ -z "$exec_cmd" ]] && exec_cmd="${line#Exec=}" ;;
+                    Icon=*)         [[ -z "$icon" ]]     && icon="${line#Icon=}" ;;
+                    NoDisplay=true) skip=true; break ;;
+                    Hidden=true)    skip=true; break ;;
+                esac
+            done < "$df"
+
+            $skip && continue
+            [[ -z "$name" || -z "$exec_cmd" ]] && continue
+            [[ -n "${seen[$name]+x}" ]] && continue
+            seen[$name]=1
+
+            clean=$(sed 's/ *%[fFuUdDnNickvm]//g; s/  */ /g; s/^ *//; s/ *$//' <<< "$exec_cmd")
+            printf '%s\t%s\n' "$name" "$clean" >> "$_map"
+
+            local count="${_counts[$name]:-0}"
+            if ipath=$(find_icon "$icon"); then
+                printf '%s\t%s\n' "$count" "img:${ipath}:text:${name}"
+            else
+                _find_fallback
+                if [[ -n "$_fallback_icon" ]]; then
+                    printf '%s\t%s\n' "$count" "img:${_fallback_icon}:text:${name}"
+                else
+                    printf '%s\t%s\n' "$count" "$name"
+                fi
+            fi
+        done
+    done
+}
+
+# sort: by count desc (numeric), then alpha by name
+build_list | sort -t$'\t' -k1,1rn -k2,2 | cut -f2 > "$_list"
+[[ -s "$_list" ]] || { echo "No .desktop entries found" >&2; exit 1; }
+
+# ── Collect icon dirs for bind-mount ──────────────────────────
+_icon_binds=()
+while IFS= read -r _line; do
+    [[ "$_line" == img:* ]] || continue
+    _ipath="${_line#img:}"
+    _ipath="${_ipath%%:text:*}"
+    _idir="$(dirname "$_ipath")"
+    [[ "$_idir" == /usr/* ]] && continue
+    _icon_binds+=("$_idir")
+done < "$_list"
+
+# ── Sandboxed wofi ───────────────────────────────────────────
+A=()
+bwrap_gui_setup A
+
+bwrap_ro_bind_dir A "${HOME}/.config/wofi"
+bwrap_bind_dir    A "${HOME}/.cache/wofi"
+
+if [[ ${#_icon_binds[@]} -gt 0 ]]; then
+    while IFS= read -r _d; do
+        [[ -d "$_d" ]] && A+=(--ro-bind "$_d" "$_d")
+    done < <(printf '%s\n' "${_icon_binds[@]}" | sort -u)
+fi
+
+bwrap_themes          A
+bwrap_wayland         A
+bwrap_env_base        A
+bwrap_hardened_malloc A default
+bwrap_sandbox         A no no
+
+# ── wofi: stdin=list, stdout=selection ────────────────────────
+choice=$(bwrap "${A[@]}" -- /usr/bin/wofi \
+    --dmenu \
+    --allow-images \
+    --parse-search \
+    --insensitive \
+    --cache-file=/dev/null \
+    --prompt launch \
+    "$@" < "$_list") || exit 0
+
+[[ -z "$choice" ]] && exit 0
+
+# ── Map selection → command ───────────────────────────────────
+if [[ "$choice" == img:*:text:* ]]; then
+    app_name="${choice#*:text:}"
+else
+    app_name="$choice"
+fi
+
+exec_cmd=$(awk -F'\t' -v n="$app_name" '$1 == n { print $2; exit }' "$_map")
+[[ -z "$exec_cmd" ]] && { echo "No mapping for: $app_name" >&2; exit 1; }
+
+# ── Update usage count ───────────────────────────────────────
+_counts["$app_name"]=$(( ${_counts[$app_name]:-0} + 1 ))
+{
+    for k in "${!_counts[@]}"; do
+        printf '%s\t%s\n' "${_counts[$k]}" "$k"
+    done
+} | sort -t$'\t' -k1,1rn > "$_usage"
+
+# ── Launch on host ───────────────────────────────────────────
+exec bash -c "exec $exec_cmd"
