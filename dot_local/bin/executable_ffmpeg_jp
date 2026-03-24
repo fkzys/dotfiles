@@ -1,27 +1,29 @@
 #!/bin/bash
 # Extract Japanese audio track from video files as opus.
-# Usage: ffmpeg_jp [-j N] [-i N] <file|directory>...
-#   -j N  encode parallelism (default: nproc)
-#   -i N  I/O parallelism for demux (default: 2)
+# Usage: ffmpeg_jp [-j N] <file|directory>...
 
 set -euo pipefail
 
 JOBS=$(nproc 2>/dev/null || echo 4)
-IO_JOBS=2
 
-while getopts "j:i:" opt; do
+while getopts "j:" opt; do
     case $opt in
         j) JOBS="$OPTARG" ;;
-        i) IO_JOBS="$OPTARG" ;;
-        *) echo "Usage: $0 [-j N] [-i N] <file|directory>..." >&2; exit 1 ;;
+        *) echo "Usage: $0 [-j N] <file|directory>..." >&2; exit 1 ;;
     esac
 done
 shift $((OPTIND - 1))
 
+# Single ffprobe call per file: get all audio stream info at once
 find_japanese_track() {
     local input="$1"
+    local first_index=""
+    local count=0
     local index lang title
     while IFS=, read -r index lang title; do
+        [[ -z "$index" ]] && continue
+        ((count++)) || true
+        [[ -z "$first_index" ]] && first_index="$index"
         if [[ "$lang" == "ja" || "$lang" == "jpn" ||
               "$title" =~ [Jj]apanese || "$title" =~ 日本語 ]]; then
             echo "$index"
@@ -30,24 +32,12 @@ find_japanese_track() {
     done < <(ffprobe -v error -select_streams a \
         -show_entries stream=index:stream_tags=language:stream_tags=title \
         -of csv=p=0 "$input")
+    # Fallback: single audio track → use it
+    if [[ "$count" -eq 1 && -n "$first_index" ]]; then
+        echo "$first_index"
+        return 0
+    fi
     echo "-1"
-}
-
-run_pool() {
-    local max_jobs="$1"; shift
-    local active=0
-    for cmd in "$@"; do
-        while ((active >= max_jobs)); do
-            wait -n 2>/dev/null || true
-            active=$((active - 1))
-        done
-        eval "$cmd" &
-        active=$((active + 1))
-    done
-    while ((active > 0)); do
-        wait -n 2>/dev/null || true
-        active=$((active - 1))
-    done
 }
 
 # --- collect files ---
@@ -63,17 +53,17 @@ elif [[ "$#" -gt 0 ]]; then
         elif [[ -d "$arg" ]]; then
             while IFS= read -r f; do
                 files+=("$f")
-            done < <(find "$arg" -type f \( -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \))
+            done < <(find "$arg" -type f \( -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \) | sort)
         else
             echo "ERROR: invalid path: $arg" >&2
         fi
     done
 else
-    echo "Usage: $0 [-j N] [-i N] <file|directory>..." >&2
+    echo "Usage: $0 [-j N] <file|directory>..." >&2
     exit 1
 fi
 
-# --- scan: find tracks, filter skips ---
+# --- scan and build work list ---
 declare -A track_map
 to_process=()
 for f in "${files[@]}"; do
@@ -84,15 +74,8 @@ for f in "${files[@]}"; do
     fi
     track=$(find_japanese_track "$f")
     if [[ "$track" -eq -1 ]]; then
-        count=$(ffprobe -v error -select_streams a \
-            -show_entries stream=index -of csv=p=0 "$f" | wc -l)
-        if [[ "$count" -eq 1 ]]; then
-            track=$(ffprobe -v error -select_streams a \
-                -show_entries stream=index -of csv=p=0 "$f")
-        else
-            echo "FAIL: no Japanese track in $name"
-            continue
-        fi
+        echo "FAIL: no Japanese track in $name"
+        continue
     fi
     track_map["$f"]="$track"
     to_process+=("$f")
@@ -104,62 +87,31 @@ if [[ ${#to_process[@]} -eq 0 ]]; then
 fi
 
 total=${#to_process[@]}
-echo "Processing $total files (extract: ${IO_JOBS}j, encode: ${JOBS}j)"
+echo "Processing $total files (${JOBS}j)"
 
-# cleanup temp files on exit/interrupt
-cleanup() {
-    for f in "${to_process[@]}"; do
-        rm -f "${f%.*}.tmp.mka"
-    done
-}
-trap cleanup EXIT
-
-# --- phase 1: demux audio (I/O bound, low parallelism) ---
-echo "--- Extracting audio (${IO_JOBS}j) ---"
+# --- single-pass: demux + encode in one ffmpeg call ---
 active=0
+done_count=0
 for f in "${to_process[@]}"; do
-    while ((active >= IO_JOBS)); do
-        wait -n 2>/dev/null || true
-        active=$((active - 1))
-    done
-    (
-        tmp="${f%.*}.tmp.mka"
-        echo "READ: $(basename "$f") [track ${track_map[$f]}]"
-        ffmpeg -nostdin -i "$f" -map "0:${track_map[$f]}" -c:a copy -v error "$tmp"
-    ) &
-    active=$((active + 1))
-done
-while ((active > 0)); do
-    wait -n 2>/dev/null || true
-    active=$((active - 1))
-done
-
-# --- phase 2: encode opus (CPU bound, high parallelism) ---
-echo "--- Encoding opus (${JOBS}j) ---"
-active=0
-for f in "${to_process[@]}"; do
-    tmp="${f%.*}.tmp.mka"
-    output="${f%.*}.opus"
-    [[ -f "$tmp" ]] || continue
     while ((active >= JOBS)); do
         wait -n 2>/dev/null || true
         active=$((active - 1))
     done
     (
         name=$(basename "$f")
-        if ffmpeg -nostdin -i "$tmp" -c:a libopus -b:a 96k -v error "$output"; then
+        output="${f%.*}.opus"
+        if ffmpeg -nostdin -v error \
+            -i "$f" -map "0:${track_map[$f]}" \
+            -c:a libopus -b:a 96k -vn \
+            "$output"; then
             echo "  OK: $name"
         else
             echo "FAIL: $name"
             rm -f "$output"
         fi
-        rm -f "$tmp"
     ) &
     active=$((active + 1))
 done
-while ((active > 0)); do
-    wait -n 2>/dev/null || true
-    active=$((active - 1))
-done
+wait
 
 echo "Done: $total files"
