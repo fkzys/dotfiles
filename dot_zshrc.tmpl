@@ -102,6 +102,7 @@ export MANROFFOPT="-c"
 eval "$(zoxide init zsh)"
 eval "$(fzf --zsh)"
 eval "$(direnv hook zsh)"
+eval "$(sing-box completion zsh)"
 
 # ── FZF ─────────────────────────────────────────────────────
 export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
