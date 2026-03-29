@@ -27,17 +27,6 @@ if [[ ! -f "${REPO_DIR}/${REPO_NAME}.db.tar.gz" ]]; then
     echo "Creating local AUR repository at ${REPO_DIR}..."
     sudo install -d "$REPO_DIR" -o "$(whoami)"
     repo-add "${REPO_DIR}/${REPO_NAME}.db.tar.gz"
-
-    # Append repo to pacman.conf if not already present
-    if ! grep -q "^\[${REPO_NAME}\]" /etc/pacman.conf; then
-        echo "Adding [${REPO_NAME}] to pacman.conf..."
-        sudo tee -a /etc/pacman.conf > /dev/null <<EOF
-
-[${REPO_NAME}]
-SigLevel = Optional TrustAll
-Server = file://${REPO_DIR}
-EOF
-    fi
 fi
 
 # ─── Bootstrap gitpkg ───
