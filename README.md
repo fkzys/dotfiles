@@ -19,6 +19,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 - **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
+- **Encrypted vault**: keys-vault (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, auto open/close on login/lock)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
@@ -39,6 +40,41 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
 
 Per-host data (monitor line, wallpaper path, container graphroot, directory aliases) is stored in `secrets.enc.yaml` under each application's key, keyed by hostname.
+
+## Encrypted vault (`keys-vault`)
+
+`keys-vault` provides file-based encryption for `~/keys` using [gocryptfs](https://github.com/rfjakob/gocryptfs). The encrypted ciphertext lives in `~/.keys.enc/`; the plaintext is mounted at `~/keys/` via FUSE.
+
+The passphrase is stored in GNOME Keyring (via `secret-tool`) for automatic unlock — no interactive prompt on login.
+
+### Lifecycle
+
+| Event | Action |
+|---|---|
+| Hyprland startup | `exec-once = keys-vault open` — mounts the vault automatically |
+| Screen lock | `ssh-add -D` + `keys-vault close` — flushes SSH keys and unmounts the vault before locking |
+| Screen unlock | `keys-vault open` — re-mounts the vault after hyprlock exits |
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `keys-vault init` | Create encrypted volume, store passphrase in keyring (random or user-supplied) |
+| `keys-vault open` | Mount vault (passphrase from keyring); no-op if already mounted or not initialized |
+| `keys-vault close` | Unmount vault; no-op if not mounted |
+| `keys-vault status` | Print state: `open` / `locked` / `not initialized` |
+| `keys-vault passwd` | Rotate gocryptfs passphrase and update keyring |
+
+### SSH integration
+
+SSH is configured to use keys from the vault:
+
+```
+AddKeysToAgent yes
+IdentityFile ~/keys/ssh/id_ed25519
+```
+
+With `AddKeysToAgent yes`, keys are loaded into `ssh-agent` on first use. On lock, `ssh-add -D` flushes the agent and the vault is unmounted, so keys are inaccessible while the screen is locked. On unlock, the vault is re-mounted and keys are available again on next SSH use.
 
 ## Memory allocator hardening
 
@@ -210,6 +246,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
 | `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
 | `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `dmenu`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
+| `keys-vault` | Encrypted vault manager for `~/keys` — gocryptfs FBE with passphrase in GNOME Keyring. Commands: `init`, `open`, `close`, `status`, `passwd`. Integrated with Hyprland startup and lock screen. |
 | `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
 | `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
 
@@ -229,7 +266,7 @@ Custom overrides include:
 
 Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age).
 
-Each machine has its own age key. Keys are stored separately from this repo.
+Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by `keys-vault`.
 
 ### Structure
 
@@ -288,17 +325,23 @@ subs2srs:
 
 1. Create age key:
 ```bash
-mkdir -p ~/.config/chezmoi
-age-keygen -o ~/.config/chezmoi/key.txt
+mkdir -p ~/keys/age
+age-keygen -o ~/keys/age/chezmoi.txt
 ```
 
-2. Add public key to `.sops.yaml` and re-encrypt secrets:
+2. Initialize the vault:
+```bash
+keys-vault init
+keys-vault open
+```
+
+3. Add public key to `.sops.yaml` and re-encrypt secrets:
 ```bash
 # Edit .sops.yaml, add new recipient
 sops updatekeys secrets.enc.yaml
 ```
 
-3. Add host data to secrets:
+4. Add host data to secrets:
 ```bash
 sops secrets.enc.yaml
 # Add entries under the relevant application keys
