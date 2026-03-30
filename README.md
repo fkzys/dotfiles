@@ -19,7 +19,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 - **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
-- **Encrypted vault**: keys-vault (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, auto open/close on login/lock)
+- **Encrypted vault**: keys-vault (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
@@ -51,30 +51,48 @@ The passphrase is stored in GNOME Keyring (via `secret-tool`) for automatic unlo
 
 | Event | Action |
 |---|---|
-| Hyprland startup | `exec-once = keys-vault open` — mounts the vault automatically |
+| Login | `keys-vault.service` (oneshot, `RemainAfterExit`) mounts the vault via `keys-vault open` |
+| Login (after vault) | `ssh-add.service` loads SSH keys from the vault via `ssh-add-keys` (4 h lifetime) |
 | Screen lock | `ssh-add -D` + `keys-vault close` — flushes SSH keys and unmounts the vault before locking |
-| Screen unlock | `keys-vault open` — re-mounts the vault after hyprlock exits |
+| Screen unlock | `keys-vault open` + `ssh-add-keys` — re-mounts the vault and reloads SSH keys after hyprlock exits |
+
+### Systemd integration
+
+The vault and SSH key loading are managed by two user services:
+
+- **`keys-vault.service`** — oneshot service that mounts the vault on login (`After=gnome-keyring-daemon.service`). `ExecStop` unmounts on logout.
+- **`ssh-add.service`** — oneshot service that loads all keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime (`After=ssh-agent.service keys-vault.service`, `Requires` both).
+
+Both are enabled at `WantedBy=default.target` / `graphical-session.target` via the chezmoi enable-services hook.
+
+### Stale mount recovery
+
+If the gocryptfs process dies (e.g. OOM kill, crash) the FUSE mountpoint becomes stale — it appears in `/proc/mounts` but `stat` fails with "Transport endpoint is not connected". `keys-vault` detects this condition and automatically recovers:
+
+- **`open`** calls `recover_stale` before attempting to mount, force-unmounting the dead mountpoint and re-mounting cleanly.
+- **`close`** detects stale mounts and force-unmounts them.
+- **`status`** reports `stale` as a distinct state.
 
 ### Commands
 
 | Command | Description |
 |---|---|
 | `keys-vault init` | Create encrypted volume, store passphrase in keyring (random or user-supplied) |
-| `keys-vault open` | Mount vault (passphrase from keyring); no-op if already mounted or not initialized |
-| `keys-vault close` | Unmount vault; no-op if not mounted |
-| `keys-vault status` | Print state: `open` / `locked` / `not initialized` |
+| `keys-vault open` | Mount vault (passphrase from keyring); recovers stale mounts; no-op if already mounted or not initialized |
+| `keys-vault close` | Unmount vault; handles stale mounts; no-op if not mounted |
+| `keys-vault status` | Print state: `open` / `locked` / `stale` / `not initialized` |
 | `keys-vault passwd` | Rotate gocryptfs passphrase and update keyring |
 
 ### SSH integration
 
-SSH is configured to use keys from the vault:
+SSH keys are loaded proactively at login and after screen unlock via `ssh-add-keys`, which adds all keys from `~/keys/ssh/` to `ssh-agent` with a 4-hour lifetime. `AddKeysToAgent` is set to `no` — keys are managed explicitly by the service/script rather than on first use.
 
 ```
-AddKeysToAgent yes
+AddKeysToAgent no
 IdentityFile ~/keys/ssh/id_ed25519
 ```
 
-With `AddKeysToAgent yes`, keys are loaded into `ssh-agent` on first use. On lock, `ssh-add -D` flushes the agent and the vault is unmounted, so keys are inaccessible while the screen is locked. On unlock, the vault is re-mounted and keys are available again on next SSH use.
+On lock, `ssh-add -D` flushes the agent and the vault is unmounted, so keys are inaccessible while the screen is locked. On unlock, the vault is re-mounted and keys are reloaded immediately.
 
 ## Memory allocator hardening
 
@@ -176,6 +194,10 @@ No framework (oh-my-zsh, etc.) — prompt, completions, keybindings are configur
 
 robbyrussell-style prompt with inline git branch + dirty indicator (`✗`), implemented as a shell function (no plugin).
 
+### PATH
+
+`~/.local/bin` is prepended to `$PATH` via zsh's `path` array, deduplicated with `typeset -U path`.
+
 ### Plugins
 
 - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) — fish-like suggestions
@@ -237,6 +259,22 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `MAKEFLAGS` etc. | Parallel builds (`-j$(nproc)`) for make, cmake, ninja, meson, dpkg |
 | `SOPS_AGE_KEY_FILE` | Age key path for sops decryption |
 
+## Systemd user services
+
+| Service | Type | Description |
+|---|---|---|
+| `ssh-agent` | — | SSH agent daemon (`SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket`) |
+| `keys-vault` | oneshot, `RemainAfterExit` | Mounts gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
+| `ssh-add` | oneshot, `RemainAfterExit` | Loads all SSH keys from `~/keys/ssh/` into agent (4 h lifetime). Requires `ssh-agent` + `keys-vault`. |
+| `hypridle` | — | Idle daemon |
+| `hyprpaper` | — | Wallpaper daemon |
+| `hyprpolkitagent` | — | Polkit agent |
+| `hyprsunset` | — | Night light. Override filters `[TRACE]` log spam via `grep -v` and uses `KillMode=control-group` for clean shutdown. |
+| `waybar` | — | Status bar |
+| `mpd` | — | Music player daemon |
+
+All user services are enabled via a chezmoi `run_onchange_after` hook. System services enabled: `firewalld`, `systemd-oomd`.
+
 ## Standalone scripts (`~/.local/bin/`)
 
 | Script | Description |
@@ -246,7 +284,8 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
 | `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
 | `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `dmenu`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
-| `keys-vault` | Encrypted vault manager for `~/keys` — gocryptfs FBE with passphrase in GNOME Keyring. Commands: `init`, `open`, `close`, `status`, `passwd`. Integrated with Hyprland startup and lock screen. |
+| `keys-vault` | Encrypted vault manager for `~/keys` — gocryptfs FBE with passphrase in GNOME Keyring. Commands: `init`, `open`, `close`, `status`, `passwd`. Detects and recovers stale FUSE mounts. Managed by `keys-vault.service`. |
+| `ssh-add-keys` | Loads all SSH keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime. Used by `ssh-add.service` and the lock/unlock script. |
 | `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
 | `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
 
