@@ -5,7 +5,7 @@
 #   init     — create encrypted volume, store passphrase in keyring
 #   open     — mount (passphrase from keyring)
 #   close    — unmount
-#   status   — print state: open / locked / not initialized
+#   status   — print state: open / locked / stale / not initialized
 #   passwd   — rotate gocryptfs passphrase
 
 set -euo pipefail
@@ -19,8 +19,27 @@ KR_LABEL="keys-vault gocryptfs passphrase"
 # ── helpers ───────────────────────────────────────────────
 
 die()            { printf 'keys-vault: %s\n' "$*" >&2; exit 1; }
-is_mounted()     { mountpoint -q "$PLAIN_DIR" 2>/dev/null; }
 is_initialized() { [[ -f "$CIPHER_DIR/gocryptfs.conf" ]]; }
+
+is_mounted() {
+    mountpoint -q "$PLAIN_DIR" 2>/dev/null
+}
+
+is_stale() {
+    if grep -qF " ${PLAIN_DIR} fuse." /proc/mounts 2>/dev/null; then
+        ! stat "$PLAIN_DIR" &>/dev/null
+    else
+        return 1
+    fi
+}
+
+recover_stale() {
+    is_stale || return 0
+    printf 'keys-vault: recovering stale FUSE mount at %s\n' "$PLAIN_DIR" >&2
+    fusermount -u "$PLAIN_DIR" 2>/dev/null \
+        || fusermount -uz "$PLAIN_DIR" 2>/dev/null \
+        || die "cannot unmount stale $PLAIN_DIR"
+}
 
 kr_store() {
     printf '%s' "$1" \
@@ -97,6 +116,7 @@ EOF
 }
 
 cmd_open() {
+    recover_stale
     is_mounted && return 0
     is_initialized || return 0
 
@@ -113,6 +133,13 @@ cmd_open() {
 }
 
 cmd_close() {
+    if is_stale; then
+        fusermount -u "$PLAIN_DIR" 2>/dev/null \
+            || fusermount -uz "$PLAIN_DIR" 2>/dev/null \
+            || die "cannot unmount stale $PLAIN_DIR"
+        return 0
+    fi
+
     is_mounted || return 0
 
     fusermount -u "$PLAIN_DIR" 2>/dev/null \
@@ -123,6 +150,8 @@ cmd_close() {
 cmd_status() {
     if ! is_initialized; then
         echo "not initialized"
+    elif is_stale; then
+        echo "stale"
     elif is_mounted; then
         echo "open"
     else
