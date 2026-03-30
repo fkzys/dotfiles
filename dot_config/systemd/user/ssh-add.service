@@ -1,0 +1,12 @@
+[Unit]
+Description=Load SSH keys from keys-vault
+After=ssh-agent.service keys-vault.service
+Requires=ssh-agent.service keys-vault.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/ssh-add-keys
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target
