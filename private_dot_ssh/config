@@ -1,4 +1,4 @@
-AddKeysToAgent yes
+AddKeysToAgent no
 IdentityFile ~/keys/ssh/id_ed25519
 Host github.com
     HostName github.com
