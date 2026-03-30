@@ -48,6 +48,9 @@ env = XMODIFIERS,@im=fcitx
 #D-Bus
 #exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE
 
+# Encrypted vault
+exec-once = keys-vault open
+
 # Apply GTK Theme
 exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
 exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'

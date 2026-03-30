@@ -1,0 +1,161 @@
+#!/bin/bash
+# keys-vault — FBE for ~/keys via gocryptfs + GNOME Keyring
+#
+# Commands:
+#   init     — create encrypted volume, store passphrase in keyring
+#   open     — mount (passphrase from keyring)
+#   close    — unmount
+#   status   — print state: open / locked / not initialized
+#   passwd   — rotate gocryptfs passphrase
+
+set -euo pipefail
+
+CIPHER_DIR="${HOME}/.keys.enc"
+PLAIN_DIR="${HOME}/keys"
+
+KR_ATTR="keys-vault"
+KR_LABEL="keys-vault gocryptfs passphrase"
+
+# ── helpers ───────────────────────────────────────────────
+
+die()            { printf 'keys-vault: %s\n' "$*" >&2; exit 1; }
+is_mounted()     { mountpoint -q "$PLAIN_DIR" 2>/dev/null; }
+is_initialized() { [[ -f "$CIPHER_DIR/gocryptfs.conf" ]]; }
+
+kr_store() {
+    printf '%s' "$1" \
+        | secret-tool store --label="$KR_LABEL" application "$KR_ATTR"
+}
+
+kr_lookup() {
+    timeout 5 secret-tool lookup application "$KR_ATTR" 2>/dev/null
+}
+
+read_pass() {
+    local pass pass2
+    IFS= read -rsp "Passphrase: " pass; echo >&2
+    [[ -n "$pass" ]] || die "empty passphrase"
+    IFS= read -rsp "Confirm:    " pass2; echo >&2
+    [[ "$pass" = "$pass2" ]] || die "passphrases do not match"
+    printf '%s' "$pass"
+}
+
+gen_pass() { head -c 32 /dev/urandom | base64 | tr -d '\n'; }
+
+choose_pass() {
+    local pass choice
+    printf '1) Generate random passphrase\n' >&2
+    printf '2) Enter your own\n' >&2
+    IFS= read -rp 'Choice [1/2]: ' choice
+
+    case "$choice" in
+        1)
+            pass=$(gen_pass)
+            cat >&2 <<EOF
+
+Generated passphrase (save it — e.g. in KeePassXC):
+
+    $pass
+
+It will be stored in GNOME Keyring for automatic unlock.
+EOF
+            ;;
+        2)  pass=$(read_pass) ;;
+        *)  die "invalid choice" ;;
+    esac
+    printf '%s' "$pass"
+}
+
+# ── commands ──────────────────────────────────────────────
+
+cmd_init() {
+    is_initialized && die "already initialized ($CIPHER_DIR)"
+
+    if [[ -d "$PLAIN_DIR" ]] \
+        && [[ -n "$(ls -A "$PLAIN_DIR" 2>/dev/null)" ]]; then
+        cat >&2 <<EOF
+keys-vault: $PLAIN_DIR is not empty.
+Move or back up its contents first, then run init again.
+After 'keys-vault init' and 'keys-vault open' you can copy them into the mounted volume.
+EOF
+        exit 1
+    fi
+
+    local pass
+    pass=$(choose_pass)
+
+    mkdir -p "$CIPHER_DIR"
+
+    printf '%s' "$pass" \
+        | gocryptfs -init -q -- "$CIPHER_DIR" \
+        || { rm -rf "$CIPHER_DIR"; die "gocryptfs -init failed"; }
+
+    kr_store "$pass"
+
+    mkdir -p "$PLAIN_DIR"
+    printf '\nInitialized. Run: keys-vault open\n' >&2
+}
+
+cmd_open() {
+    is_mounted && return 0
+    is_initialized || return 0
+
+    mkdir -p "$PLAIN_DIR"
+
+    local pass
+    pass=$(kr_lookup) \
+        || die "keyring lookup failed (is gnome-keyring unlocked?)"
+    [[ -n "$pass" ]] || die "empty passphrase in keyring"
+
+    printf '%s' "$pass" \
+        | gocryptfs -q -- "$CIPHER_DIR" "$PLAIN_DIR" \
+        || die "mount failed"
+}
+
+cmd_close() {
+    is_mounted || return 0
+
+    fusermount -u "$PLAIN_DIR" 2>/dev/null \
+        || fusermount -u -z "$PLAIN_DIR" \
+        || die "unmount failed"
+}
+
+cmd_status() {
+    if ! is_initialized; then
+        echo "not initialized"
+    elif is_mounted; then
+        echo "open"
+    else
+        echo "locked"
+    fi
+}
+
+cmd_passwd() {
+    is_initialized || die "not initialized — run: keys-vault init"
+
+    local old new
+    old=$(kr_lookup) || die "cannot read current passphrase from keyring"
+
+    new=$(choose_pass)
+
+    printf '%s\n%s\n' "$old" "$new" \
+        | gocryptfs -passwd -q -- "$CIPHER_DIR" \
+        || die "gocryptfs -passwd failed"
+
+    kr_store "$new"
+    printf 'Passphrase rotated and updated in keyring.\n' >&2
+}
+
+# ── main ──────────────────────────────────────────────────
+
+case "${1:-}" in
+    init)   cmd_init   ;;
+    open)   cmd_open   ;;
+    close)  cmd_close  ;;
+    status) cmd_status ;;
+    passwd) cmd_passwd ;;
+    *)
+        printf 'Usage: keys-vault {init|open|close|status|passwd}\n' >&2
+        exit 1
+        ;;
+esac
