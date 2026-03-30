@@ -34,7 +34,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `tablet` | OpenTabletDriver (otd-daemon) |
 | `ocr` | transformers\_ocr (autostart + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
-| `subs2srs` | [subs2srs-gtk3](https://gitlab.com/fkzys/subs2srs-gtk3) + SubsReTimer (wrappers, desktop entries, packages) |
+| `subs2srs` | [subs2srs](https://gitlab.com/fkzys/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
