@@ -16,4 +16,5 @@ hyprlock
 
 set_usb_lock 1
 keys-vault open
+ssh-add-keys
 systemctl --user restart hyprsunset
