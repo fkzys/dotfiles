@@ -58,11 +58,6 @@ exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 exec-once = otd-daemon
 {{- end }}
 
-{{- if eq .ocr true }}
-# OCR
-exec-once = transformers_ocr start
-{{- end }}
-
 # Input Method
 exec-once = fcitx5 -dr
 

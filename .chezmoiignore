@@ -30,6 +30,11 @@ secrets.enc.yaml
 .local/bin/otd-daemon
 {{- end }}
 
+{{- if not .ocr }}
+.local/bin/transformers_ocr
+.config/systemd/user/transformers_ocr.service.d/override.conf
+{{- end }}
+
 {{- if not .portproton }}
 .local/share/flatpak/overrides/ru.linux_gaming.PortProton
 {{- end }}
