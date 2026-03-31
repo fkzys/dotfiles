@@ -32,7 +32,7 @@ Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmo
 | `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
 | `laptop` | Battery, backlight, natural scroll, disable touchpad while typing, compact fonts, bluetooth packages |
 | `tablet` | OpenTabletDriver (otd-daemon) |
-| `ocr` | transformers\_ocr (autostart + keybind) |
+| `ocr` | transformers\_ocr (systemd user service + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
 | `subs2srs` | [subs2srs](https://gitlab.com/fkzys/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
@@ -272,8 +272,9 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `hyprsunset` | — | Night light. Override filters `[TRACE]` log spam via `grep -v` and uses `KillMode=control-group` for clean shutdown. |
 | `waybar` | — | Status bar |
 | `mpd` | — | Music player daemon |
+| `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
-All user services are enabled via a chezmoi `run_onchange_after` hook. System services enabled: `firewalld`, `systemd-oomd`.
+All user services are enabled via a chezmoi `run_onchange_after` hook (templated to conditionally include `transformers_ocr` when the `ocr` flag is set). System services enabled: `firewalld`, `systemd-oomd`.
 
 ## Standalone scripts (`~/.local/bin/`)
 
