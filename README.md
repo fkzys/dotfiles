@@ -2,7 +2,7 @@
 
 ![screenshot](assets/screenshot.png)
 
-Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
+Arch Linux dotfiles, managed with [dotm](https://gitlab.com/fkzys/dotm).
 
 ## What's included
 
@@ -24,7 +24,7 @@ Arch Linux dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Per-host configuration
 
-Feature flags are set via `chezmoi init` prompts and stored in `~/.config/chezmoi/chezmoi.toml`:
+Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm/<hash>.toml`:
 
 | Variable | Description |
 |---|---|
@@ -63,7 +63,7 @@ The vault and SSH key loading are managed by two user services:
 - **`keys-vault.service`** — oneshot service that mounts the vault on login (`After=gnome-keyring-daemon.service`). `ExecStop` unmounts on logout.
 - **`ssh-add.service`** — oneshot service that loads all keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime (`After=ssh-agent.service keys-vault.service`, `Requires` both).
 
-Both are enabled at `WantedBy=default.target` / `graphical-session.target` via the chezmoi enable-services hook.
+Both are enabled at `WantedBy=default.target` / `graphical-session.target` via the dotm enable-services hook.
 
 ### Stale mount recovery
 
@@ -274,7 +274,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `mpd` | — | Music player daemon |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
-All user services are enabled via a chezmoi `run_onchange_after` hook (templated to conditionally include `transformers_ocr` when the `ocr` flag is set). System services enabled: `firewalld`, `systemd-oomd`.
+All user services are enabled via a dotm `on_change` script (templated to conditionally include `transformers_ocr` when the `ocr` flag is set). System services enabled: `firewalld`, `systemd-oomd`.
 
 ## Standalone scripts (`~/.local/bin/`)
 
@@ -294,7 +294,7 @@ All user services are enabled via a chezmoi `run_onchange_after` hook (templated
 
 ## Firefox
 
-Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via chezmoi at `~/.var/app/org.mozilla.firefox/.mozilla/firefox/<profile>/user-overrides.js`.
+Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via dotm at `~/.mozilla/firefox/arkenfox/user-overrides.js`.
 
 Custom overrides include:
 - Hardware video acceleration (VA-API)
@@ -304,7 +304,7 @@ Custom overrides include:
 
 ## Secrets
 
-Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age).
+Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) and accessed in templates via `output "sops" "-d"` — dotm delegates encryption entirely to external tools.
 
 Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by `keys-vault`.
 
@@ -366,7 +366,7 @@ subs2srs:
 1. Create age key:
 ```bash
 mkdir -p ~/keys/age
-age-keygen -o ~/keys/age/chezmoi.txt
+age-keygen -o ~/keys/age/dotm.txt
 ```
 
 2. Initialize the vault:
@@ -390,10 +390,13 @@ sops secrets.enc.yaml
 ## Install
 
 ```bash
-chezmoi init --apply https://gitlab.com/fkzys/dotfiles.git
+git clone https://gitlab.com/fkzys/dotfiles.git
+cd dotfiles
+dotm init
+dotm apply
 ```
 
-During init, chezmoi will prompt for feature flags (nvidia, laptop, etc.).
+During init, dotm will prompt for feature flags (nvidia, laptop, etc.).
 
 ## Credits
 
