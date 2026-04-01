@@ -174,6 +174,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `vi`, `vim` | `nvim` |
 | `lg` | `lazygit` |
 | `start-hyprland` | `exec uwsm start start-hyprland` |
+| `ssops` | `sudo SOPS_AGE_KEY="$(cat ~/keys/age/dotm.txt)"` |
 | `g`, `ga`, `gc`, `gco`, `gd`, `gl`, `gp`, `gst`, `glog` | git shorthands |
 | Flatpak apps | `firefox`, `telegram`, etc. → `flatpak run <id>` (generated from a map, conditional on feature flags) |
 | Directory aliases | Per-host `cd` shortcuts from `secrets.enc.yaml` (e.g. `anime`, `subs`) |
