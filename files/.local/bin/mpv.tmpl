@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+{{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
+{{ $host := .hostname -}}
+{{ $mpv := index $s "mpv" -}}
+DATA_BINDS=()
+{{ if hasKey $mpv $host -}}
+{{ range $key, $path := index $mpv $host -}}
+[[ -d "{{ $path }}" ]] && DATA_BINDS+=(--ro-bind "{{ $path }}" "{{ $path }}")
+{{ end -}}
+{{ end -}}
+
+FILE_BINDS=(); ARGS=()
+bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
+
+A=()
+bwrap_gui_setup A yes
+bwrap_dbus_system A
+bwrap_bind_dir A \
+    "${HOME}/.config/mpv" \
+    "${HOME}/.local/state/mpv/watch_later" \
+    "${HOME}/.local/state/lf/watched" \
+    "${HOME}/.local/share/Anki2" \
+    "${HOME}/Pictures/Screenshots" \
+    "${HOME}/.cache/fontconfig"
+A+=("${DATA_BINDS[@]}" "${FILE_BINDS[@]}")
+bwrap_audio A
+A+=(--setenv XDG_STATE_HOME "${HOME}/.local/state")
+bwrap_gui_finish A wayland yes
+
+exec bwrap "${A[@]}" -- /usr/bin/mpv "${ARGS[@]}"

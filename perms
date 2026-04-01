@@ -1,0 +1,28 @@
+# pattern                                                      mode  owner  group
+# ─── Executable scripts ───
+.local/bin/**                                                  0755  -      -
+.config/hypr/scripts/**                                        0755  -      -
+.config/lf/cleaner                                             0755  -      -
+.config/lf/previewer                                           0755  -      -
+.config/lf/previewer_sandbox                                   0755  -      -
+.config/lf/vidthumb                                            0755  -      -
+run_sing-box.sh                                                0755  -      -
+
+# ─── SSH (private) ───
+.ssh/                                                          0700  -      -
+.ssh/**                                                        0600  -      -
+
+# ─── fcitx5 (private) ───
+.config/fcitx5/                                                0700  -      -
+.config/fcitx5/**/                                             0700  -      -
+.config/fcitx5/**                                              0600  -      -
+
+# ─── Flatpak overrides (private) ───
+.local/share/flatpak/                                          0700  -      -
+.local/share/flatpak/**/                                       0700  -      -
+.local/share/flatpak/**                                        0600  -      -
+
+# ─── Firefox arkenfox (private) ───
+.var/app/org.mozilla.firefox/.mozilla/firefox/                  0700  -      -
+.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/         0700  -      -
+.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/**       0600  -      -

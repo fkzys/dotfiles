@@ -1,0 +1,41 @@
+# Repo files
+.git/**
+assets/**
+LICENSE
+README.md
+secrets.enc.yaml
+.envrc
+.sops.yaml
+
+{{ if not .goldendict -}}
+.local/bin/goldendict
+.local/share/applications/io.github.xiaoyifang.goldendict_ng.desktop
+{{ end -}}
+
+{{ if not .subs2srs -}}
+.local/bin/subs2srs
+.local/bin/subsretimer
+.local/share/applications/subs2srs.desktop
+.local/share/applications/subsretimer.desktop
+{{ end -}}
+
+{{ if not .sparrow -}}
+.local/bin/sparrow
+{{ end -}}
+
+{{ if not .laptop -}}
+.local/bin/bt-audio
+{{ end -}}
+
+{{ if not .tablet -}}
+.local/bin/otd-daemon
+{{ end -}}
+
+{{ if not .ocr -}}
+.local/bin/transformers_ocr
+.config/systemd/user/transformers_ocr.service.d/**
+{{ end -}}
+
+{{ if not .portproton -}}
+.local/share/flatpak/overrides/ru.linux_gaming.PortProton
+{{ end -}}
