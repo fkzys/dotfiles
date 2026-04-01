@@ -19,7 +19,7 @@ Arch Linux dotfiles, managed with [dotm](https://gitlab.com/fkzys/dotm).
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 - **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
-- **Encrypted vault**: keys-vault (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
+- **Encrypted vault**: [keys-vault](https://gitlab.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
@@ -40,59 +40,6 @@ Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
 
 Per-host data (monitor line, wallpaper path, container graphroot, directory aliases) is stored in `secrets.enc.yaml` under each application's key, keyed by hostname.
-
-## Encrypted vault (`keys-vault`)
-
-`keys-vault` provides file-based encryption for `~/keys` using [gocryptfs](https://github.com/rfjakob/gocryptfs). The encrypted ciphertext lives in `~/.keys.enc/`; the plaintext is mounted at `~/keys/` via FUSE.
-
-The passphrase is stored in GNOME Keyring (via `secret-tool`) for automatic unlock — no interactive prompt on login.
-
-### Lifecycle
-
-| Event | Action |
-|---|---|
-| Login | `keys-vault.service` (oneshot, `RemainAfterExit`) mounts the vault via `keys-vault open` |
-| Login (after vault) | `ssh-add.service` loads SSH keys from the vault via `ssh-add-keys` (4 h lifetime) |
-| Screen lock | `ssh-add -D` + `keys-vault close` — flushes SSH keys and unmounts the vault before locking |
-| Screen unlock | `keys-vault open` + `ssh-add-keys` — re-mounts the vault and reloads SSH keys after hyprlock exits |
-
-### Systemd integration
-
-The vault and SSH key loading are managed by two user services:
-
-- **`keys-vault.service`** — oneshot service that mounts the vault on login (`After=gnome-keyring-daemon.service`). `ExecStop` unmounts on logout.
-- **`ssh-add.service`** — oneshot service that loads all keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime (`After=ssh-agent.service keys-vault.service`, `Requires` both).
-
-Both are enabled at `WantedBy=default.target` / `graphical-session.target` via the dotm enable-services hook.
-
-### Stale mount recovery
-
-If the gocryptfs process dies (e.g. OOM kill, crash) the FUSE mountpoint becomes stale — it appears in `/proc/mounts` but `stat` fails with "Transport endpoint is not connected". `keys-vault` detects this condition and automatically recovers:
-
-- **`open`** calls `recover_stale` before attempting to mount, force-unmounting the dead mountpoint and re-mounting cleanly.
-- **`close`** detects stale mounts and force-unmounts them.
-- **`status`** reports `stale` as a distinct state.
-
-### Commands
-
-| Command | Description |
-|---|---|
-| `keys-vault init` | Create encrypted volume, store passphrase in keyring (random or user-supplied) |
-| `keys-vault open` | Mount vault (passphrase from keyring); recovers stale mounts; no-op if already mounted or not initialized |
-| `keys-vault close` | Unmount vault; handles stale mounts; no-op if not mounted |
-| `keys-vault status` | Print state: `open` / `locked` / `stale` / `not initialized` |
-| `keys-vault passwd` | Rotate gocryptfs passphrase and update keyring |
-
-### SSH integration
-
-SSH keys are loaded proactively at login and after screen unlock via `ssh-add-keys`, which adds all keys from `~/keys/ssh/` to `ssh-agent` with a 4-hour lifetime. `AddKeysToAgent` is set to `no` — keys are managed explicitly by the service/script rather than on first use.
-
-```
-AddKeysToAgent no
-IdentityFile ~/keys/ssh/id_ed25519
-```
-
-On lock, `ssh-add -D` flushes the agent and the vault is unmounted, so keys are inaccessible while the screen is locked. On unlock, the vault is re-mounted and keys are reloaded immediately.
 
 ## Memory allocator hardening
 
@@ -264,7 +211,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | Service | Type | Description |
 |---|---|---|
 | `ssh-agent` | — | SSH agent daemon (`SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket`) |
-| `keys-vault` | oneshot, `RemainAfterExit` | Mounts gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
+| `keys-vault` | oneshot, `RemainAfterExit` | Mounts [keys-vault](https://gitlab.com/fkzys/keys-vault) gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
 | `ssh-add` | oneshot, `RemainAfterExit` | Loads all SSH keys from `~/keys/ssh/` into agent (4 h lifetime). Requires `ssh-agent` + `keys-vault`. |
 | `hypridle` | — | Idle daemon |
 | `hyprpaper` | — | Wallpaper daemon |
@@ -285,7 +232,6 @@ All user services are enabled via a dotm `on_change` script (templated to condit
 | `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
 | `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
 | `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `dmenu`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
-| `keys-vault` | Encrypted vault manager for `~/keys` — gocryptfs FBE with passphrase in GNOME Keyring. Commands: `init`, `open`, `close`, `status`, `passwd`. Detects and recovers stale FUSE mounts. Managed by `keys-vault.service`. |
 | `ssh-add-keys` | Loads all SSH keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime. Used by `ssh-add.service` and the lock/unlock script. |
 | `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
 | `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
@@ -306,7 +252,7 @@ Custom overrides include:
 
 Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) and accessed in templates via `output "sops" "-d"` — dotm delegates encryption entirely to external tools.
 
-Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by `keys-vault`.
+Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by [keys-vault](https://gitlab.com/fkzys/keys-vault).
 
 ### Structure
 
