@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+{{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
+DICT_DIR="{{ index $s "goldendict" "dict_dir" }}"
+AUDIO_DIR="{{ index $s "goldendict" "audio_dir" }}"
+
+A=()
+bwrap_gui_setup A yes
+bwrap_dbus_system A
+bwrap_bind_dir A \
+    "${HOME}/.config/goldendict" \
+    "${HOME}/.local/share/goldendict" \
+    "${HOME}/.local/share/GoldenDict-ng" \
+    "${HOME}/.cache/goldendict" \
+    "${HOME}/.cache/fontconfig"
+require_dir "${DICT_DIR}"
+bwrap_ro_bind_dir A "${DICT_DIR}" "${AUDIO_DIR}"
+bwrap_audio A
+bwrap_fcitx A
+A+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
+bwrap_gui_finish A x11 yes no
+
+exec bwrap "${A[@]}" -- /usr/bin/goldendict "$@"

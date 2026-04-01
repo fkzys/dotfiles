@@ -1,0 +1,27 @@
+dest = "~"
+
+[prompts]
+nvidia       = { type = "bool", question = "NVIDIA GPU" }
+amd_cpu      = { type = "bool", question = "AMD CPU (for temp sensors)" }
+laptop       = { type = "bool", question = "Laptop (battery, backlight, compact fonts)" }
+tablet       = { type = "bool", question = "Drawing tablet (OpenTabletDriver)" }
+ocr          = { type = "bool", question = "OCR (transformers_ocr)" }
+goldendict   = { type = "bool", question = "GoldenDict" }
+subs2srs     = { type = "bool", question = "subs2srs" }
+sparrow      = { type = "bool", question = "sparrow-wallet" }
+portproton   = { type = "bool", question = "PortProton" }
+virt_manager = { type = "bool", question = "QEMU / virt-manager" }
+
+[symlinks]
+".local/bin/imv-dir"  = "{{ .homeDir }}/.local/bin/imv"
+".local/bin/sing-box" = "{{ .homeDir }}/sing-box/sing-box"
+
+[[scripts]]
+path     = "scripts/install_packages.sh.tmpl"
+template = true
+trigger  = "on_change"
+
+[[scripts]]
+path     = "scripts/enable_services.sh.tmpl"
+template = true
+trigger  = "on_change"
