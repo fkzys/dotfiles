@@ -1,0 +1,14 @@
+[Unit]
+Description=Nextcloud Desktop Client
+After=graphical-session.target network-online.target
+PartOf=graphical-session.target
+Requires=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/nextcloud --background
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

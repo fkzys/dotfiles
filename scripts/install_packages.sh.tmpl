@@ -90,7 +90,7 @@ NATIVE_PKGS=(
 
     # === INPUT & FONTS ===
     "fcitx5-im"
-    "fcitx5-kkc"
+    "fcitx5-mozc"
     "ttf-hack"
     "otf-ipafont"
     "otf-font-awesome"
@@ -156,6 +156,10 @@ NATIVE_PKGS=(
     "python-pytest"
     "devtools"
     "gocryptfs"
+    "xorg-server-xvfb"
+    "python-pytest-timeout"
+    "nodejs"
+    "npm"
 
     # === DEV & VIRTUALIZATION ===
     "base-devel"
@@ -239,6 +243,11 @@ GITPKG_PKGS=(
     {{- end }}
 )
 
+# ─── 5. npm global packages ───
+NPM_PKGS=(
+    "@qwen-code/qwen-code@latest"
+)
+
 # ─── Install ───
 
 echo "--- Installing Native Packages ---"
@@ -254,5 +263,8 @@ flatpak install "${FLATPAK_PKGS[@]}"
 
 echo "--- Installing gitpkg Packages ---"
 sudo gitpkg install --needed "${GITPKG_PKGS[@]}"
+
+echo "--- Installing npm Global Packages ---"
+npm install -g "${NPM_PKGS[@]}"
 
 echo "Done"

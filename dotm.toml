@@ -15,6 +15,7 @@ virt_manager = { type = "bool", question = "QEMU / virt-manager" }
 [symlinks]
 ".local/bin/imv-dir"  = "{{ .homeDir }}/.local/bin/imv"
 ".local/bin/sing-box" = "{{ .homeDir }}/sing-box/sing-box"
+".config/systemd/user/com.nextcloudgmbh.Nextcloud.service" = "/dev/null"
 
 [[scripts]]
 path     = "scripts/install_packages.sh.tmpl"

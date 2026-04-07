@@ -1,0 +1,13 @@
+[Unit]
+Description=Fcitx 5 Input Method
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/fcitx5
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

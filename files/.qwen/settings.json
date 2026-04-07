@@ -1,0 +1,41 @@
+{
+  "general": {
+    "gitCoAuthor": false
+  },
+  "security": {
+    "auth": {
+      "selectedType": "qwen-oauth"
+    }
+  },
+  "model": {
+    "name": "coder-model",
+    "generationConfig": {
+      "samplingParams": {
+        "max_tokens": 16364,
+        "temperature": 0.5,
+        "top_p": 0.9
+      }
+    }
+  },
+  "tools": {
+    "sandbox": false,
+    "approvalMode": "auto-edit",
+    "truncateToolOutputThreshold": 0,
+    "truncateToolOutputLines": 0
+  },
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "respectQwenIgnore": true,
+      "enableRecursiveFileSearch": true,
+      "enableFuzzySearch": true
+    }
+  },
+  "telemetry": {
+    "enabled": false
+  },
+  "privacy": {
+    "usageStatisticsEnabled": false
+  },
+  "$version": 3
+}

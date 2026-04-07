@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Sandboxed qwen-code via bubblewrap
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+mkdir -p "${HOME}/.config/qwen" \
+         "${HOME}/.local/share/qwen" \
+         "${HOME}/.local/state/qwen" \
+         "${HOME}/.cache/qwen"
+
+FILE_BINDS=(); TMP_BINDS=()
+
+_add_bind() {
+    local d="$1"
+    case "$d" in /usr/*|/etc/*|/proc/*|/dev/*|/sys/*) return ;; esac
+    if [[ "$d" == /tmp* ]]; then
+        TMP_BINDS+=(--bind "$d" "$d")
+    else
+        FILE_BINDS+=(--bind "$d" "$d")
+    fi
+}
+
+CWD="$(realpath "$PWD")"
+_add_bind "$CWD"
+for arg in "$@"; do
+    [[ "$arg" == -* ]] && continue
+    if [[ -e "$arg" ]]; then
+        _add_bind "$(dirname "$(realpath "$arg")")"
+    elif [[ -d "$(dirname "$arg")" ]]; then
+        _add_bind "$(realpath "$(dirname "$arg")")"
+    fi
+done
+
+A=()
+bwrap_base A
+bwrap_lib64 A
+bwrap_resolv A
+A+=("${TMP_BINDS[@]}")
+
+A+=(--dir "${HOME}"
+    --dir "${HOME}/.config"
+    --bind "${HOME}/.qwen"                        "${HOME}/.qwen"
+    --bind "${HOME}/.config/qwen"                 "${HOME}/.config/qwen"
+    --bind "${HOME}/.local/share/qwen"            "${HOME}/.local/share/qwen"
+    --bind "${HOME}/.local/state/qwen"            "${HOME}/.local/state/qwen"
+    --bind "${HOME}/.cache/qwen"                  "${HOME}/.cache/qwen"
+    --ro-bind "${HOME}/.npm-global"               "${HOME}/.npm-global"
+    --bind "$CWD"                                 "$CWD"
+    --ro-bind-try "${HOME}/.gitconfig"            "${HOME}/.gitconfig"
+    --ro-bind-try "${HOME}/.config/git"           "${HOME}/.config/git"
+    --ro-bind-try "${HOME}/.ssh/id_ed25519.pub" "${HOME}/.ssh/id_ed25519.pub"
+    "${FILE_BINDS[@]}")
+
+bwrap_ssh_agent A
+bwrap_runtime_dir A
+bwrap_env_base A
+A+=(--setenv TERM "${TERM}"
+    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"}
+    --setenv EDITOR "${EDITOR:-nvim}")
+
+bwrap_hardened_malloc A default
+bwrap_sandbox A yes
+
+exec bwrap "${A[@]}" -- {{ .homeDir }}/.npm-global/bin/qwen "$@"
