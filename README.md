@@ -14,10 +14,10 @@ Arch Linux dotfiles, managed with [dotm](https://gitlab.com/fkzys/dotm).
 - **Audio switching**: audio-device-switcher (PipeWire sink selection via wpctl + dmenu)
 - **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via dmenu, auto-switch PipeWire sink)
 - **Screenshots**: swappy (annotation tool)
-- **Input**: fcitx5 + kkc (Japanese)
+- **Input**: fcitx5 + mozc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
-- **Cloud sync**: Nextcloud (sandboxed, autostart via XDG desktop entry + D-Bus activation service)
+- **Cloud sync**: Nextcloud (sandboxed, systemd user service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
 - **Encrypted vault**: [keys-vault](https://gitlab.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
@@ -53,7 +53,7 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, qwen, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
 | light (system-wide) | hyprland, waybar, kitty, thunar, all other native processes |
 | disabled | anki, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
@@ -96,6 +96,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | obs | Wayland | yes | Camera devices, Videos dir |
 | otd-daemon | Wayland (no GUI) | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, Wayland socket for tablet mapping |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
+| qwen | terminal | yes | CWD + file args, qwen config/cache/state dirs, npm-global, SSH agent forwarding, git config |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
 | subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
@@ -220,6 +221,8 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `hyprsunset` | — | Night light. Override filters `[TRACE]` log spam via `grep -v` and uses `KillMode=control-group` for clean shutdown. |
 | `waybar` | — | Status bar |
 | `mpd` | — | Music player daemon |
+| `fcitx5` | — | Input method daemon |
+| `nextcloud` | — | Nextcloud desktop client |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
 All user services are enabled via a dotm `on_change` script (templated to conditionally include `transformers_ocr` when the `ocr` flag is set). System services enabled: `firewalld`, `systemd-oomd`.
@@ -294,6 +297,9 @@ PortProton:
         games_dir: /path/to/games
 
 # Global (application → keys)
+fcitx5:
+    kb_layouts:
+        - us
 keepassxc:
     db_dir: /path/to/database
 nextcloud:

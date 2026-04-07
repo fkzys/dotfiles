@@ -2,7 +2,7 @@
 set -e
 
 echo "--- User services ---"
-systemctl --user enable hypridle hyprpaper hyprpolkitagent hyprsunset waybar mpd ssh-agent keys-vault ssh-add {{- if .ocr }} transformers_ocr {{- end }}
+systemctl --user enable hypridle hyprpaper hyprpolkitagent hyprsunset waybar mpd ssh-agent keys-vault ssh-add nextcloud {{- if .ocr }} transformers_ocr {{- end }}
 
 # System services live here (not in root_m) to keep all service
 # enablement in one place and avoid requiring a separate apply step.

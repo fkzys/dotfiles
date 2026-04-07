@@ -5,6 +5,7 @@ Requires=ssh-agent.service keys-vault.service
 
 [Service]
 Type=oneshot
+Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
 ExecStart=%h/.local/bin/ssh-add-keys
 RemainAfterExit=yes
 
