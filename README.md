@@ -297,6 +297,8 @@ PortProton:
         games_dir: /path/to/games
 
 # Global (application → keys)
+qwen:
+    outputLanguage: english
 fcitx5:
     kb_layouts:
         - us
