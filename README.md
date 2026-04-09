@@ -125,6 +125,12 @@ An mpv script (`mark-watched.lua`) creates watched markers on playback completio
 
 After mpv exits, lf auto-refreshes the preview. An `on-select` hook displays the mpv resume position in the status bar when navigating to a video with saved state (e.g. `⏸ 12:34`), or `▣ watched` for fully watched videos.
 
+### Git status
+
+Per-file git status is shown in the right info column via `set info custom` and `addcustominfo`. An `on-load` hook runs one `git status --porcelain` call per directory, parses all entries, and sends status codes to lf via `lf -remote`. An `on-init` hook triggers a reload to ensure the lf server has registered the client before the first `on-load` fires.
+
+Files with uncommitted changes show their two-character porcelain status code (e.g. `M `, `??`, `D `). Clean files show `clean`. Non-repository directories show no status.
+
 ### Keybindings
 
 | Key | Action |
