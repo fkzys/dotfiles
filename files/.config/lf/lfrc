@@ -3,20 +3,44 @@ set cleaner ~/.config/lf/cleaner
 
 &mkdir -p "$HOME/.local/state/lf/watched"
 
-cmd play ${{
-    mpv "$f"
-    lf -remote "send $id reload"
-    lf -remote "send $id on-select"
+set info custom
+
+# ── Git per-file status via addcustominfo ─────────────────
+# on-load: one git status call, parse all files, set custom info
+# Shows per-file indicators in the right info column.
+cmd on-load &{{
+    cd "$(dirname "$1")" || exit 1
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
+
+    # Get all status entries at once
+    declare -A status_map
+    while IFS= read -r line; do
+        code="${line:0:2}"
+        file="${line:3}"
+        # Handle renamed files: "old -> new" — use target name
+        file="${file##* -> }"
+        status_map["$file"]="$code"
+    done < <(git status --porcelain 2>/dev/null)
+
+    cmds=""
+    for file in "$@"; do
+        base=$(basename "$file")
+        if [[ -n "${status_map[$base]+_}" ]]; then
+            code="${status_map[$base]}"
+        else
+            code="clean"
+        fi
+        cmds="${cmds}addcustominfo \"${file}\" \"${code}\"; "
+    done
+
+    if [ -n "$cmds" ]; then
+        lf -remote "send $id :$cmds"
+    fi
 }}
-map m play
 
-map n $nvim "$f"
-
-cmd ffmpeg_jp %sh ffmpeg_jp "$f"
-map o ffmpeg_jp
-
-cmd rename_subs %sh rename_subs && lf -remote "send $id reload"
-map <c-b> rename_subs
+cmd on-init &{{
+    lf -remote "send $id reload"
+}}
 
 cmd on-select &{{
     real=$(realpath -- "$f" 2>/dev/null) || exit 0
@@ -44,3 +68,18 @@ cmd on-select &{{
 
     lf -remote "send $id echomsg"
 }}
+
+cmd play ${{
+    mpv "$f"
+    lf -remote "send $id reload"
+    lf -remote "send $id on-select"
+}}
+map m play
+
+map n $nvim "$f"
+
+cmd ffmpeg_jp %sh ffmpeg_jp "$f"
+map o ffmpeg_jp
+
+cmd rename_subs %sh rename_subs && lf -remote "send $id reload"
+map <c-b> rename_subs
