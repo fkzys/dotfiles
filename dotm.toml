@@ -187,6 +187,7 @@ packages = [
     "python-pytest-timeout",
     "nodejs",
     "npm",
+    "opencode",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
