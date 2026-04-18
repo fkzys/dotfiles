@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+# ─── Bootstrap aurutils + gitpkg, then hand off to dotm ───
+# This script is the entry point for new machine setup.
+# After this runs, all packages/services are managed by dotm.
+
+GITPKG_PRIMARY="https://gitlab.com/fkzys"
+GITPKG_FALLBACK="https://github.com/rpPH4kQocMjkm2Ve"
+
+# ─── 1. Bootstrap aurutils ───
+if ! command -v aur &>/dev/null; then
+    echo ":: Bootstrapping aurutils..."
+    sudo pacman -S --needed base-devel git
+    BOOTSTRAP_DIR=$(mktemp -d)
+    git clone https://aur.archlinux.org/aurutils.git "$BOOTSTRAP_DIR/aurutils"
+    cd "$BOOTSTRAP_DIR/aurutils"
+    makepkg -si --noconfirm
+    cd -
+    rm -rf "$BOOTSTRAP_DIR"
+else
+    echo ":: aurutils already installed"
+fi
+
+# ─── 2. Bootstrap gitpkg ───
+if ! command -v gitpkg &>/dev/null; then
+    echo ":: Bootstrapping gitpkg..."
+    BOOTSTRAP_DIR=$(mktemp -d)
+    git clone "${GITPKG_PRIMARY}/gitpkg.git" "$BOOTSTRAP_DIR" 2>/dev/null || \
+        git clone "${GITPKG_FALLBACK}/gitpkg.git" "$BOOTSTRAP_DIR"
+    cd "$BOOTSTRAP_DIR"
+    sudo make install
+    cd -
+    rm -rf "$BOOTSTRAP_DIR"
+else
+    echo ":: gitpkg already installed"
+fi

@@ -231,7 +231,17 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `nextcloud` | — | Nextcloud desktop client |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
-All user services are enabled via a dotm `on_change` script (templated to conditionally include `transformers_ocr` when the `ocr` flag is set). System services enabled: `firewalld`, `systemd-oomd`.
+All user services are enabled via [dotm](https://gitlab.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`.
+
+### Package management
+
+All packages (pacman, AUR, flatpak, gitpkg, npm) are managed by dotm via `dotm.toml`. A bootstrap script (`scripts/bootstrap.sh.tmpl`) installs the prerequisite tools (aurutils, gitpkg) on new machines before calling `dotm apply`.
+
+For a new machine setup:
+```bash
+dotm init
+dotm apply   # runs bootstrap.sh.tmpl → aurutils + gitpkg → dotm apply
+```
 
 ## Standalone scripts (`~/.local/bin/`)
 

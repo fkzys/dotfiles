@@ -1,5 +1,7 @@
 dest = "~"
 
+# ─── Prompts ───
+
 [prompts]
 nvidia       = { type = "bool", question = "NVIDIA GPU" }
 amd_cpu      = { type = "bool", question = "AMD CPU (for temp sensors)" }
@@ -12,17 +14,294 @@ sparrow      = { type = "bool", question = "sparrow-wallet" }
 portproton   = { type = "bool", question = "PortProton" }
 virt_manager = { type = "bool", question = "QEMU / virt-manager" }
 
+# ─── Symlinks ───
+
 [symlinks]
 ".local/bin/imv-dir"  = "{{ .homeDir }}/.local/bin/imv"
 ".local/bin/sing-box" = "{{ .homeDir }}/sing-box/sing-box"
 ".config/systemd/user/com.nextcloudgmbh.Nextcloud.service" = "/dev/null"
 
+# ─── Scripts ───
+
 [[scripts]]
-path     = "scripts/install_packages.sh.tmpl"
+path     = "scripts/bootstrap.sh.tmpl"
 template = true
 trigger  = "on_change"
 
-[[scripts]]
-path     = "scripts/enable_services.sh.tmpl"
-template = true
-trigger  = "on_change"
+# ─── Managers ───
+
+[managers.pacman]
+check   = "pacman -Q {{.Name}}"
+install = "sudo pacman -S --needed {{.Name}}"
+remove  = "sudo pacman -Rns {{.Name}}"
+
+[managers.aur]
+check   = "pacman -Q {{.Name}}"
+install = "aur sync --no-view -n {{.Name}} && sudo pacman -S --needed {{.Name}}"
+remove  = "sudo pacman -Rns {{.Name}}"
+
+[managers.flatpak]
+check   = "flatpak info '{{.Name}}' >/dev/null 2>&1"
+install = "flatpak install -y --noninteractive {{.Name}}"
+remove  = "flatpak uninstall -y --noninteractive {{.Name}}"
+
+[managers.gitpkg]
+check   = "gitpkg list 2>/dev/null | grep -q '^{{.Name}} '"
+install = "sudo gitpkg install {{.Name}}"
+remove  = "sudo gitpkg remove {{.Name}}"
+
+[managers.npm]
+check   = "pkg={{.Name}}; pkg=${pkg%@*}; test -d $(npm root -g)/$pkg"
+install = "npm install -g {{.Name}}"
+remove  = "npm uninstall -g {{.Name}}"
+
+[managers.systemd]
+check   = "systemctl is-enabled {{.Name}}"
+enable  = "sudo systemctl enable {{.Name}}"
+disable = "sudo systemctl disable {{.Name}}"
+
+[managers.systemd-user]
+check   = "systemctl --user is-enabled {{.Name}}"
+enable  = "systemctl --user enable {{.Name}}"
+disable = "systemctl --user disable {{.Name}}"
+
+# ─── Native packages (pacman) ───
+
+[pacman]
+packages = [
+    # === SYSTEM & HYPRLAND ===
+    "hyprland",
+    "xdg-desktop-portal-hyprland",
+    "xdg-desktop-portal-gtk",
+    "xorg-xwayland",
+    "waybar",
+    "hyprpaper",
+    "wofi",
+    "hyprpolkitagent",
+    "gnome-keyring",
+    "hypridle",
+    "hyprlock",
+    "hyprsunset",
+    "zram-generator",
+    "libnotify",
+    "openssh",
+    "btrbk",
+    "qt5ct",
+    "qt6ct",
+    "systemd-ukify",
+    "firewalld",
+    "uwsm",
+    "wl-clipboard",
+    """
+    {{ if .laptop }}
+    brightnessctl
+    tpm2-tss
+    tpm2-tools
+    bluez
+    bluez-utils
+    libfdk-aac
+    libldac
+    {{ end }}
+    """,
+
+    # === AUDIO & VIDEO ===
+    "pipewire",
+    "pipewire-pulse",
+    "pipewire-alsa",
+    "wireplumber",
+    "mpd",
+    "ncmpcpp",
+    "mpv",
+    "obs-studio",
+    "ffmpegthumbnailer",
+
+    # === INPUT & FONTS ===
+    "fcitx5-mozc",
+    "fcitx5-configtool",
+    "ttf-hack",
+    "otf-ipafont",
+    "otf-font-awesome",
+    "noto-fonts-cjk",
+    "ttf-jetbrains-mono-nerd",
+    "ttf-font-awesome",
+    "noto-fonts-emoji",
+
+    # === APPS ===
+    "kitty",
+    "thunar",
+    "nextcloud-client",
+    "keepassxc",
+    "qbittorrent",
+    "gimp",
+    "krita",
+    "flatpak",
+    "anki",
+
+    # === CLI & TOOLS ===
+    "neovim",
+    "zsh",
+    "fzf",
+    "ripgrep",
+    "fd",
+    "bat",
+    "eza",
+    "zoxide",
+    "unzip",
+    "7zip",
+    "man-db",
+    "git",
+    "htop",
+    "grim",
+    "slurp",
+    "lf",
+    "rsync",
+    "rclone",
+    "restic",
+    "syncthing",
+    "wget",
+    "reflector",
+    "pacman-contrib",
+    "udisks2",
+    "strace",
+    "imv",
+    "swappy",
+    "git-delta",
+    "lazygit",
+    "zsh-autosuggestions",
+    "zsh-syntax-highlighting",
+    "bind",
+    "imagemagick",
+    "git-filter-repo",
+    "lego",
+    "dnsproxy",
+    "namcap",
+    "bash-completion",
+    "optipng",
+    "perl-image-exiftool",
+    "pandoc-cli",
+    "python-pipx",
+    "python-pytest",
+    "devtools",
+    "gocryptfs",
+    "xorg-server-xvfb",
+    "python-pytest-timeout",
+    "nodejs",
+    "npm",
+
+    # === DEV & VIRTUALIZATION ===
+    "base-devel",
+    "go",
+    "podman",
+    "podman-compose",
+    """
+    {{ if .virt_manager }}
+    qemu-base
+    virt-manager
+    dnsmasq
+    {{ end }}
+    """,
+    "ansible",
+    "ansible-lint",
+    "age",
+    "sops",
+    "direnv",
+
+    # === NVIDIA ===
+    """
+    {{ if .nvidia }}
+    nvidia-open
+    nvidia-settings
+    nvidia-utils
+    libva-nvidia-driver
+    {{ end }}
+    """,
+
+    # === THEMES ===
+    "materia-gtk-theme",
+    "papirus-icon-theme",
+    "kvantum",
+]
+
+# ─── AUR packages ───
+
+[aur]
+packages = [
+    "kopia-bin",
+    "{{ if .tablet }}opentabletdriver{{ end }}",
+    "{{ if .goldendict }}goldendict-ng{{ end }}",
+    "{{ if .goldendict }}gd-tools-git{{ end }}",
+    "coolercontrol-bin",
+    "aurutils",
+    "cf-terraforming",
+    "hunspell-ja-git",
+    "mecab-git",
+    "siji-git",
+    "ventoy-bin",
+    "yay",
+]
+
+# ─── Flatpak packages ───
+
+[flatpak]
+packages = [
+    "com.github.tchx84.Flatseal",
+    "org.mozilla.firefox",
+    "org.telegram.desktop",
+    "org.libreoffice.LibreOffice",
+    "org.gnome.Papers",
+    "org.qownnotes.QOwnNotes",
+    "org.localsend.localsend_app",
+    """
+    {{ if .portproton }}
+    ru.linux_gaming.PortProton
+    runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/25.08
+    {{ end }}
+    """,
+]
+
+# ─── gitpkg packages ───
+
+[gitpkg]
+packages = [
+    "verify-lib",
+    "gitpkg",
+    "atomic-upgrade",
+    "bwrap-common",
+    "hardened_malloc",
+    "fetch",
+    "btrfs-file-history",
+    "{{ if .subs2srs }}subs2srs{{ end }}",
+    "{{ if .ocr }}transformers_ocr{{ end }}",
+]
+
+# ─── npm global packages ───
+
+[npm]
+packages = [
+    "@qwen-code/qwen-code@latest",
+]
+
+# ─── System services ───
+
+[systemd]
+services = [
+    "firewalld",
+    "systemd-oomd",
+]
+
+# ─── User services ───
+
+[systemd-user]
+services = [
+    "hypridle",
+    "hyprpaper",
+    "hyprpolkitagent",
+    "hyprsunset",
+    "waybar",
+    "mpd",
+    "ssh-agent",
+    "keys-vault",
+    "ssh-add",
+    "nextcloud",
+    "{{ if .ocr }}transformers_ocr{{ end }}",
+]
