@@ -2,6 +2,7 @@
 application/x-bat=kitty.desktop;
 audio/x-opus+ogg=mpv.desktop;
 text/html=org.mozilla.firefox.desktop;
+application/x-bittorrent=org.qbittorrent.qBittorrent.desktop;
 
 [Default Applications]
 text/html=org.mozilla.firefox.desktop
@@ -30,3 +31,4 @@ application/x-wine-extension-msp=ru.linux_gaming.PortProton.desktop
 application/x-msi=ru.linux_gaming.PortProton.desktop
 application/x-msdos-program=ru.linux_gaming.PortProton.desktop
 text/win-bat=ru.linux_gaming.PortProton.desktop
+application/x-bittorrent=org.qbittorrent.qBittorrent.desktop
