@@ -2,7 +2,7 @@
 
 ![screenshot](assets/screenshot.png)
 
-Arch Linux dotfiles, managed with [dotm](https://gitlab.com/fkzys/dotm).
+Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 
 ## What's included
 
@@ -19,7 +19,7 @@ Arch Linux dotfiles, managed with [dotm](https://gitlab.com/fkzys/dotm).
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
 - **Cloud sync**: Nextcloud (sandboxed, systemd user service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
-- **Encrypted vault**: [keys-vault](https://gitlab.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
+- **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
@@ -34,7 +34,7 @@ Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm
 | `tablet` | OpenTabletDriver (otd-daemon) |
 | `ocr` | transformers\_ocr (systemd user service + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
-| `subs2srs` | [subs2srs](https://gitlab.com/fkzys/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
+| `subs2srs` | [subs2srs](https://github.com/ajatt-tools/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
@@ -43,7 +43,7 @@ Per-host data (monitor line, wallpaper path, container graphroot, directory alia
 
 ## Memory allocator hardening
 
-[hardened\_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Installed as a separate package via [gitpkg](https://gitlab.com/fkzys/gitpkg) — see [hardened_malloc](https://gitlab.com/fkzys/hardened_malloc).
+[hardened\_malloc](https://github.com/GrapheneOS/hardened_malloc) is deployed system-wide via `/etc/ld.so.preload` (light variant) and per-app via bwrap `LD_PRELOAD` (default variant). Installed as a separate package via [gitpkg](https://github.com/fkzys/gitpkg) — see [hardened_malloc](https://github.com/fkzys/hardened_malloc).
 
 The light variant provides zero-on-free, slab canaries, and guard slabs. The default variant adds slot randomization, write-after-free checks, and slab quarantines.
 
@@ -60,9 +60,9 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 
 ## Application sandboxing
 
-GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library [bwrap-common](https://gitlab.com/fkzys/bwrap-common) (`/usr/lib/bwrap-common/bwrap-common.sh`) provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened\_malloc integration.
+GUI and CLI applications are sandboxed via [bubblewrap](https://github.com/containers/bubblewrap) wrappers in `~/.local/bin/`. A shared library [bwrap-common](https://github.com/fkzys/bwrap-common) (`/usr/lib/bwrap-common/bwrap-common.sh`) provides reusable helpers for GPU, Wayland/X11, audio, D-Bus, filesystem setup, and hardened\_malloc integration.
 
-Before sourcing, each wrapper validates the library with [verify-lib](https://gitlab.com/fkzys/verify-lib) — a compiled binary that checks file ownership, permissions, and symlink integrity:
+Before sourcing, each wrapper validates the library with [verify-lib](https://github.com/fkzys/verify-lib) — a compiled binary that checks file ownership, permissions, and symlink integrity:
 
 ```sh
 _src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
@@ -107,7 +107,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 
 Per-host data directories (media paths, download dirs) are configured in `secrets.enc.yaml` under each application key, keyed by hostname.
 
-For the full list of bwrap-common functions and wrapper patterns, see [bwrap-common](https://gitlab.com/fkzys/bwrap-common).
+For the full list of bwrap-common functions and wrapper patterns, see [bwrap-common](https://github.com/fkzys/bwrap-common).
 
 ## lf file manager
 
@@ -219,7 +219,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | Service | Type | Description |
 |---|---|---|
 | `ssh-agent` | — | SSH agent daemon (`SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket`) |
-| `keys-vault` | oneshot, `RemainAfterExit` | Mounts [keys-vault](https://gitlab.com/fkzys/keys-vault) gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
+| `keys-vault` | oneshot, `RemainAfterExit` | Mounts [keys-vault](https://github.com/fkzys/keys-vault) gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
 | `ssh-add` | oneshot, `RemainAfterExit` | Loads all SSH keys from `~/keys/ssh/` into agent (4 h lifetime). Requires `ssh-agent` + `keys-vault`. |
 | `hypridle` | — | Idle daemon |
 | `hyprpaper` | — | Wallpaper daemon |
@@ -231,7 +231,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `nextcloud` | — | Nextcloud desktop client |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
-All user services are enabled via [dotm](https://gitlab.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`.
+All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`.
 
 ### Package management
 
@@ -272,7 +272,7 @@ Custom overrides include:
 
 Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) and accessed in templates via `output "sops" "-d"` — dotm delegates encryption entirely to external tools.
 
-Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by [keys-vault](https://gitlab.com/fkzys/keys-vault).
+Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by [keys-vault](https://github.com/fkzys/keys-vault).
 
 ### Structure
 
@@ -361,7 +361,7 @@ sops secrets.enc.yaml
 ## Install
 
 ```bash
-git clone https://gitlab.com/fkzys/dotfiles.git
+git clone https://github.com/fkzys/dotfiles.git
 cd dotfiles
 dotm init
 dotm apply
