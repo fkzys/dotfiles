@@ -5,8 +5,7 @@ set -euo pipefail
 # This script is the entry point for new machine setup.
 # After this runs, all packages/services are managed by dotm.
 
-GITPKG_PRIMARY="https://gitlab.com/fkzys"
-GITPKG_FALLBACK="https://github.com/rpPH4kQocMjkm2Ve"
+GITPKG_PRIMARY="https://github.com/fkzys"
 
 # ─── 1. Bootstrap aurutils ───
 if ! command -v aur &>/dev/null; then
@@ -26,8 +25,7 @@ fi
 if ! command -v gitpkg &>/dev/null; then
     echo ":: Bootstrapping gitpkg..."
     BOOTSTRAP_DIR=$(mktemp -d)
-    git clone "${GITPKG_PRIMARY}/gitpkg.git" "$BOOTSTRAP_DIR" 2>/dev/null || \
-        git clone "${GITPKG_FALLBACK}/gitpkg.git" "$BOOTSTRAP_DIR"
+    git clone "${GITPKG_PRIMARY}/gitpkg.git" "$BOOTSTRAP_DIR" 2>/dev/null
     cd "$BOOTSTRAP_DIR"
     sudo make install
     cd -
