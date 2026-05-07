@@ -188,6 +188,11 @@ packages = [
     "nodejs",
     "npm",
     "opencode",
+    "shellcheck",
+    "golangci-lint",
+    "dpkg",
+    "i2pd",
+    "tor",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
