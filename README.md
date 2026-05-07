@@ -304,6 +304,7 @@ mpd:
 qbittorrent:
     hostname1:
         anime_dir: /path/to/torrents
+        anime_second_dir: /path/to/second/torrents
 dir_aliases:
     hostname1:
         subs: /path/to/subtitles
