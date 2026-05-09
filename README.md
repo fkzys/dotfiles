@@ -260,7 +260,7 @@ dotm apply   # runs bootstrap.sh.tmpl → aurutils + gitpkg → dotm apply
 
 ## Firefox
 
-Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via dotm at `~/.mozilla/firefox/arkenfox/user-overrides.js`.
+Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via dotm at `~/.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/user-overrides.js`.
 
 Custom overrides include:
 - Hardware video acceleration (VA-API)
