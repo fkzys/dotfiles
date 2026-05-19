@@ -31,7 +31,7 @@ Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm
 | `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu\_temp) |
 | `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
 | `laptop` | Battery, backlight, natural scroll, disable touchpad while typing, compact fonts, bluetooth packages |
-| `tablet` | OpenTabletDriver (otd-daemon) |
+| `tablet` | OpenTabletDriver (otd-daemon, systemd user service) |
 | `ocr` | transformers\_ocr (systemd user service + keybind) |
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
 | `subs2srs` | [subs2srs](https://github.com/ajatt-tools/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
@@ -55,7 +55,7 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 |---|---|
 | default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, qwen, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
 | light (system-wide) | hyprland, waybar, kitty, thunar, all other native processes |
-| disabled | anki, goldendict (PartitionAlloc / QtWebEngine) |
+| disabled | anki, fd, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
 
 ## Application sandboxing
@@ -83,6 +83,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 |---|---|---|---|
 | anki | Wayland | yes | QtWebEngine, Anki2 data dir, Downloads/anki, audio sources dir + subs2srs dir from secrets |
 | dmenu (wofi) | Wayland | no | Sandboxed wofi --dmenu wrapper, config/cache dirs |
+| fd | terminal | no | Bwrap wrapper with full filesystem access (`--dev-bind / /`), hardened_malloc disabled (`/etc/ld.so.preload` masked) |
 | fcitx5 | Wayland | no | Input method daemon, socket dir shared via `/tmp/fcitx5-$UID`, D-Bus session access |
 | gimp | Wayland | no | Pictures/Downloads rw |
 | goldendict | XWayland | yes | Dictionary + audio dirs from secrets, fcitx5 input |
@@ -226,6 +227,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `hyprpolkitagent` | — | Polkit agent |
 | `hyprsunset` | — | Night light. Override filters `[TRACE]` log spam via `grep -v` and uses `KillMode=control-group` for clean shutdown. |
 | `waybar` | — | Status bar |
+| `opentabletdriver` | — | OpenTabletDriver daemon (conditional on `tablet` flag). `PartOf=graphical-session.target`, auto-restart on failure (`RestartSec=3`). Launched via systemd instead of hyprland `exec-once`. |
 | `mpd` | — | Music player daemon |
 | `fcitx5` | — | Input method daemon |
 | `nextcloud` | — | Nextcloud desktop client |
