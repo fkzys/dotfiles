@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+A=()
+
+A+=(--dev-bind / /)
+A+=(--bind /dev/null /etc/ld.so.preload)
+
+exec bwrap "${A[@]}" -- /usr/bin/fd "$@"
