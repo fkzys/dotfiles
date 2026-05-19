@@ -53,11 +53,6 @@ exec-once = gsettings set org.gnome.desktop.interface gtk-theme 'Materia-dark'
 exec-once = gsettings set org.gnome.desktop.interface icon-theme 'Papirus'
 exec-once = gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
-{{- if eq .tablet true }}
-# Tablet Driver
-exec-once = otd-daemon
-{{- end }}
-
 # Input Method
 exec-once = fcitx5 -dr
 

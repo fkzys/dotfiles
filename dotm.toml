@@ -304,6 +304,7 @@ services = [
     "hyprpolkitagent",
     "hyprsunset",
     "waybar",
+    "{{ if .tablet }}opentabletdriver{{ end }}",
     "mpd",
     "ssh-agent",
     "keys-vault",
