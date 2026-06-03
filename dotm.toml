@@ -263,6 +263,7 @@ packages = [
     runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/25.08
     {{ end }}
     """,
+    "org.kde.kdenlive",
 ]
 
 # ─── gitpkg packages ───
