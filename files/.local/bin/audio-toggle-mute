@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+Toggle mute for the default audio input device (microphone).
+Shows a notification with the new state (muted/unmuted).
+
+Usage: DEBUG=1 audio-toggle-mute
+"""
+
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+DEBUG = os.environ.get("DEBUG", "0") == "1"
+
+
+def debug(msg: str) -> None:
+    if DEBUG:
+        print(f"[DEBUG] {msg}", file=sys.stderr)
+
+
+def check_dependencies() -> None:
+    missing = [cmd for cmd in ("wpctl",) if not shutil.which(cmd)]
+
+    if not shutil.which("notify-send"):
+        debug("notify-send not found, will use stderr")
+
+    if missing:
+        print(f"Error: missing dependencies: {' '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
+
+    r = subprocess.run(["wpctl", "status"], capture_output=True)
+    if r.returncode != 0:
+        print("Error: PipeWire is not running", file=sys.stderr)
+        sys.exit(1)
+
+
+def get_default_source_name() -> str | None:
+    """Get the nickname of the default audio source (mic)."""
+    r = subprocess.run(
+        ["wpctl", "inspect", "@DEFAULT_AUDIO_SOURCE@"],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode == 0:
+        m = re.search(r'node\.nick\s*=\s*"([^"]*)"', r.stdout)
+        if m:
+            return m.group(1)
+    return None
+
+
+def is_muted() -> bool:
+    """Check if the default audio source is muted."""
+    r = subprocess.run(
+        ["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"],
+        capture_output=True,
+        text=True,
+    )
+    return "[MUTED]" in r.stdout if r.returncode == 0 else False
+
+
+def notify(message: str) -> None:
+    try:
+        subprocess.run(
+            ["notify-send", "-t", "2000", "Mic", message],
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        print(message, file=sys.stderr)
+
+
+def main() -> None:
+    check_dependencies()
+
+    # Remember state before toggle
+    was_muted = is_muted()
+
+    # Grab source name before the toggle (for the notification)
+    source_name = get_default_source_name()
+
+    # Toggle mute on default audio source (mic)
+    r = subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"])
+    if r.returncode != 0:
+        print("Error: failed to toggle mute", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine new state
+    now_muted = not was_muted
+    state = "Muted" if now_muted else "Unmuted"
+
+    # Build notification
+    msg = state
+    if source_name:
+        msg += f": {source_name}"
+
+    notify(msg)
+    debug(f"Default source {state.lower()}: {source_name}")
+
+
+if __name__ == "__main__":
+    main()
