@@ -264,6 +264,7 @@ packages = [
     {{ end }}
     """,
     "org.kde.kdenlive",
+    "io.github.ungoogled_software.ungoogled_chromium",
 ]
 
 # ─── gitpkg packages ───

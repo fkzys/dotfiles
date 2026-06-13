@@ -159,6 +159,7 @@ typeset -A flatpak_apps=(
     qownnotes   "org.qownnotes.QOwnNotes"
     localsend   "org.localsend.localsend_app"
     kdenlive    "org.kde.kdenlive"
+    chromium    "io.github.ungoogled_software.ungoogled_chromium"
 )
 for app flatpak_id in "${(@kv)flatpak_apps}"; do
     alias "$app"="flatpak run $flatpak_id"
