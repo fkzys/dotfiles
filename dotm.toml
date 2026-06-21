@@ -13,6 +13,7 @@ subs2srs     = { type = "bool", question = "subs2srs" }
 sparrow      = { type = "bool", question = "sparrow-wallet" }
 portproton   = { type = "bool", question = "PortProton" }
 virt_manager = { type = "bool", question = "QEMU / virt-manager" }
+vid_edit     = { type = "bool", question = "KdenLive" }
 
 # ─── Symlinks ───
 
@@ -264,7 +265,7 @@ packages = [
     runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/25.08
     {{ end }}
     """,
-    "org.kde.kdenlive",
+    "{{ if .vid_edit }}org.kde.kdenlive{{ end }}",
     "io.github.ungoogled_software.ungoogled_chromium",
 ]
 
