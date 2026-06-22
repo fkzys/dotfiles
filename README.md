@@ -20,7 +20,7 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Cloud sync**: Nextcloud (sandboxed, systemd user service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
-- **Scripts**: ffmpeg\_jp (Japanese audio extraction), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
+- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
 ## Per-host configuration
 
@@ -138,7 +138,7 @@ Files with uncommitted changes show their two-character porcelain status code (e
 |---|---|
 | `m` | Play with mpv (auto-refreshes preview on exit) |
 | `n` | Edit with nvim |
-| `o` | Extract Japanese audio (ffmpeg\_jp) |
+| `o` | Extract audio with ffmpeg\_jp (Japanese by default, `--en` for English) |
 | `Ctrl-B` | Rename subtitles to match videos |
 
 ## Shell (zsh)
@@ -249,7 +249,7 @@ dotm apply   # runs bootstrap.sh.tmpl → aurutils + gitpkg → dotm apply
 
 | Script | Description |
 |---|---|
-| `ffmpeg_jp` | Extract Japanese audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects Japanese track by language tag or title; falls back to the only track if there is exactly one. Two-phase pipeline: demux (I/O-bound, low parallelism) → encode (CPU-bound, high parallelism). |
+| `ffmpeg_jp` | Extract Japanese (`--en` for English) audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects target language track by language tag or title; falls back to the only track if there is exactly one. `--track N` overrides auto-detection with a manual stream index. Two-phase pipeline: demux (I/O-bound, low parallelism) → encode (CPU-bound, high parallelism). Output is forced to stereo (`-ac 2`). |
 | `rename_subs` | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
 | `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
 | `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
