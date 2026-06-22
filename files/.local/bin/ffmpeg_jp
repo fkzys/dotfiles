@@ -1,31 +1,45 @@
 #!/bin/bash
-# Extract Japanese audio track from video files as opus.
-# Usage: ffmpeg_jp [-j N] <file|directory>...
+# Extract Japanese (default) or English (--en) audio track from video files as opus.
+# Usage: ffmpeg_jp [--en] [--track N] [-j N] <file|directory>...
 
 set -euo pipefail
 
 JOBS=$(nproc 2>/dev/null || echo 4)
+LANG_TARGET="jp"
+TRACK_OVERRIDE=""
 
-while getopts "j:" opt; do
-    case $opt in
-        j) JOBS="$OPTARG" ;;
-        *) echo "Usage: $0 [-j N] <file|directory>..." >&2; exit 1 ;;
+PARSED=$(getopt -o j: -l en,track: -n "$0" -- "$@")
+eval set -- "$PARSED"
+while true; do
+    case "$1" in
+        -j) JOBS="$2"; shift 2 ;;
+        --en) LANG_TARGET="en"; shift ;;
+        --track) TRACK_OVERRIDE="$2"; shift 2 ;;
+        --) shift; break ;;
+        *) echo "Usage: $0 [--en] [--track N] [-j N] <file|directory>..." >&2; exit 1 ;;
     esac
 done
-shift $((OPTIND - 1))
 
 # Single ffprobe call per file: get all audio stream info at once
-find_japanese_track() {
+find_audio_track() {
     local input="$1"
+    local target="${2:-jp}"
     local first_index=""
     local count=0
     local index lang title
+    local lang_pat title_pat
+    if [[ "$target" == "en" ]]; then
+        lang_pat="^(en|eng)$"
+        title_pat="[Ee]nglish"
+    else
+        lang_pat="^(ja|jpn)$"
+        title_pat="[Jj]apanese|日本語"
+    fi
     while IFS=, read -r index lang title; do
         [[ -z "$index" ]] && continue
         ((count++)) || true
         [[ -z "$first_index" ]] && first_index="$index"
-        if [[ "$lang" == "ja" || "$lang" == "jpn" ||
-              "$title" =~ [Jj]apanese || "$title" =~ 日本語 ]]; then
+        if [[ "$lang" =~ $lang_pat || "$title" =~ $title_pat ]]; then
             echo "$index"
             return 0
         fi
@@ -59,7 +73,7 @@ elif [[ "$#" -gt 0 ]]; then
         fi
     done
 else
-    echo "Usage: $0 [-j N] <file|directory>..." >&2
+    echo "Usage: $0 [--en] [--track N] [-j N] <file|directory>..." >&2
     exit 1
 fi
 
@@ -72,10 +86,15 @@ for f in "${files[@]}"; do
         echo "SKIP: $name"
         continue
     fi
-    track=$(find_japanese_track "$f")
-    if [[ "$track" -eq -1 ]]; then
-        echo "FAIL: no Japanese track in $name"
-        continue
+    if [[ -n "$TRACK_OVERRIDE" ]]; then
+        track="$TRACK_OVERRIDE"
+    else
+        track=$(find_audio_track "$f" "$LANG_TARGET")
+        if [[ "$track" -eq -1 ]]; then
+            lang_label="Japanese"; [[ "$LANG_TARGET" == "en" ]] && lang_label="English"
+            echo "FAIL: no ${lang_label} track in $name"
+            continue
+        fi
     fi
     track_map["$f"]="$track"
     to_process+=("$f")
@@ -102,7 +121,7 @@ for f in "${to_process[@]}"; do
         output="${f%.*}.opus"
         if ffmpeg -nostdin -v error \
             -i "$f" -map "0:${track_map[$f]}" \
-            -c:a libopus -b:a 96k -vn \
+            -c:a libopus -b:a 96k -ac 2 -vn \
             "$output"; then
             echo "  OK: $name"
         else
