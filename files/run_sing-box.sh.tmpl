@@ -2,20 +2,50 @@
 {{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $url := index $s "sing-box" "config_url" .hostname -}}
 
-CONFIG="$HOME/{{ .hostname }}_sing-box/config.json"
-TEMP=$(mktemp)
+show_help() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTION]
 
-# -f = fail on HTTP errors (4xx, 5xx)
-# -s = silent, -S = show errors
-if curl -fsSL "{{ $url }}" -o "$TEMP"; then
-    mv "$TEMP" "$CONFIG"
-    echo "Config updated"
-else
-    rm -f "$TEMP"
-    echo "Load failed, using old config"
-fi
+Run sing-box with per-host config downloaded from secrets.
 
-trap 'kill $(jobs -p) 2>/dev/null' EXIT SIGHUP SIGINT SIGTERM
+Options:
+  --perm      Grant sing-box binary cap_net_admin, cap_net_bind_service,
+              and cap_net_raw capabilities (via setcap, requires sudo)
+  -h, --help  Show this help message and exit
 
-"$HOME/sing-box/sing-box" run -c "$CONFIG" &
-wait
+Without options, downloads config (if available) and starts sing-box.
+EOF
+}
+
+case "${1:-}" in
+    --perm)
+        sudo setcap 'cap_net_admin,cap_net_bind_service,cap_net_raw=+ep' "$HOME/sing-box/sing-box"
+        ;;
+    -h|--help)
+        show_help
+        ;;
+    "")
+        CONFIG="$HOME/{{ .hostname }}_sing-box/config.json"
+        TEMP=$(mktemp)
+
+        # -f = fail on HTTP errors (4xx, 5xx)
+        # -s = silent, -S = show errors
+        if curl -fsSL "{{ $url }}" -o "$TEMP"; then
+            mv "$TEMP" "$CONFIG"
+            echo "Config updated"
+        else
+            rm -f "$TEMP"
+            echo "Load failed, using old config"
+        fi
+
+        trap 'kill $(jobs -p) 2>/dev/null' EXIT SIGHUP SIGINT SIGTERM
+
+        "$HOME/sing-box/sing-box" run -c "$CONFIG" &
+        wait
+        ;;
+    *)
+        echo "Unknown option: $1" >&2
+        show_help >&2
+        exit 1
+        ;;
+esac
