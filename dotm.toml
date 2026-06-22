@@ -295,6 +295,7 @@ packages = [
 services = [
     "firewalld",
     "systemd-oomd",
+    "systemd-timesyncd",
 ]
 
 # ─── User services ───
