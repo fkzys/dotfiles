@@ -193,6 +193,7 @@ packages = [
     "dpkg",
     "i2pd",
     "tor",
+    "yt-dlp",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
