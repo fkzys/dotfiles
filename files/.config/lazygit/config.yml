@@ -3,9 +3,9 @@ gui:
   nerdFontsVersion: "3"
 
 git:
-  pagers:
+  diffRenderers:
     - colorArg: always
-      pager: delta --dark --paging=never
+      command: delta --dark --paging=never
   overrideGpg: true
 
 os:
