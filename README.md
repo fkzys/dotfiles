@@ -53,7 +53,7 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, qwen, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
 | light (system-wide) | hyprland, waybar, kitty, thunar, all other native processes |
 | disabled | anki, fd, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
@@ -97,7 +97,6 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | obs | Wayland | yes | Camera devices, Videos dir |
 | otd-daemon | Wayland (no GUI) | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, Wayland socket for tablet mapping |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
-| qwen | terminal | yes | CWD + file args, qwen config/cache/state dirs, npm-global, SSH agent forwarding, git config |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
 | subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
@@ -237,7 +236,7 @@ All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm a
 
 ### Package management
 
-All packages (pacman, AUR, flatpak, gitpkg, npm) are managed by dotm via `dotm.toml`. A bootstrap script (`scripts/bootstrap.sh.tmpl`) installs the prerequisite tools (aurutils, gitpkg) on new machines before calling `dotm apply`.
+All packages (pacman, AUR, flatpak, gitpkg, pnpm) are managed by dotm via `dotm.toml`. A bootstrap script (`scripts/bootstrap.sh.tmpl`) installs the prerequisite tools (aurutils, gitpkg) on new machines before calling `dotm apply`.
 
 For a new machine setup:
 ```bash
@@ -316,8 +315,6 @@ PortProton:
         games_dir: /path/to/games
 
 # Global (application → keys)
-qwen:
-    outputLanguage: english
 fcitx5:
     kb_layouts:
         - us

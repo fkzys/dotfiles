@@ -1,0 +1,24 @@
+# pnpm supply-chain hardening (https://pnpm.io/supply-chain-security)
+
+# ─── Dependency resolution ───
+# Reject versions published less than 1 week (10080 min) ago — mitigates
+# "release age"-style supply-chain attacks (newly published malicious versions)
+minimumReleaseAge: 10080
+# Fail resolution if no version satisfies minimumReleaseAge
+minimumReleaseAgeStrict: true
+# Fail if a package's trust evidence weakened vs earlier releases
+trustPolicy: no-downgrade
+# Block exotic subdependencies (git, file, workspace protocols)
+blockExoticSubdeps: true
+
+# ─── Build ───
+# Run lifecycle scripts (postinstall etc.) — approve per project only
+# (allowBuilds is not settable in the global config file)
+ignoreScripts: false
+# Fail install if any dependency has unreviewed build scripts
+strictDepBuilds: true
+
+# ─── Global packages ───
+# Pin global dirs to $PNPM_HOME (see .zshrc.tmpl) regardless of XDG_DATA_HOME
+globalBinDir: ~/.local/share/pnpm/bin
+globalDir: ~/.local/share/pnpm/global
