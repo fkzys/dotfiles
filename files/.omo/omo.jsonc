@@ -2,6 +2,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
   "[opencode]": {
+    "team_mode": {
+        "enabled": true
+    },
     "agents": {
       "sisyphus": {
         "model": "opencode/claude-opus-4-7",
