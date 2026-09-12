@@ -1,5 +1,6 @@
 # ── Path ────────────────────────────────────────────
-path=("${HOME}/.local/bin" $path)
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+path=("${HOME}/.local/bin" "$PNPM_HOME/bin" $path)
 
 # ── Deduplicate PATH ───────
 typeset -U path
@@ -93,6 +94,8 @@ source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 export EDITOR=nvim
 export SOPS_AGE_KEY_FILE="$HOME/keys/age/sops.txt"
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
+# Allow oh-my-openagent codegraph MCP on node >= 25 (untested upstream)
+export CODEGRAPH_ALLOW_UNSAFE_NODE=1
 
 export MAKEFLAGS="-j$(nproc)"
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
