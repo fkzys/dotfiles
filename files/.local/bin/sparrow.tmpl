@@ -3,6 +3,9 @@ set -euo pipefail
 _src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
 _src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
+{{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
+BTC_DIR="{{ index $s "sparrow" "btc_dir" }}"
+
 A=()
 A+=(
     --ro-bind /usr /usr
@@ -22,6 +25,7 @@ bwrap_runtime_dir A
 bwrap_home_tmpfs A
 
 bwrap_bind_dir A "${HOME}/.sparrow"
+bwrap_ro_bind_dir A "${BTC_DIR}"
 
 bwrap_themes A
 bwrap_x11 A
