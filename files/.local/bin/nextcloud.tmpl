@@ -20,6 +20,7 @@ bwrap_bind_dir A \
     A+=(--ro-bind "${XDG_RUNTIME_DIR}/keyring" "${XDG_RUNTIME_DIR}/keyring")
 
 bwrap_dbus_common A \
+    --own=com.nextcloud.desktopclient.nextcloud \
     --talk=org.freedesktop.secrets \
     --talk=org.kde.kwalletd5 \
     --talk=org.kde.kwalletd6
