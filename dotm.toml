@@ -197,6 +197,7 @@ packages = [
     "tor",
     "yt-dlp",
     "vifm",
+    "calc",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
