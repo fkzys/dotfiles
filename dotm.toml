@@ -196,6 +196,7 @@ packages = [
     "i2pd",
     "tor",
     "yt-dlp",
+    "vifm",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
