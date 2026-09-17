@@ -21,6 +21,16 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
+---
+
+## Docs structure
+<details>
+<summary>tree</summary>
+|README.md (you're here)
+|->docs->|![hardening](docs/hardening.md)
+         |![lf](docs/lf.md)
+         |![notes](docs/notes.md)
+</details>
 
 ### Setup on a new machine
 
