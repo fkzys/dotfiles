@@ -59,6 +59,10 @@ dotm apply
 
 During init, dotm will prompt for feature flags (nvidia, laptop, etc.).
 
+### Package management
+
+All packages (pacman, AUR, flatpak, gitpkg, pnpm) are managed by dotm via `dotm.toml`. A bootstrap script (`scripts/bootstrap.sh.tmpl`) installs the prerequisite tools (aurutils, gitpkg) on new machines before calling `dotm apply`.
+
 ## Credits
 
 Some configs based on [tatsumoto-ren/dotfiles](https://github.com/tatsumoto-ren/dotfiles):
