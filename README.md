@@ -22,16 +22,6 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
-### Package management
-
-All packages (pacman, AUR, flatpak, gitpkg, pnpm) are managed by dotm via `dotm.toml`. A bootstrap script (`scripts/bootstrap.sh.tmpl`) installs the prerequisite tools (aurutils, gitpkg) on new machines before calling `dotm apply`.
-
-For a new machine setup:
-```bash
-dotm init
-dotm apply   # runs bootstrap.sh.tmpl → aurutils + gitpkg → dotm apply
-```
-
 ### Setup on a new machine
 
 1. Create age key:
