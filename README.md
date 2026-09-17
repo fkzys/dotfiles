@@ -32,6 +32,32 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
          |![notes](docs/notes.md)
 </details>
 
+---
+## Shell (zsh)
+
+No framework (oh-my-zsh, etc.) — prompt, completions, keybindings are configured manually.
+
+### Prompt
+
+robbyrussell-style prompt with inline git branch + dirty indicator (`✗`), implemented as a shell function (no plugin).
+
+### PATH
+
+`~/.local/bin` is prepended to `$PATH` via zsh's `path` array, deduplicated with `typeset -U path`.
+
+### Plugins
+
+- [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) — fish-like suggestions
+- [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) — command highlighting
+
+### Tools
+
+- [zoxide](https://github.com/ajeetdsouza/zoxide) — smart `cd`
+- [fzf](https://github.com/junegunn/fzf) — fuzzy finder (`Ctrl-T` files, `Alt-C` dirs, `Ctrl-R` history)
+- [direnv](https://direnv.net/) — per-directory env
+
+FZF uses `fd` for file/dir discovery and `bat`/`eza` for previews.
+
 ### Setup on a new machine
 
 1. Create age key:
