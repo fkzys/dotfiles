@@ -22,12 +22,24 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
 - **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
 
-## Docs structure
+## Docs
+
 - **[hardening](docs/hardening.md)**
+    - [Memory allocator hardening](docs/hardening.md#memory-allocator-hardening)
+    - [Application sandboxing](docs/hardening.md#application-sandboxing)
 
 - **[lf](docs/lf.md)**
+    - [Previews](docs/lf.md#previews)
+    - [Watch tracking](docs/lf.md#watch-tracking)
+    - [Keybindings](docs/lf.md#keybindings)
 
 - **[notes](docs/notes.md)**
+    - [Per-host configuration](docs/notes.md#per-host-configuration)
+    - [Shell](docs/notes.md#shell)
+    - [Systemd user services](docs/notes.md#systemd-user-services)
+    - [Standalone scripts](docs/notes.md#standalone-scripts)
+    - [Firefox](docs/notes.md#firefox)
+    - [Secrets](docs/notes.md#secrets)
 
 ## Shell (zsh)
 
