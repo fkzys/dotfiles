@@ -37,7 +37,7 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
     - [Per-host configuration](docs/notes.md#per-host-configuration)
     - [Shell](docs/notes.md#shell)
     - [Systemd user services](docs/notes.md#systemd-user-services)
-    - [Standalone scripts](docs/notes.md#standalone-scripts)
+    - [Standalone scripts](docs/notes.md#standalone-scripts-localbin)
     - [Firefox](docs/notes.md#firefox)
     - [Secrets](docs/notes.md#secrets)
 
