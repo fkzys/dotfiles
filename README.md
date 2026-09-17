@@ -66,7 +66,7 @@ robbyrussell-style prompt with inline git branch + dirty indicator (`✗`), impl
 
 FZF uses `fd` for file/dir discovery and `bat`/`eza` for previews.
 
-### Setup on a new machine
+## Setup on a new machine
 
 1. Create age key:
 ```bash
