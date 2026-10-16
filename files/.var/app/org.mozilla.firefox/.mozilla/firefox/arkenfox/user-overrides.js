@@ -1,16 +1,34 @@
 //my own
 
+/* 4501: enable RFP ***/
+    // user_pref("privacy.resistFingerprinting", true); // [FF41+]
+/* 4504: enable letterboxing [FF67+] ***/
+    // user_pref("privacy.resistFingerprinting.letterboxing", true); // [HIDDEN PREF]
+/* 4520: disable WebGL (Web Graphics Library) ***/
+    user_pref("webgl.disabled", true);
+/* 5003: disable saving passwords ***/
+   user_pref("signon.rememberSignons", false);
+/* 5017: disable Form Autofill ***/
+   user_pref("extensions.formautofill.addresses.enabled", false); // [FF55+]
+   user_pref("extensions.formautofill.creditCards.enabled", false); // [FF56+]
+/* 5505: disable Ion and baseline JIT to harden against JS exploits [RESTART]
+ * [NOTE] When both Ion and JIT are disabled, and trustedprincipals
+ * is enabled, then Ion can still be used by extensions (1599226)
+ * [1] https://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=firefox+jit
+ * [2] https://microsoftedge.github.io/edgevr/posts/Super-Duper-Secure-Mode/ ***/
+   user_pref("javascript.options.ion", false);
+   user_pref("javascript.options.baselinejit", false);
+   user_pref("javascript.options.jit_trustedprincipals", true); // [FF75+] [HIDDEN PREF]
+/* 5506: disable WebAssembly [FF52+] ***/
+   // user_pref("javascript.options.wasm", false);
+
+//---
+
 user_pref("browser.download.useDownloadDir", true);
 user_pref("browser.download.always_ask_before_handling_new_types", false);
 
-user_pref("gfx.webrender.all", true);
-user_pref("media.ffmpeg.vaapi.enabled", true);
-
 user_pref("ui.key.menuAccessKey", 0);
 
-user_pref("javascript.options.ion", false);
-user_pref("javascript.options.baselinejit", false);
-user_pref("javascript.options.native_regexp", false);
 //https://github.com/arkenfox/user.js/issues/1080
 
 /* override recipe: enable session restore ***/
@@ -30,8 +48,6 @@ user_pref("privacy.clearOnShutdown_v2.browsingHistoryAndDownloads", false); // 2
 
 // These are changes made on top of the Arkenfox JS file to tweak it as
 // desired. Any of these settings can be overridden by the user.
-
-
 
 
 //https://github.com/tatsumoto-ren/dotfiles/blob/main/.config/firefox/larbs.js
@@ -81,4 +97,3 @@ user_pref("identity.fxaccounts.enabled", false);
 
 // Fix the issue where right mouse button instantly clicks
 user_pref("ui.context_menus.after_mouseup", true);
-
