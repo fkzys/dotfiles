@@ -179,23 +179,6 @@
           }
         ]
       },
-      "deep": {
-        "model": "opencode/gpt-5.5",
-        "variant": "medium",
-        "fallback_models": [
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "variant": "high"
-          },
-          {
-            "model": "opencode/big-pickle"
-          }
-        ]
-      },
       "artistry": {
         "model": "opencode/gemini-3.1-pro",
         "variant": "high",
@@ -269,11 +252,201 @@
             "model": "opencode/big-pickle"
           }
         ]
+      },
+      "deep-low": {
+        "model": "opencode/gpt-5.5",
+        "variant": "medium",
+        "fallback_models": [
+          {
+            "model": "opencode/claude-opus-4-7",
+            "variant": "max"
+          },
+          {
+            "model": "opencode/gemini-3.1-pro",
+            "variant": "high"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
       }
     }
   },
   "_migrations": [
     "2026-07-opencode-config-unification",
-    "2026-08-reasoning-unification"
-  ]
+    "2026-08-reasoning-unification",
+    "2026-09-category-deep-split",
+    "2026-09-opencode-routing-notice"
+  ],
+  "[native]": {
+    "categories": {
+      "artistry": {
+        "models": [
+          "opencode/gemini-3.1-pro",
+          {
+            "model": "opencode/claude-opus-4-7",
+            "reasoning": "max"
+          },
+          {
+            "model": "opencode/gpt-5.5"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "high"
+      },
+      "deep-low": {
+        "models": [
+          "opencode/gpt-5.5",
+          {
+            "model": "opencode/claude-opus-4-7",
+            "reasoning": "max"
+          },
+          {
+            "model": "opencode/gemini-3.1-pro",
+            "reasoning": "high"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "medium"
+      },
+      "quick": {
+        "models": [
+          "opencode/gpt-5.4-mini",
+          {
+            "model": "opencode/claude-haiku-4-5"
+          },
+          {
+            "model": "opencode/gemini-3-flash"
+          },
+          {
+            "model": "opencode/gpt-5-nano"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
+      },
+      "ultrabrain": {
+        "models": [
+          "opencode/gpt-5.5",
+          {
+            "model": "opencode/gemini-3.1-pro",
+            "reasoning": "high"
+          },
+          {
+            "model": "opencode/claude-opus-4-7",
+            "reasoning": "max"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "xhigh"
+      },
+      "unspecified-high": {
+        "models": [
+          "opencode/claude-sonnet-4-6",
+          {
+            "model": "opencode/gpt-5.3-codex",
+            "reasoning": "medium"
+          },
+          {
+            "model": "opencode/gemini-3-flash"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
+      },
+      "unspecified-low": {
+        "models": [
+          "opencode/claude-sonnet-4-6",
+          {
+            "model": "opencode/gpt-5.3-codex",
+            "reasoning": "medium"
+          },
+          {
+            "model": "opencode/gemini-3-flash"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
+      },
+      "visual-engineering": {
+        "models": [
+          "opencode/gemini-3.1-pro",
+          {
+            "model": "opencode/glm-5"
+          },
+          {
+            "model": "opencode/claude-opus-4-7",
+            "reasoning": "max"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "high"
+      },
+      "writing": {
+        "models": [
+          "opencode/gemini-3-flash",
+          {
+            "model": "opencode/claude-sonnet-4-6"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
+      }
+    },
+    "agents": {
+      "explore": {
+        "models": [
+          "opencode/claude-haiku-4-5",
+          {
+            "model": "opencode/gpt-5.4-nano"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ]
+      },
+      "plan-consultant": {
+        "models": [
+          "opencode/claude-opus-4-7",
+          {
+            "model": "opencode/gpt-5.5",
+            "reasoning": "high"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "max"
+      },
+      "plan-reviewer": {
+        "models": [
+          "opencode/gpt-5.5",
+          {
+            "model": "opencode/claude-opus-4-7",
+            "reasoning": "max"
+          },
+          {
+            "model": "opencode/gemini-3.1-pro",
+            "reasoning": "high"
+          },
+          {
+            "model": "opencode/big-pickle"
+          }
+        ],
+        "reasoning": "xhigh"
+      }
+    }
+  }
 }
