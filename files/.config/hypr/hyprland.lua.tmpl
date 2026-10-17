@@ -314,6 +314,7 @@ hl.bind(mainMod .. " + SHIFT + E",     hl.dsp.exec_cmd("uwsm stop"))
 hl.bind(mainMod .. " + SHIFT + SPACE", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + D",             hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + F",             hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd("~/.config/hypr/scripts/lock.sh"))
 
 hl.bind(mainMod .. " + W", hl.dsp.group.toggle())
 
