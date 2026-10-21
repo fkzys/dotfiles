@@ -23,6 +23,10 @@ secrets.enc.yaml
 .local/bin/sparrow
 {{ end -}}
 
+{{ if not .wasabi -}}
+.local/bin/wasabi
+{{ end -}}
+
 {{ if not .laptop -}}
 .local/bin/bt-audio
 {{ end -}}
