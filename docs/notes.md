@@ -16,6 +16,7 @@ Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm
 | `sparrow` | sparrow-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
+| `vid_edit` | KdenLive (flatpak) |
 
 Per-host data (monitor line, wallpaper path, container graphroot, directory aliases) is stored in `secrets.enc.yaml` under each application's key, keyed by hostname.
 
@@ -88,7 +89,15 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `nextcloud` | — | Nextcloud desktop client |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
-All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`.
+All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`, `systemd-timesyncd`.
+
+## Hyprland scripts
+
+Scripts in `~/.config/hypr/scripts/`, invoked from Hyprland keybindings.
+
+| Script | Description |
+|---|---|
+| `lock.sh` | Lock sequence bound to `SUPER+CTRL+L`: drops all SSH keys from the agent (`ssh-add -D`), closes the [keys-vault](https://github.com/fkzys/keys-vault) (`keys-vault close`), de-authorizes every USB device (`/sys/bus/usb/devices/usb*/authorized_default` → `0`), runs `hyprlock`, then re-authorizes USB devices (→ `1`), reopens the vault (`keys-vault open`) and reloads the SSH keys (`ssh-add-keys`). |
 
 ## Standalone scripts (`~/.local/bin/`)
 
@@ -110,9 +119,10 @@ All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm a
 Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via dotm at `~/.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/user-overrides.js`.
 
 Custom overrides include:
-- Hardware video acceleration (VA-API)
 - Disabled menu access key
-- JIT disabled (`ion`, `baselinejit`, `native_regexp`) for security hardening
+- JIT disabled (`ion`, `baselinejit`) with `jit_trustedprincipals` enabled, for security hardening
+- WebGL disabled
+- Password saving and form autofill disabled
 - Session restore enabled
 
 ## Secrets

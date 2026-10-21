@@ -12,7 +12,7 @@ Applications with incompatible custom allocators (e.g. PartitionAlloc in QtWebEn
 
 | Allocator | Applications |
 |---|---|
-| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
+| default (via bwrap) | imv, keepassxc, krita, mpv, obs, nvim, lazygit, qbittorrent, gimp, swappy, makepkg, fcitx5, nextcloud, otd-daemon, sparrow, wasabi, transformers\_ocr, subs2srs, subsretimer, wofi-launcher, dmenu (wofi) |
 | light (system-wide) | hyprland, waybar, kitty, thunar, all other native processes |
 | disabled | anki, fd, goldendict (PartitionAlloc / QtWebEngine) |
 | not applicable | flatpak apps (own runtime) |
@@ -34,7 +34,7 @@ System desktop entries are overridden in `~/.local/share/applications/` to redir
 
 Flatpak applications have per-app permission overrides in `~/.local/share/flatpak/overrides/`.
 
-Nextcloud and fcitx5 are launched via XDG autostart desktop entries (`~/.config/autostart/`) instead of systemd user services. The desktop entries use templated paths pointing to the bwrap wrappers. Nextcloud also has a D-Bus activation service (`~/.local/share/dbus-1/services/`) for on-demand startup.
+Nextcloud and fcitx5 are launched via systemd user services (`nextcloud.service`, `fcitx5.service`). Both units point at the bwrap wrappers (`%h/.local/bin/nextcloud --background`, `%h/.local/bin/fcitx5`) and are bound to `graphical-session.target`. The Nextcloud flatpak's own startup paths are disabled: `~/.local/share/dbus-1/services/com.nextcloudgmbh.Nextcloud.service` is a stub with `Exec=/bin/false` (blocks D-Bus activation), and `~/.config/systemd/user/com.nextcloudgmbh.Nextcloud.service` is masked with a symlink to `/dev/null`.
 
 subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/`) for launcher integration.
 
@@ -57,6 +57,7 @@ subs2srs and SubsReTimer have XDG desktop entries (`~/.local/share/applications/
 | otd-daemon | Wayland (no GUI) | no | OpenTabletDriver daemon, full `/dev` access for tablet devices, Wayland socket for tablet mapping |
 | qbittorrent | Wayland | yes | Download dirs from secrets |
 | sparrow | XWayland | yes | Bitcoin wallet, `/opt/sparrow` read-only bind, Java AWT non-reparenting, filtered D-Bus |
+| wasabi | X11 | yes | Bitcoin wallet, `/opt/WasabiWallet` read-only bind, `~/.walletwasabi` writable, filtered D-Bus owning `org.kde.*`, no GPU, own `libHarfBuzzSharp.so` preloaded alongside hardened\_malloc |
 | subs2srs | Wayland | no | Native binary, media dir read-only from secrets, output + log dirs writable, audio, fcitx5 input |
 | subsretimer | XWayland | no | Mono/.NET app (SubsReTimer.exe), media dir read-only from secrets, output dir writable, fcitx5 input |
 | swappy | Wayland | no | Screenshots dir, D-Bus system access |
