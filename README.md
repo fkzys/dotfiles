@@ -19,6 +19,7 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
     - [Per-host configuration](docs/notes.md#per-host-configuration)
     - [Shell](docs/notes.md#shell)
     - [Systemd user services](docs/notes.md#systemd-user-services)
+    - [Hyprland scripts](docs/notes.md#hyprland-scripts)
     - [Standalone scripts](docs/notes.md#standalone-scripts-localbin)
     - [Firefox](docs/notes.md#firefox)
     - [Secrets](docs/notes.md#secrets)
@@ -35,11 +36,11 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Screenshots**: swappy (annotation tool)
 - **Input**: fcitx5 + mozc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
-- **Browser**: Firefox (flatpak, arkenfox user.js with overrides)
+- **Browser**: Firefox (flatpak, arkenfox user.js with overrides), ungoogled-chromium (flatpak, launched with `--disable-gpu`)
 - **Cloud sync**: Nextcloud (sandboxed, systemd user service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
-- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility)
+- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility), wasabi (sandboxed Wasabi Wallet launcher)
 
 ## Shell (zsh)
 
