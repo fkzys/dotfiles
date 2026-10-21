@@ -14,6 +14,7 @@ Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm
 | `goldendict` | GoldenDict-ng (wrapper, config, package) |
 | `subs2srs` | [subs2srs](https://github.com/ajatt-tools/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
 | `sparrow` | sparrow-wallet (wrapper) |
+| `wasabi` | wasabi-wallet (wrapper) |
 | `portproton` | PortProton (flatpak + alias) |
 | `virt_manager` | QEMU / virt-manager / dnsmasq |
 | `vid_edit` | KdenLive (flatpak) |
