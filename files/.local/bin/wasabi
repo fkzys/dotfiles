@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+A=()
+bwrap_gui_setup A yes no
+
+bwrap_bind_dir A "$HOME/.walletwasabi"
+bwrap_ro_bind_dir A "/opt/WasabiWallet"
+
+bwrap_dbus_common A \
+    --own=org.kde.*
+
+bwrap_gui_finish A x11 yes default none
+
+A+=(--setenv LD_PRELOAD "/usr/lib/libhardened_malloc.so /opt/WasabiWallet/libHarfBuzzSharp.so")
+
+bwrap_exec "${A[@]}" -- /opt/WasabiWallet/wassabee "$@"
