@@ -2,6 +2,6 @@
 set -euo pipefail
 
 shopt -s nullglob
-keys=("$HOME/keys/ssh"/*)
+keys=("$HOME/keys/ssh"/git-id_ed25519)
 shopt -u nullglob
 (( ${#keys[@]} )) && exec ssh-add -t 4h "${keys[@]}"
