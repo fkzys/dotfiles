@@ -123,10 +123,12 @@ export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
 
 # ── Aliases ─────────────────────────────────────────────────
 alias ls='eza --color=always'
+alias lss='eza --color=always -snew'
 alias ll='eza -loga --color=always --git'
-alias lls='eza -loga -snew --color=always --git'
 alias la='eza -a --color=always'
+alias lls='eza -loga -snew --color=always --git'
 alias llt='eza -logaT --color=always --level=2'
+alias llts='eza -logaT --color=always -snew --level=2'
 alias lt='eza -T --color=always --level=2'
 alias l.='eza -d .* --color=always'
 
