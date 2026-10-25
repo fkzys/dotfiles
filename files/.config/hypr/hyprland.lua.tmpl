@@ -324,7 +324,9 @@ hl.bind(mainMod .. " + F2", hl.dsp.exec_cmd("flatpak run org.telegram.desktop"))
 hl.bind(mainMod .. " + F3", hl.dsp.exec_cmd("thunar"))
 hl.bind(mainMod .. " + F4", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + F5", hl.dsp.exec_cmd("flatpak run io.github.ungoogled_software.ungoogled_chromium --disable-gpu"))
+{{- if eq .sparrow true}}
 hl.bind(mainMod .. " + F6", hl.dsp.exec_cmd("~/.local/bin/sparrow"))
+{{- end}}
 
 {{- if eq .ocr true }}
 -- -- Custom Tools (OCR) --
