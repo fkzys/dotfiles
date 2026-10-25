@@ -198,6 +198,7 @@ packages = [
     "yt-dlp",
     "vifm",
     "calc",
+    "moreutils",
 
     # === DEV & VIRTUALIZATION ===
     "base-devel",
