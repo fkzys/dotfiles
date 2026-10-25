@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=OpenCloud Desktop
+GenericName=File Synchronizer
+Exec=/usr/bin/opencloud
+Hidden=true
+Terminal=false
+Icon=opencloud
+Categories=Network
+Type=Application
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=10
