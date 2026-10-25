@@ -21,7 +21,6 @@ vid_edit     = { type = "bool", question = "KdenLive" }
 [symlinks]
 ".local/bin/imv-dir"  = "{{ .homeDir }}/.local/bin/imv"
 ".local/bin/sing-box" = "{{ .homeDir }}/sing-box/sing-box"
-".config/systemd/user/com.nextcloudgmbh.Nextcloud.service" = "/dev/null"
 
 # ─── Scripts ───
 
@@ -131,7 +130,7 @@ packages = [
     # === APPS ===
     "kitty",
     "thunar",
-    "nextcloud-client",
+    "opencloud-desktop",
     "keepassxc",
     "qbittorrent",
     "gimp",
@@ -318,6 +317,6 @@ services = [
     "ssh-agent",
     "keys-vault",
     "ssh-add",
-    "nextcloud",
+    "opencloud",
     "{{ if .ocr }}transformers_ocr{{ end }}",
 ]

@@ -1,12 +1,12 @@
 [Unit]
-Description=Nextcloud Desktop Client
+Description=OpenCloud Desktop Client
 After=graphical-session.target network-online.target
 PartOf=graphical-session.target
 Requires=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/nextcloud --background
+ExecStart=%h/.local/bin/opencloud
 Restart=on-failure
 RestartSec=5
 
