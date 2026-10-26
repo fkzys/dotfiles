@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
+
+A=()
+A+=(--dev-bind / /)
+
+{{ range $s.opencode.tmpfs -}}
+A+=(--tmpfs "${HOME}/{{ . }}")
+{{ end -}}
+
+exec bwrap "${A[@]}" -- /usr/bin/opencode "$@"
