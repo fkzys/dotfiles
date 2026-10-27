@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
 {{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
+PROJECTS_DIR="{{ index $s "opencode" "projects_dir" | replace "$HOME" .homeDir -}}"
 
 A=()
-A+=(--dev-bind / /)
+bwrap_gui_setup A yes no
+bwrap_bind_dir A \
+    "${HOME}/.omo" \
+    "${HOME}/.local/share/opencode" \
+    "${HOME}/.local/state/opencode" \
+    "${HOME}/.cache/opencode" \
+    "$PROJECTS_DIR"
+
+bwrap_ro_bind_dir A "${HOME}/.config/opencode" "${HOME}/.local/share/pnpm"
 
 {{ range $s.opencode.tmpfs -}}
 A+=(--tmpfs "${HOME}/{{ . }}")
 {{ end -}}
 
-exec bwrap "${A[@]}" -- /usr/bin/opencode "$@"
+bwrap_gui_finish A wayland yes default filtered
+
+bwrap_exec "${A[@]}" -- /usr/bin/opencode "$@"
