@@ -4,6 +4,8 @@ set -euo pipefail
 _src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
 _src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
+require_dir "${HOME}/keys/git-rtz"
+
 mkdir -p "${HOME}/.config/lazygit" \
          "${HOME}/.local/state/lazygit"
 
@@ -13,26 +15,36 @@ A=()
 bwrap_base A
 bwrap_lib64 A
 bwrap_resolv A
+bwrap_runtime_dir A
+bwrap_ssh_agent A
+bwrap_home_tmpfs A
 
-A+=(--dir "${HOME}"
-    --dir "${HOME}/.config"
-    --dir "${HOME}/.local"
-    --dir "${HOME}/.local/share"
-    --dir "${HOME}/.local/state"
-    --bind "${CWD}" "${CWD}"
-    --bind "${HOME}/.config/lazygit"       "${HOME}/.config/lazygit"
-    --bind "${HOME}/.local/state/lazygit"  "${HOME}/.local/state/lazygit"
+A+=(--tmpfs "${HOME}/keys")
+
+bwrap_bind_dir A "${HOME}/.config/lazygit" \
+                 "${HOME}/.local/state/lazygit" \
+                 "${HOME}/keys/git-rtz" \
+                 "${HOME}/.cache/git-rtz"
+
+A+=(--bind "${CWD}" "${CWD}"
+    --ro-bind "${HOME}/.local/bin/git"     "${HOME}/.local/bin/git"
     --ro-bind-try "${HOME}/.gitconfig"     "${HOME}/.gitconfig"
     --ro-bind-try "${HOME}/.config/git"    "${HOME}/.config/git"
     --ro-bind-try "${HOME}/.ssh/git-id_ed25519.pub" "${HOME}/.ssh/git-id_ed25519.pub")
 
-bwrap_ssh_agent A
-bwrap_runtime_dir A
 bwrap_env_base A
-A+=(--setenv TERM "${TERM}"
-    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
 
+: "${GIT_RANDOM_TZ_KEYS:=${HOME}/keys/git-rtz}"
+: "${GIT_RANDOM_TZ_SEGMENTS:=$((RANDOM % 4 + 6))}"
+
+A+=(--setenv TERM "${TERM}"
+    --setenv PATH "${HOME}/.local/bin:/usr/bin:/bin"
+    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"}
+    ${GIT_RANDOM_TZ_KEYS:+--setenv GIT_RANDOM_TZ_KEYS "$GIT_RANDOM_TZ_KEYS"}
+    ${GIT_RANDOM_TZ_SEGMENTS:+--setenv GIT_RANDOM_TZ_SEGMENTS "$GIT_RANDOM_TZ_SEGMENTS"})
+
+bwrap_dbus_common A
 bwrap_hardened_malloc A default
 bwrap_sandbox A yes no
 
-exec bwrap "${A[@]}" -- /usr/bin/lazygit "$@"
+bwrap_exec "${A[@]}" -- /usr/bin/lazygit "$@"
