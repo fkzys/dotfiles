@@ -94,7 +94,8 @@ source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 export EDITOR=nvim
 export SOPS_AGE_KEY_FILE="$HOME/keys/age/sops-pq.txt"
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
-# Allow oh-my-openagent codegraph MCP on node >= 25 (untested upstream)
+export GIT_RANDOM_TZ_KEYS="${HOME}/keys/git-rtz"
+# Allow oh-my-openagent codegraph MCP on node
 export CODEGRAPH_ALLOW_UNSAFE_NODE=1
 
 export MAKEFLAGS="-j$(nproc)"
