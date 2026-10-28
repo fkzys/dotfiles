@@ -382,6 +382,8 @@ assert_contains "verbose state dump zone tab" "zone tab=" "$OUT"
 assert_contains "verbose state dump zone count" "zones=" "$OUT"
 assert_contains "verbose state dump segment count" "n_segments=" "$OUT"
 assert_contains "verbose state dump first segment" "segment 0:" "$OUT"
+assert_contains "verbose state dump selected zone" "selected zone=" "$OUT"
+assert_contains "verbose state dump selected now" "now=" "$OUT"
 assert_not_contains "verbose state dump does not exec git" "exec " "$OUT"
 assert_not_contains "verbose state dump does not show help" "Usage: git --wrapper" "$OUT"
 

@@ -538,6 +538,9 @@ if ! (( seg_exists )); then
 fi
 
 if (( state_only )); then
+    now=$(date +%s)
+    zone=$(awk -v now="$now" '$1 <= now && now < $2 { print $3; exit }' "$SEG_FILE")
+    log "selected zone=${zone:-none} now=$now"
     close_lock
     exit 0
 fi

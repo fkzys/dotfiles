@@ -77,7 +77,7 @@ printed to make investigation easier.
 5. **Non-TZ fast path** — status/version under `--wrapper` create no key material.
 6. **`--regen`** — regenerates salt/segments, changes the salt, keeps the header in sync, enforces `0600`/`0700` modes, leaves no temp files.
 7. **Segment count** — default is 6..9; `--segments` and `GIT_RANDOM_TZ_SEGMENTS` select the count; CLI overrides the environment; more than 10 is allowed but warns; invalid or missing values fail without creating keys.
-8. **`--verbose`** — logs are prefixed with `git-rtz:`, show the selected zone, and never print the salt or its hash. With no subcommand, `--wrapper --verbose` prints the current state and exits without running Git; a missing schedule is reported without creating key material.
+8. **`--verbose`** — logs are prefixed with `git-rtz:`, show the selected zone, and never print the salt or its hash. With no subcommand, `--wrapper --verbose` prints the current state and selected zone, then exits without running Git; a missing schedule is reported without creating key material.
 9. **YEAR validation** — malformed, past, and future years fail with clear messages and create no keys.
 10. **FBE guard** — state without any key material refuses regeneration.
 11. **Partial corruption** — state + salt without segments is repaired by `--regen`.
