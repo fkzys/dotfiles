@@ -1,0 +1,571 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+self=$(readlink -f "$0")
+REAL_GIT=""
+while IFS= read -r p; do
+    if [[ "$(readlink -f "$p")" != "$self" ]]; then
+        REAL_GIT="$p"
+        break
+    fi
+done < <(type -ap git || true)
+
+if [[ -z "$REAL_GIT" ]]; then
+    echo "git-rtz: real git not found" >&2
+    exit 127
+fi
+
+verbose=0
+log() {
+    if (( verbose )); then
+        printf 'git-rtz: %s\n' "$*" >&2
+    fi
+}
+
+show_help() {
+    cat <<'EOF'
+Usage: git --wrapper [--regen] [--segments N] [--verbose] [--help]
+
+Wraps git to assign a random IANA time zone to committer/tagger dates.
+The current UTC year is split into 6..9 segments by default, or into N
+segments when selected below, by HMAC-SHA256, keyed by a per-year salt.
+Each segment maps to a real IANA zone from zone1970.tab and zone.tab as a fallback.
+When a commit-writing command runs, TZ is set to
+the current segment's zone; the timestamp itself is not changed.
+
+Storage:
+  $KEYS_DIR/salt-$YEAR, $KEYS_DIR/segments-$YEAR
+      default: ~/keys/git-rtz
+  $CACHE_DIR/state-$YEAR
+      default: ~/.cache/git-rtz
+
+~/keys must be encrypted at rest. File-based encryption is sufficient.
+Full-disk encryption is still recommended because FBE only
+covers the keys directory, while FDE also protects anything that
+touches the same disk.
+Without either, shred gives no real guarantee on CoW filesystems
+and SSDs.
+
+Environment:
+  YEAR                         UTC year to use (default: current UTC year)
+  GIT_RANDOM_TZ_KEYS           Override KEYS_DIR
+  GIT_RANDOM_TZ_SEGMENTS       Positive segment count to generate
+                               (default: 6..9); overridden by --segments
+  GIT_RANDOM_TZ_REQUIRE_MOUNT  If "yes", abort unless KEYS_DIR is a mount
+                               point (use when ~/keys is on a separate
+                               encrypted volume). Unset or "no" disables.
+
+--wrapper is stripped before dispatch. Without --wrapper, wrapper-only
+flags are passed to real git unchanged; other arguments are passed through,
+and TZ is still applied to the commands listed below.
+
+Wrapper-only flags (require --wrapper; recognized only in git's leading
+global options):
+  --regen       Shred and regenerate this year's salt and segment schedule
+  --segments N  Set the segment count (positive integer) for a new or
+                regenerated schedule. No upper limit. More than 10 segments
+                make the time zone change unnaturally often.
+  --verbose     Print diagnostics to stderr (never the salt or its hash).
+                With no subcommand, print the current schedule and exit.
+
+TZ is applied to:
+  commit, ci, commit-tree, merge, cherry-pick, revert, rebase, am, pull, tag
+EOF
+}
+
+require_cmd() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "git-rtz: required command not found: $1" >&2
+        exit 1
+    fi
+}
+
+find_zones() {
+    ZONES=()
+    TZ_TAB=""
+    for candidate in /usr/share/zoneinfo/zone1970.tab /usr/share/zoneinfo/zone.tab; do
+        if [[ ! -r "$candidate" ]]; then
+            continue
+        fi
+        zones_candidate=()
+        mapfile -t zones_candidate < <(awk -F'\t' '!/^#/ && NF >= 3 { print $3 }' "$candidate")
+        if (( ${#zones_candidate[@]} > 0 )); then
+            TZ_TAB="$candidate"
+            ZONES=("${zones_candidate[@]}")
+            break
+        fi
+    done
+    if [[ -z "$TZ_TAB" ]]; then
+        echo "git-rtz: no time zones parsed from zone1970.tab or zone.tab" >&2
+        exit 1
+    fi
+}
+
+log_schedule() {
+    local file=$1 count j=0 start end zone
+    count=$(awk 'END { print NR - 1 }' "$file")
+    log "zone tab=$TZ_TAB zones=${#ZONES[@]}"
+    log "n_segments=$count"
+    while read -r start end zone; do
+        log "segment $j: $start $end $zone"
+        j=$((j + 1))
+    done < <(awk 'NR > 1' "$file")
+}
+
+SALT_TMP=""
+SEG_TMP=""
+cleanup_tmp() {
+    if [[ -n "$SALT_TMP" ]]; then
+        rm -f -- "$SALT_TMP"
+    fi
+    if [[ -n "$SEG_TMP" ]]; then
+        rm -f -- "$SEG_TMP"
+    fi
+    return 0
+}
+trap cleanup_tmp EXIT
+
+# First pass: find the end of git's leading global-option prefix and detect
+# --wrapper. Only this prefix may contain wrapper-only flags; everything after
+# the subcommand is passed through verbatim.
+args=("$@")
+n_args=${#args[@]}
+i=0
+prefix_end=0
+wrapper_mode=0
+saw_wrapper_only_flag=0
+segments_set=0
+segments_missing=0
+segments_arg=""
+while (( i < n_args )); do
+    case "${args[$i]}" in
+        --wrapper)
+            wrapper_mode=1
+            (( i += 1 ))
+            ;;
+        --regen|--verbose)
+            saw_wrapper_only_flag=1
+            (( i += 1 ))
+            ;;
+        --segments)
+            saw_wrapper_only_flag=1
+            segments_set=1
+            if (( i + 1 < n_args )) && [[ "${args[$((i + 1))]}" != -* ]]; then
+                segments_arg="${args[$((i + 1))]}"
+                (( i += 2 ))
+            else
+                segments_missing=1
+                (( i += 1 ))
+            fi
+            ;;
+        --segments=*)
+            saw_wrapper_only_flag=1
+            segments_set=1
+            segments_arg="${args[$i]#--segments=}"
+            (( i += 1 ))
+            ;;
+        -C|-c|--git-dir|--work-tree|--namespace|--exec-path)
+            (( i += 2 ))
+            ;;
+        --git-dir=*|--work-tree=*|--namespace=*|--exec-path=*|-*)
+            (( i += 1 ))
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+prefix_end=$i
+
+# Without --wrapper, wrapper-only flags are not ours: pass the original argv
+# straight to real git so an invalid invocation creates no key material. A
+# plain commit-writing command still falls through and gets the scheduled TZ.
+if (( ! wrapper_mode )) && (( saw_wrapper_only_flag )); then
+    exec "$REAL_GIT" "$@"
+fi
+
+# Second pass: strip wrapper-only flags from the prefix, preserve option
+# values that merely look like wrapper flags, and copy the rest verbatim.
+new_args=()
+regen=0
+i=0
+while (( i < n_args )); do
+    if (( i >= prefix_end )); then
+        new_args+=("${args[$i]}")
+        (( i += 1 ))
+        continue
+    fi
+    case "${args[$i]}" in
+        --wrapper)
+            (( i += 1 ))
+            ;;
+        --regen)
+            regen=1
+            (( i += 1 ))
+            ;;
+        --verbose)
+            verbose=1
+            (( i += 1 ))
+            ;;
+        --segments)
+            (( i += 1 ))
+            if (( i < prefix_end )) && [[ "${args[$i]}" != -* ]]; then
+                (( i += 1 ))
+            fi
+            ;;
+        --segments=*)
+            (( i += 1 ))
+            ;;
+        -C|-c|--git-dir|--work-tree|--namespace|--exec-path)
+            new_args+=("${args[$i]}")
+            if (( i + 1 < n_args )); then
+                new_args+=("${args[$((i + 1))]}")
+            fi
+            (( i += 2 ))
+            ;;
+        *)
+            new_args+=("${args[$i]}")
+            (( i += 1 ))
+            ;;
+    esac
+done
+
+if (( wrapper_mode )); then
+    if (( ${#new_args[@]} > 0 )); then
+        case "${new_args[0]}" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+        esac
+    fi
+    if (( segments_set )); then
+        if (( segments_missing )); then
+            echo "git-rtz: --segments requires a positive integer" >&2
+            exit 1
+        fi
+        if ! [[ "$segments_arg" =~ ^[1-9][0-9]*$ ]]; then
+            echo "git-rtz: --segments must be a positive integer (got '$segments_arg')" >&2
+            exit 1
+        fi
+    fi
+    if (( ${#new_args[@]} == 0 )) && (( ! regen )) && (( ! verbose )); then
+        show_help
+        exit 0
+    fi
+fi
+
+if (( ${#new_args[@]} > 0 )); then
+    set -- "${new_args[@]}"
+else
+    set --
+fi
+
+state_only=0
+if (( wrapper_mode )) && (( verbose )) && (( $# == 0 )) && (( ! regen )); then
+    state_only=1
+fi
+
+args=("$@")
+n_args=${#args[@]}
+i=0
+while (( i < n_args )); do
+    case "${args[$i]}" in
+        -C|-c|--git-dir|--work-tree|--namespace|--exec-path)
+            (( i += 2 ))
+            ;;
+        --git-dir=*|--work-tree=*|--namespace=*|--exec-path=*|-*)
+            (( i += 1 ))
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+subcmd="${args[$i]:-}"
+
+log "wrapper=$wrapper_mode regen=$regen verbose=$verbose"
+log "subcommand='$subcmd'"
+
+tz_needed=0
+case "$subcmd" in
+    commit|ci|commit-tree|merge|cherry-pick|revert|rebase|am|pull|tag)
+        tz_needed=1
+        ;;
+esac
+
+# Non-TZ command without --regen: dispatch before touching anything.
+if (( ! tz_needed && ! regen && ! state_only )); then
+    log "subcommand '$subcmd' does not need a time zone"
+    exec "$REAL_GIT" "$@"
+fi
+
+if [[ -n "${GIT_RANDOM_TZ_SEGMENTS:-}" ]] && ! [[ "$GIT_RANDOM_TZ_SEGMENTS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "git-rtz: GIT_RANDOM_TZ_SEGMENTS must be a positive integer (got '$GIT_RANDOM_TZ_SEGMENTS')" >&2
+    exit 1
+fi
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/git-rtz"
+KEYS_DIR="${GIT_RANDOM_TZ_KEYS:-$HOME/keys/git-rtz}"
+
+for c in date awk sha256sum cut; do
+    require_cmd "$c"
+done
+
+now_year=$(TZ=UTC date +%Y)
+YEAR=${YEAR:-$now_year}
+
+if ! [[ "$YEAR" =~ ^[1-9][0-9]{3}$ ]]; then
+    echo "git-rtz: YEAR=$YEAR is not a valid four-digit year (1000-9999)" >&2
+    exit 1
+fi
+if (( YEAR > now_year )); then
+    echo "git-rtz: YEAR=$YEAR is in the future; the schedule would not cover the current time" >&2
+    exit 1
+fi
+if (( YEAR < now_year )); then
+    echo "git-rtz: YEAR=$YEAR is in the past; past-year data is destroyed for forward secrecy" >&2
+    exit 1
+fi
+
+log "YEAR=$YEAR now_year=$now_year"
+log "CACHE_DIR=$CACHE_DIR"
+log "KEYS_DIR=$KEYS_DIR"
+
+if [[ ! -d "$CACHE_DIR" ]]; then
+    mkdir -p -- "$CACHE_DIR"
+fi
+chmod 700 -- "$CACHE_DIR"
+
+case "${GIT_RANDOM_TZ_REQUIRE_MOUNT:-no}" in
+    yes|YES|true|TRUE|1)
+        require_cmd mountpoint
+        if ! mountpoint -q "$KEYS_DIR"; then
+            echo "git-rtz: $KEYS_DIR is not a mount point" >&2
+            exit 1
+        fi
+        ;;
+    no|NO|false|FALSE|0|"")
+        ;;
+    *)
+        echo "git-rtz: GIT_RANDOM_TZ_REQUIRE_MOUNT must be yes or no" >&2
+        exit 1
+        ;;
+esac
+
+STATE_FILE="$CACHE_DIR/state-$YEAR"
+SALT_FILE="$KEYS_DIR/salt-$YEAR"
+SEG_FILE="$KEYS_DIR/segments-$YEAR"
+
+# Serialize existence checks, cleanup, regeneration and generation. flock is
+# optional; without it we still work, just without cross-process exclusion.
+lock_fd=""
+if command -v flock >/dev/null 2>&1; then
+    exec {lock_fd}>"$CACHE_DIR/.lock"
+    flock -x "$lock_fd"
+else
+    log "flock not available; proceeding without a lock"
+fi
+
+close_lock() {
+    if [[ -n "$lock_fd" ]]; then
+        exec {lock_fd}>&-
+        lock_fd=""
+    fi
+}
+
+state_exists=0
+[[ -f "$STATE_FILE" ]] && state_exists=1
+salt_exists=0
+[[ -f "$SALT_FILE" ]] && salt_exists=1
+seg_exists=0
+[[ -f "$SEG_FILE" ]] && seg_exists=1
+
+log "state_exists=$state_exists salt_exists=$salt_exists seg_exists=$seg_exists"
+
+# FBE safety: a state file with no key material at all means the vault is not
+# mounted. Refuse without creating anything.
+if (( state_exists )) && (( ! salt_exists )) && (( ! seg_exists )); then
+    echo "git-rtz: state-$YEAR exists but salt-$YEAR or segments-$YEAR is missing" >&2
+    echo "git-rtz: refusing to regenerate; is $KEYS_DIR accessible (FBE mounted)?" >&2
+    exit 1
+fi
+
+# A state dump is read-only: never create key material just to inspect it.
+if (( state_only )) && { (( ! salt_exists )) || (( ! seg_exists )); }; then
+    log "state dump: no complete schedule; run --regen"
+    close_lock
+    exit 0
+fi
+
+if [[ ! -d "$KEYS_DIR" ]]; then
+    mkdir -p -- "$KEYS_DIR"
+fi
+chmod 700 -- "$KEYS_DIR"
+
+# Forward secrecy: drop state, salt and segments from past years.
+if (( ! state_only )); then
+    shopt -s nullglob
+    for f in "$CACHE_DIR"/state-*; do
+        y="${f##*-}"
+        if [[ "$y" =~ ^[0-9]{4}$ ]] && (( y < now_year )); then
+            rm -f -- "$f"
+        fi
+    done
+    for f in "$KEYS_DIR"/salt-* "$KEYS_DIR"/segments-*; do
+        y="${f##*-}"
+        if [[ "$y" =~ ^[0-9]{4}$ ]] && (( y < now_year )); then
+            shred -u -n 1 -- "$f" 2>/dev/null || rm -f -- "$f"
+        fi
+    done
+    shopt -u nullglob
+fi
+
+if (( regen )); then
+    # Remove state first: a crash mid-regen then leaves a recoverable no-state
+    # situation rather than a state file pointing at half-written keys.
+    rm -f -- "$STATE_FILE"
+    state_exists=0
+    if (( salt_exists )); then
+        shred -u -n 1 -- "$SALT_FILE" 2>/dev/null || rm -f -- "$SALT_FILE"
+    fi
+    if (( seg_exists )); then
+        shred -u -n 1 -- "$SEG_FILE" 2>/dev/null || rm -f -- "$SEG_FILE"
+    fi
+    salt_exists=0
+    seg_exists=0
+    log "regenerated: shredded salt-$YEAR and segments-$YEAR"
+fi
+
+if (( ! salt_exists )) && (( seg_exists )); then
+    echo "git-rtz: segments-$YEAR exists but salt-$YEAR is missing" >&2
+    echo "git-rtz: refusing to regenerate" >&2
+    exit 1
+fi
+
+if (( ! salt_exists )) || (( ! seg_exists )); then
+    for c in od openssl sort tr mktemp; do
+        require_cmd "$c"
+    done
+fi
+
+if (( ! salt_exists )); then
+    SALT_TMP=$(mktemp -- "$KEYS_DIR/.salt-$YEAR.XXXXXX")
+    (
+        umask 077
+        od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$SALT_TMP"
+    )
+    mv -f -- "$SALT_TMP" "$SALT_FILE"
+    SALT_TMP=""
+fi
+
+SALT=$(cat -- "$SALT_FILE")
+if ! [[ "$SALT" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "git-rtz: salt-$YEAR is malformed" >&2
+    exit 1
+fi
+salt_hash=$(printf '%s' "$SALT" | sha256sum | cut -d' ' -f1)
+
+seg_header=""
+if (( seg_exists )); then
+    IFS= read -r seg_header < "$SEG_FILE" || true
+    if [[ "$seg_header" != "#salt=$salt_hash" ]]; then
+        echo "git-rtz: salt-$YEAR does not match segments-$YEAR" >&2
+        exit 1
+    fi
+    if (( verbose )); then
+        find_zones
+        log_schedule "$SEG_FILE"
+    fi
+fi
+
+hmac_int() {
+    local msg="$1"
+    printf '%s' "$msg" | openssl dgst -sha256 -hmac "$SALT" -binary \
+        | od -An -N4 -tu4 | tr -d ' '
+}
+
+if ! (( seg_exists )); then
+    find_zones
+    log "zone tab=$TZ_TAB zones=${#ZONES[@]}"
+
+    start_epoch=$(date -d "${YEAR}-01-01 00:00:00 UTC" +%s)
+    end_epoch=$(date -d "$((YEAR + 1))-01-01 00:00:00 UTC" +%s)
+    seconds_in_year=$(( end_epoch - start_epoch ))
+
+    if (( segments_set )); then
+        n_segments=$segments_arg
+    elif [[ -n "${GIT_RANDOM_TZ_SEGMENTS:-}" ]]; then
+        n_segments=$GIT_RANDOM_TZ_SEGMENTS
+    else
+        n_segments=$(( 6 + $(hmac_int "n_segments") % 4 ))
+    fi
+    log "n_segments=$n_segments"
+    if (( n_segments > 10 )); then
+        echo "git-rtz: warning: more than 10 segments make the time zone change unnaturally often" >&2
+    fi
+
+    boundaries=()
+    for (( k=1; k<n_segments; k++ )); do
+        b=$(hmac_int "boundary_$k")
+        boundaries+=( $(( b % seconds_in_year )) )
+    done
+    sorted=$(printf '%s\n' "${boundaries[@]}" | sort -n)
+    mapfile -t boundaries <<<"$sorted"
+
+    SEG_TMP=$(mktemp -- "$KEYS_DIR/.segments-$YEAR.XXXXXX")
+    (
+        umask 077
+        echo "#salt=$salt_hash" > "$SEG_TMP"
+        prev=0
+        for (( j=0; j<n_segments; j++ )); do
+            if (( j == n_segments - 1 )); then
+                next=$seconds_in_year
+            else
+                next=${boundaries[$j]}
+            fi
+            zone_idx=$(( $(hmac_int "zone_$j") % ${#ZONES[@]} ))
+            zone="${ZONES[$zone_idx]}"
+            seg_start=$(( start_epoch + prev ))
+            seg_end=$(( start_epoch + next ))
+            echo "$seg_start $seg_end $zone" >> "$SEG_TMP"
+            log "segment $j: $seg_start $seg_end $zone"
+            prev=$next
+        done
+    )
+    mv -f -- "$SEG_TMP" "$SEG_FILE"
+    SEG_TMP=""
+fi
+
+if (( state_only )); then
+    close_lock
+    exit 0
+fi
+
+if (( ! state_exists )); then
+    : > "$STATE_FILE"
+fi
+
+# --regen without a TZ-requiring command: the schedule is fresh, then either
+# report or run the command without a TZ override.
+if (( ! tz_needed )); then
+    close_lock
+    if (( $# == 0 )); then
+        echo "git-rtz: regenerated salt and segment schedule for $YEAR" >&2
+        exit 0
+    fi
+    log "exec $REAL_GIT"
+    exec "$REAL_GIT" "$@"
+fi
+
+now=$(date +%s)
+zone=$(awk -v now="$now" '$1 <= now && now < $2 { print $3; exit }' "$SEG_FILE")
+if [[ -z "$zone" ]]; then
+    echo "git-rtz: no segment covers current time" >&2
+    exit 1
+fi
+log "selected zone=$zone now=$now"
+
+close_lock
+log "exec $REAL_GIT with TZ=$zone"
+TZ="$zone" exec "$REAL_GIT" "$@"
