@@ -21,6 +21,6 @@ bwrap_ro_bind_dir A "${HOME}/.config/opencode" "${HOME}/.local/share/pnpm"
 A+=(--tmpfs "${HOME}/{{ . }}")
 {{ end -}}
 
-bwrap_gui_finish A wayland yes default filtered
+bwrap_gui_finish A wayland yes default filtered no none
 
 bwrap_exec "${A[@]}" -- /usr/bin/opencode "$@"
