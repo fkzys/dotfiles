@@ -45,6 +45,7 @@ A+=(--setenv TERM "${TERM}"
 
 bwrap_dbus_common A
 bwrap_hardened_malloc A default
+bwrap_seccomp A default
 bwrap_sandbox A yes no
 
 bwrap_exec "${A[@]}" -- /usr/bin/lazygit "$@"
