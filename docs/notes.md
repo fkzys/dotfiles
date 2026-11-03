@@ -31,15 +31,17 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 
 | Alias | Expands to |
 |---|---|
-| `ls`, `ll`, `la`, `lt`, `l.` | `eza` variants (color, dirs first, git status, tree) |
+| `ls`, `ll`, `la`, `lt`, `l.`, `lss`, `lls`, `llt`, `llts` | `eza` variants (color, git status, tree, sort by newest) |
 | `cat` | `bat --paging=never` |
-| `ccat` | `bat --paging=never --style=full --color=never` |
+| `catt` | `bat --plain --paging=never` |
+| `ccat` | `bat --paging=never --style=full --color=never --decorations=always` |
 | `catp` | `bat` with pager |
 | `rg` | `ripgrep --smart-case` |
 | `vi`, `vim` | `nvim` |
 | `lg` | `lazygit` |
 | `start-hyprland` | `exec uwsm start start-hyprland` |
-| `ssops` | `sudo SOPS_AGE_KEY="$(cat ~/keys/age/dotm.txt)"` |
+| `ssops` | `sudo SOPS_AGE_KEY="$(cat ~/keys/age/dotm-pq.txt)"` |
+| `nomalloc` | `bwrap --dev-bind / / --bind /dev/null /etc/ld.so.preload` — run a command without hardened\_malloc |
 | `g`, `ga`, `gc`, `gco`, `gd`, `gl`, `gp`, `gst`, `glog` | git shorthands |
 | Flatpak apps | `firefox`, `telegram`, etc. → `flatpak run <id>` (generated from a map, conditional on feature flags) |
 | Directory aliases | Per-host `cd` shortcuts from `secrets.enc.yaml` (e.g. `anime`, `subs`) |
@@ -70,7 +72,9 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `EDITOR` | `nvim` |
 | `MANPAGER` | `bat` as man pager (with `col -bx`) |
 | `MAKEFLAGS` etc. | Parallel builds (`-j$(nproc)`) for make, cmake, ninja, meson, dpkg |
-| `SOPS_AGE_KEY_FILE` | Age key path for sops decryption |
+| `SOPS_AGE_KEY_FILE` | Age key used by `sops` (`~/keys/age/sops-pq.txt`) |
+| `SSH_AUTH_SOCK` | `$XDG_RUNTIME_DIR/ssh-agent.socket` |
+| `GIT_RANDOM_TZ_KEYS` | Keys dir for the git-rtz wrapper (`~/keys/git-rtz`) |
 
 ## Systemd user services
 
@@ -87,7 +91,7 @@ Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, 
 | `opentabletdriver` | — | OpenTabletDriver daemon (conditional on `tablet` flag). `PartOf=graphical-session.target`, auto-restart on failure (`RestartSec=3`). Launched via systemd instead of hyprland `exec-once`. |
 | `mpd` | — | Music player daemon |
 | `fcitx5` | — | Input method daemon |
-| `nextcloud` | — | Nextcloud desktop client |
+| `opencloud` | — | OpenCloud desktop client (`Restart=on-failure`, `RestartSec=5`). |
 | `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
 
 All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`, `systemd-timesyncd`.
@@ -98,7 +102,8 @@ Scripts in `~/.config/hypr/scripts/`, invoked from Hyprland keybindings.
 
 | Script | Description |
 |---|---|
-| `lock.sh` | Lock sequence bound to `SUPER+CTRL+L`: drops all SSH keys from the agent (`ssh-add -D`), closes the [keys-vault](https://github.com/fkzys/keys-vault) (`keys-vault close`), de-authorizes every USB device (`/sys/bus/usb/devices/usb*/authorized_default` → `0`), runs `hyprlock`, then re-authorizes USB devices (→ `1`), reopens the vault (`keys-vault open`) and reloads the SSH keys (`ssh-add-keys`). |
+| `lock.sh` | Lock sequence bound to `SUPER+CTRL+L` (and the `hypridle` `lock_cmd`): drops all SSH keys from the agent (`ssh-add -D`), closes the [keys-vault](https://github.com/fkzys/keys-vault) (`keys-vault close`), de-authorizes every USB device (`/sys/bus/usb/devices/usb*/authorized_default` → `0`), runs `hyprlock`, then re-authorizes USB devices (→ `1`), reopens the vault (`keys-vault open`) and reloads the SSH keys (`ssh-add-keys`). |
+| `screenshot.sh` | Region screenshot (`slurp` + `grim`) piped into `swappy` for editing. Bound to `SUPER+SHIFT+F`. |
 
 ## Standalone scripts (`~/.local/bin/`)
 
@@ -112,6 +117,9 @@ Scripts in `~/.config/hypr/scripts/`, invoked from Hyprland keybindings.
 | `ssh-add-keys` | Loads all SSH keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime. Used by `ssh-add.service` and the lock/unlock script. |
 | `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
 | `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
+| `git` | git-rtz wrapper — assigns a random IANA time zone (HMAC-SHA256, per-year salt) to committer/tagger dates for `commit`, `ci`, `commit-tree`, `merge`, `cherry-pick`, `revert`, `rebase`, `am`, `pull`, `tag`. Salt/segments live in `~/keys/git-rtz`, per-year state in `~/.cache/git-rtz`. Wrapper-only flags (`--regen`, `--segments N`, `--verbose`) require `--wrapper`. |
+| `rewrite_secret_history.py` | git-filter-repo helper that propagates a target file's current content into its ancestor commits within a path scope (e.g. to scrub a secret from history). |
+| `opencode` | Sandboxed opencode launcher (config, state, cache, pnpm store and project dir bound; `opencode.json` and `auth.json` read-only). |
 
 `ffmpeg_jp` and `rename_subs` are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
 
@@ -131,6 +139,10 @@ Custom overrides include:
 Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) and accessed in templates via `output "sops" "-d"` — dotm delegates encryption entirely to external tools.
 
 Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by [keys-vault](https://github.com/fkzys/keys-vault).
+
+SSH keys live in `~/keys/ssh/`: `~/.ssh/config` uses a dedicated `git-id_ed25519` key for `github.com` and `aur.archlinux.org`, and `id_ed25519` for everything else.
+
+The git-rtz wrapper keeps its per-year salt and segment schedule under `~/keys/git-rtz`, which must be encrypted at rest; set `GIT_RANDOM_TZ_REQUIRE_MOUNT=yes` to abort when that directory is not a mount point.
 
 ### Structure
 
@@ -177,7 +189,7 @@ fcitx5:
         - us
 keepassxc:
     db_dir: /path/to/database
-nextcloud:
+opencloud:
     sync_dir: /path/to/sync
 goldendict:
     dict_dir: /path/to/dictionaries

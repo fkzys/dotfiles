@@ -37,10 +37,10 @@ Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
 - **Input**: fcitx5 + mozc (Japanese)
 - **Theme**: Materia GTK + Kvantum + Papirus icons
 - **Browser**: Firefox (flatpak, arkenfox user.js with overrides), ungoogled-chromium (flatpak, launched with `--disable-gpu`)
-- **Cloud sync**: Nextcloud (sandboxed, systemd user service)
+- **Cloud sync**: OpenCloud (sandboxed, systemd user service)
 - **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
 - **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
-- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility), wasabi (sandboxed Wasabi Wallet launcher)
+- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility), wasabi (sandboxed Wasabi Wallet launcher), git-rtz (git wrapper that assigns commit dates a random IANA time zone, keyed per year), rewrite\_secret\_history.py (git-filter-repo helper to propagate a file into ancestor commits)
 
 ## Shell (zsh)
 
@@ -72,7 +72,7 @@ FZF uses `fd` for file/dir discovery and `bat`/`eza` for previews.
 1. Create age key:
 ```bash
 mkdir -p ~/keys/age
-age-keygen -o ~/keys/age/dotm.txt
+age-keygen -o ~/keys/age/dotm-pq.txt
 ```
 
 2. Initialize the vault:
