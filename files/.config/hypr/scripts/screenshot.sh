@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Take a screenshot of a selected region and open it in swappy for editing.
 # Dependencies: slurp, grim, swappy
 
