@@ -17,8 +17,7 @@ FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
 A=()
-bwrap_gui_setup A yes
-bwrap_dbus_system A
+bwrap_gui_setup A yes yes
 bwrap_bind_dir A \
     "${HOME}/.config/mpv" \
     "${HOME}/.local/state/mpv/watch_later" \
@@ -31,4 +30,4 @@ bwrap_audio A
 A+=(--setenv XDG_STATE_HOME "${HOME}/.local/state")
 bwrap_gui_finish A wayland yes
 
-exec bwrap "${A[@]}" -- /usr/bin/mpv "${ARGS[@]}"
+bwrap_exec "${A[@]}" -- /usr/bin/mpv "${ARGS[@]}"

@@ -13,6 +13,10 @@ bwrap_bind_dir A "${HOME}/.config/keepassxc" "${HOME}/.cache/keepassxc"
 A+=(--bind "${DB_DIR}" "${DB_DIR}")
 bwrap_fcitx A
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
-bwrap_gui_finish A wayland no default filtered
+
+bwrap_dbus_common A \
+    --call=org.freedesktop.portal.Desktop=org.freedesktop.portal.RemoteDesktop.*
+
+bwrap_gui_finish A wayland no default none
 
 exec bwrap "${A[@]}" -- /usr/bin/keepassxc "$@"

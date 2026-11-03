@@ -4,8 +4,7 @@ _src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
 _src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
 A=()
-bwrap_gui_setup A yes
-bwrap_dbus_system A
+bwrap_gui_setup A yes yes
 
 # Camera
 for dev in /dev/video*; do

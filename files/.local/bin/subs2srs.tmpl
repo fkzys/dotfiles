@@ -23,6 +23,9 @@ bwrap_fcitx A
 
 A+=(--chdir "$CONF_DIR")
 
-bwrap_gui_finish A wayland no
+bwrap_dbus_common A \
+    --own=org.subs2srs.app
 
-exec bwrap "${A[@]}" -- /usr/bin/subs2srs "$@"
+bwrap_gui_finish A wayland no default none
+
+bwrap_exec "${A[@]}" -- /usr/bin/subs2srs "$@"

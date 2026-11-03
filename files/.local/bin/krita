@@ -10,7 +10,7 @@ FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
 
 A=()
-bwrap_gui_setup A
+bwrap_gui_setup A no yes
 bwrap_bind_dir A \
     "${HOME}/.local/share/krita" \
     "${HOME}/.cache/krita" \
@@ -23,4 +23,4 @@ bwrap_fcitx A
 A+=(--setenv QT_QPA_PLATFORM xcb --setenv QT_QPA_PLATFORMTHEME qt6ct)
 bwrap_gui_finish A x11
 
-exec bwrap "${A[@]}" -- /usr/bin/krita "${ARGS[@]}"
+bwrap_exec "${A[@]}" -- /usr/bin/krita "${ARGS[@]}"

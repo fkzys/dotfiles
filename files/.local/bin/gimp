@@ -7,7 +7,7 @@ FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --bind "$@"
 
 A=()
-bwrap_gui_setup A
+bwrap_gui_setup A no yes
 bwrap_bind_dir A \
     "${HOME}/.config/GIMP" \
     "${HOME}/.local/share/GIMP" \
@@ -17,4 +17,4 @@ bwrap_bind_dir A \
 A+=("${FILE_BINDS[@]}")
 bwrap_gui_finish A
 
-exec bwrap "${A[@]}" -- /usr/bin/gimp "${ARGS[@]}"
+bwrap_exec "${A[@]}" -- /usr/bin/gimp "${ARGS[@]}"

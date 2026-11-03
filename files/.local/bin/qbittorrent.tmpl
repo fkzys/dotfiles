@@ -16,7 +16,6 @@ DATA_BINDS+=(--bind "{{ $path }}" "{{ $path }}")
 
 A=()
 bwrap_gui_setup A yes
-bwrap_dbus_system A
 bwrap_bind_dir A \
     "${HOME}/.config/qBittorrent" \
     "${HOME}/.local/share/qBittorrent" \

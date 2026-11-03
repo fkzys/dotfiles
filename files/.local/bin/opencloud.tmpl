@@ -8,7 +8,6 @@ SYNC_DIR="{{ index $s "opencloud" "sync_dir" }}"
 
 A=()
 bwrap_gui_setup A yes
-bwrap_dbus_system A
 
 bwrap_bind_dir A \
     "${HOME}/.config/OpenCloud" \

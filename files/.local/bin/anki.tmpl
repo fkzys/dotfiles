@@ -13,8 +13,7 @@ FILE_BINDS=(); ARGS=()
 bwrap_resolve_files FILE_BINDS ARGS --ro-bind "$@"
 
 A=()
-bwrap_gui_setup A yes
-bwrap_dbus_system A
+bwrap_gui_setup A yes yes
 bwrap_bind_dir A "${HOME}/.local/share/Anki2" "${HOME}/Downloads/anki"
 bwrap_ro_bind_dir A "${AUDIO_DIR}" "${SUBS2SRS_DIR}"
 A+=("${FILE_BINDS[@]}")
@@ -24,4 +23,4 @@ A+=(--setenv QT_QPA_PLATFORM wayland
     --setenv QTWEBENGINE_DISABLE_SANDBOX 1)
 bwrap_gui_finish A wayland yes no
 
-exec bwrap "${A[@]}" -- /usr/bin/anki "${ARGS[@]}"
+bwrap_exec "${A[@]}" -- /usr/bin/anki "${ARGS[@]}"
