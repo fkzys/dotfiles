@@ -2,205 +2,44 @@
 
 ## Per-host configuration
 
-Feature flags are set via `dotm init` prompts and stored in `~/.local/state/dotm/<hash>.toml`:
-
-| Variable | Description |
-|---|---|
-| `nvidia` | NVIDIA GPU (env vars, packages, waybar gpu\_temp) |
-| `amd_cpu` | AMD CPU temp sensors (Tctl/Tccd1 vs generic) |
-| `laptop` | Battery, backlight, natural scroll, disable touchpad while typing, compact fonts, bluetooth packages |
-| `tablet` | OpenTabletDriver (otd-daemon, systemd user service) |
-| `ocr` | transformers\_ocr (systemd user service + keybind) |
-| `goldendict` | GoldenDict-ng (wrapper, config, package) |
-| `subs2srs` | [subs2srs](https://github.com/ajatt-tools/subs2srs) + SubsReTimer (wrappers, desktop entries, packages) |
-| `sparrow` | sparrow-wallet (wrapper) |
-| `wasabi` | wasabi-wallet (wrapper) |
-| `portproton` | PortProton (flatpak + alias) |
-| `virt_manager` | QEMU / virt-manager / dnsmasq |
-| `vid_edit` | KdenLive (flatpak) |
-
-Per-host data (monitor line, wallpaper path, container graphroot, directory aliases) is stored in `secrets.enc.yaml` under each application's key, keyed by hostname.
+Feature flags are chosen by `dotm init` and stored under `~/.local/state/dotm/`. The prompts and what each flag toggles live in `dotm.toml`; the per-host data they pull in (monitor line, wallpaper, container graphroot, directory aliases) lives per hostname in `secrets.enc.yaml`.
 
 ## Shell
 
-### Completion
+zsh with no framework: prompt, completions and keybindings are hand-rolled in `files/.zshrc.tmpl`.
 
-Interactive menu with arrow navigation, case-insensitive matching, `LS_COLORS`, grouped by type.
-
-### Aliases
-
-| Alias | Expands to |
-|---|---|
-| `ls`, `ll`, `la`, `lt`, `l.`, `lss`, `lls`, `llt`, `llts` | `eza` variants (color, git status, tree, sort by newest) |
-| `cat` | `bat --paging=never` |
-| `catt` | `bat --plain --paging=never` |
-| `ccat` | `bat --paging=never --style=full --color=never --decorations=always` |
-| `catp` | `bat` with pager |
-| `rg` | `ripgrep --smart-case` |
-| `vi`, `vim` | `nvim` |
-| `lg` | `lazygit` |
-| `start-hyprland` | `exec uwsm start start-hyprland` |
-| `ssops` | `sudo SOPS_AGE_KEY="$(cat ~/keys/age/dotm-pq.txt)"` |
-| `nomalloc` | `bwrap --dev-bind / / --bind /dev/null /etc/ld.so.preload` — run a command without hardened\_malloc |
-| `g`, `ga`, `gc`, `gco`, `gd`, `gl`, `gp`, `gst`, `glog` | git shorthands |
-| Flatpak apps | `firefox`, `telegram`, etc. → `flatpak run <id>` (generated from a map, conditional on feature flags) |
-| Directory aliases | Per-host `cd` shortcuts from `secrets.enc.yaml` (e.g. `anime`, `subs`) |
-
-### Functions
-
-| Function | Description |
-|---|---|
-| `bcat` | `bat` with decorations → `wl-copy` (copy file with line numbers to clipboard) |
-
-### Keybindings
-
-| Key | Action |
-|---|---|
-| `Ctrl-O` | Launch `lf` |
-| `Ctrl-F` | `fzf-cd-widget` (fuzzy cd) |
-| `Ctrl-N` | Launch `ncmpcpp` |
-| `Ctrl-T` | fzf file search |
-| `Alt-C` | fzf directory search |
-| `Up` / `Down` | History search by prefix |
-| `Ctrl-Left` / `Ctrl-Right` | Word navigation |
-| `Ctrl-Backspace` / `Ctrl-Delete` | Kill word backward/forward |
-
-### Environment
-
-| Variable | Value |
-|---|---|
-| `EDITOR` | `nvim` |
-| `MANPAGER` | `bat` as man pager (with `col -bx`) |
-| `MAKEFLAGS` etc. | Parallel builds (`-j$(nproc)`) for make, cmake, ninja, meson, dpkg |
-| `SOPS_AGE_KEY_FILE` | Age key used by `sops` (`~/keys/age/sops-pq.txt`) |
-| `SSH_AUTH_SOCK` | `$XDG_RUNTIME_DIR/ssh-agent.socket` |
-| `GIT_RANDOM_TZ_KEYS` | Keys dir for the git-rtz wrapper (`~/keys/git-rtz`) |
+- `~/.local/bin` and the pnpm bin are prepended and deduplicated through zsh's `path` array (`typeset -U path`).
+- `nomalloc` re-runs a command with hardened\_malloc masked from outside any sandbox, for the occasional app that misbehaves under the preload.
 
 ## Systemd user services
 
-| Service | Type | Description |
-|---|---|---|
-| `ssh-agent` | — | SSH agent daemon (`SSH_AUTH_SOCK` at `$XDG_RUNTIME_DIR/ssh-agent.socket`) |
-| `keys-vault` | oneshot, `RemainAfterExit` | Mounts [keys-vault](https://github.com/fkzys/keys-vault) gocryptfs vault (`~/keys`) on login, unmounts on stop. After `gnome-keyring-daemon`. |
-| `ssh-add` | oneshot, `RemainAfterExit` | Loads all SSH keys from `~/keys/ssh/` into agent (4 h lifetime). Requires `ssh-agent` + `keys-vault`. |
-| `hypridle` | — | Idle daemon |
-| `hyprpaper` | — | Wallpaper daemon |
-| `hyprpolkitagent` | — | Polkit agent |
-| `hyprsunset` | — | Night light. Override filters `[TRACE]` log spam via `grep -v` and uses `KillMode=control-group` for clean shutdown. |
-| `waybar` | — | Status bar |
-| `opentabletdriver` | — | OpenTabletDriver daemon (conditional on `tablet` flag). `PartOf=graphical-session.target`, auto-restart on failure (`RestartSec=3`). Launched via systemd instead of hyprland `exec-once`. |
-| `mpd` | — | Music player daemon |
-| `fcitx5` | — | Input method daemon |
-| `opencloud` | — | OpenCloud desktop client (`Restart=on-failure`, `RestartSec=5`). |
-| `transformers_ocr` | — | OCR daemon (conditional on `ocr` flag). Drop-in override replaces `ExecStart` with `transformers_ocr start --foreground` using `%h` for home directory resolution. |
+Services are declared in `dotm.toml`. Login order matters: `keys-vault` mounts the gocryptfs vault first, then `ssh-add` loads keys from it after `ssh-agent`.
 
-All user services are enabled via [dotm](https://github.com/fkzys/dotm) (`dotm apply`), which manages both packages and services declaratively from `dotm.toml`. System services enabled: `firewalld`, `systemd-oomd`, `systemd-timesyncd`.
+- `hyprsunset` filters its own `[TRACE]` log spam and uses `KillMode=control-group` so it shuts down cleanly.
+- `transformers_ocr` runs `start --foreground` under systemd (with `%h`) instead of daemonizing itself.
+- `opentabletdriver` is a systemd unit (`PartOf=graphical-session.target`) rather than a Hyprland `exec-once`, so it survives Hyprland restarts.
 
 ## Hyprland scripts
 
-Scripts in `~/.config/hypr/scripts/`, invoked from Hyprland keybindings.
+- `lock.sh` (bound to `SUPER+CTRL+L`, and the `hypridle` `lock_cmd`) de-authorizes USB devices and closes the vault before running `hyprlock`, then restores both — so nothing new can be attached while the session is locked.
+- `screenshot.sh` (`SUPER+SHIFT+F`) pipes a `slurp` region through `grim` into `swappy`.
 
-| Script | Description |
-|---|---|
-| `lock.sh` | Lock sequence bound to `SUPER+CTRL+L` (and the `hypridle` `lock_cmd`): drops all SSH keys from the agent (`ssh-add -D`), closes the [keys-vault](https://github.com/fkzys/keys-vault) (`keys-vault close`), de-authorizes every USB device (`/sys/bus/usb/devices/usb*/authorized_default` → `0`), runs `hyprlock`, then re-authorizes USB devices (→ `1`), reopens the vault (`keys-vault open`) and reloads the SSH keys (`ssh-add-keys`). |
-| `screenshot.sh` | Region screenshot (`slurp` + `grim`) piped into `swappy` for editing. Bound to `SUPER+SHIFT+F`. |
+## Scripts
 
-## Standalone scripts (`~/.local/bin/`)
+Wrappers and tools live in `files/.local/bin/`; each script's header/`--help` is its reference.
 
-| Script | Description |
-|---|---|
-| `ffmpeg_jp` | Extract Japanese (`--en` for English) audio track from video files as opus. Accepts a file, directory, or `$LF_SELECTED_FILES` from lf. Auto-detects target language track by language tag or title; falls back to the only track if there is exactly one. `--track N` overrides auto-detection with a manual stream index. Two-phase pipeline: demux (I/O-bound, low parallelism) → encode (CPU-bound, high parallelism). Output is forced to stereo (`-ac 2`). |
-| `rename_subs` | Rename subtitle files (.srt, .ass, .sub) to match video filenames by episode number. Supports patterns like S01E05, 1x05, Ep05, Episode 05, bare numbers, and --dry-run. |
-| `audio-device-switcher` | Switch default PipeWire audio output device via `wpctl` + `dmenu`. |
-| `bt-audio` | Connect/disconnect paired Bluetooth audio devices via `dmenu`, auto-switch PipeWire sink on connect. |
-| `cabl` | Clipboard plumber — reads selection/clipboard, presents context-sensitive actions via `dmenu`: dictionary lookups, Anki card creation, Forvo audio download, mecab headword extraction, media downloads, QR codes, man pages. |
-| `ssh-add-keys` | Loads all SSH keys from `~/keys/ssh/` into `ssh-agent` with a 4-hour lifetime. Used by `ssh-add.service` and the lock/unlock script. |
-| `wofi-launcher` | Sandboxed application launcher. Parses `.desktop` files on the host, resolves icons from the GTK icon theme, sorts entries by usage count, and displays the list via wofi inside a bwrap sandbox. Selection is mapped back to the `Exec=` command and launched on the host. |
-| `dmenu` | Sandboxed `wofi --dmenu` wrapper providing `dmenu`-compatible CLI interface (used by `cabl`, `audio-device-switcher`, `bt-audio`). |
-| `git` | git-rtz wrapper — assigns a random IANA time zone (HMAC-SHA256, per-year salt) to committer/tagger dates for `commit`, `ci`, `commit-tree`, `merge`, `cherry-pick`, `revert`, `rebase`, `am`, `pull`, `tag`. Salt/segments live in `~/keys/git-rtz`, per-year state in `~/.cache/git-rtz`. Wrapper-only flags (`--regen`, `--segments N`, `--verbose`) require `--wrapper`. |
-| `rewrite_secret_history.py` | git-filter-repo helper that propagates a target file's current content into its ancestor commits within a path scope (e.g. to scrub a secret from history). |
-| `opencode` | Sandboxed opencode launcher (config, state, cache, pnpm store and project dir bound; `opencode.json` and `auth.json` read-only). |
-
-`ffmpeg_jp` and `rename_subs` are integrated into lf via keybindings (`o` for ffmpeg\_jp, `Ctrl-B` for rename\_subs).
+- `git` (git-rtz) assigns commit and tag dates a random IANA time zone, chosen per year from a salt in `~/keys/git-rtz`. The salt must be encrypted at rest, and past years' key material is shredded for forward secrecy. Wrapper-only flags (`--regen`, `--segments N`, `--verbose`) require `--wrapper`.
+- `rewrite_secret_history.py` is a `git-filter-repo` callback that writes a file's current content into its ancestor commits — used to scrub a leaked secret from history.
 
 ## Firefox
 
-Firefox runs as a flatpak with [arkenfox user.js](https://github.com/arkenfox/user.js). Overrides are managed via dotm at `~/.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/user-overrides.js`.
-
-Custom overrides include:
-- Disabled menu access key
-- JIT disabled (`ion`, `baselinejit`) with `jit_trustedprincipals` enabled, for security hardening
-- WebGL disabled
-- Password saving and form autofill disabled
-- Session restore enabled
+Firefox is a flatpak running [arkenfox user.js](https://github.com/arkenfox/user.js). The overrides in `files/.var/app/org.mozilla.firefox/.mozilla/firefox/arkenfox/user-overrides.js` disable JIT and WebGL and turn off password saving and form autofill — hardening, at some speed and convenience cost.
 
 ## Secrets
 
-Secrets are encrypted with [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age) and accessed in templates via `output "sops" "-d"` — dotm delegates encryption entirely to external tools.
+Secrets are SOPS + age, one key per machine; templates read values via `output "sops" "-d"` and dotm delegates encryption to those tools. `secrets.enc.yaml` is namespaced:
 
-Each machine has its own age key. Keys are stored in the encrypted vault (`~/keys`), managed by [keys-vault](https://github.com/fkzys/keys-vault).
+- per host: `hyprland.monitor`, `hyprpaper.wallpaper`, `containers.graphroot`, `sing-box.config_url`, `mpv`/`mpd`/`qbittorrent` dirs, `PortProton.games_dir`, and `dir_aliases` (per-host `cd` shortcuts)
+- global: `fcitx5.kb_layouts`, `keepassxc.db_dir`, `opencloud.sync_dir`, `goldendict.dict_dir`/`audio_dir`, `anki.audio_sources_dir`/`subs2srs_dir`, `subs2srs.media_dir`
 
-SSH keys live in `~/keys/ssh/`: `~/.ssh/config` uses a dedicated `git-id_ed25519` key for `github.com` and `aur.archlinux.org`, and `id_ed25519` for everything else.
-
-The git-rtz wrapper keeps its per-year salt and segment schedule under `~/keys/git-rtz`, which must be encrypted at rest; set `GIT_RANDOM_TZ_REQUIRE_MOUNT=yes` to abort when that directory is not a mount point.
-
-### Structure
-
-```yaml
-# secrets.enc.yaml
-
-# Per-host (application → hostname → keys)
-hyprland:
-    hostname1:
-        monitor: "DP-1,1920x1080@144,0x0,1"
-hyprpaper:
-    hostname1:
-        wallpaper: "~/Downloads/background.jpg"
-    hostname2:
-        wallpaper: "/usr/share/hypr/wall2.png"
-containers:
-    hostname1:
-        graphroot: "/path/to/storage"
-sing-box:
-    config_url:
-        hostname1: https://example.com
-        hostname2: https://example.com
-mpv:
-    hostname1:
-        anime_dir: /path/to/anime
-mpd:
-    hostname1:
-        music_dir: /path/to/music
-qbittorrent:
-    hostname1:
-        anime_dir: /path/to/torrents
-        anime_second_dir: /path/to/second/torrents
-dir_aliases:
-    hostname1:
-        subs: /path/to/subtitles
-        anime: /path/to/anime
-PortProton:
-    hostname1:
-        games_dir: /path/to/games
-
-# Global (application → keys)
-fcitx5:
-    kb_layouts:
-        - us
-keepassxc:
-    db_dir: /path/to/database
-opencloud:
-    sync_dir: /path/to/sync
-goldendict:
-    dict_dir: /path/to/dictionaries
-    audio_dir: /path/to/audio
-anki:
-    audio_sources_dir: /path/to/audio/sources
-    subs2srs_dir: /path/to/subs2srs
-subs2srs:
-    media_dir: /path/to/anime
-```
-
-## License
-
-AGPL-3.0-or-later
+SSH keys live in `~/keys/ssh/`; `github.com` and `aur.archlinux.org` use a dedicated `git-id_ed25519` (also the commit signing key), everything else uses `id_ed25519`. The git-rtz salt under `~/keys/git-rtz` must be encrypted at rest — `GIT_RANDOM_TZ_REQUIRE_MOUNT=yes` aborts when it is not a mount point.

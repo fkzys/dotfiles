@@ -2,70 +2,14 @@
 
 ![screenshot](assets/screenshot.png)
 
-Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm).
+Arch Linux dotfiles, managed with [dotm](https://github.com/fkzys/dotm): a Hyprland (uwsm) desktop — waybar, kitty/zsh, neovim/lazygit, lf/thunar, mpd/ncmpcpp/mpv, Firefox and ungoogled-chromium, OpenCloud, sing-box, and a keys-vault-encrypted `~/keys` — with bubblewrap-sandboxed GUI and CLI apps.
 
 ## Docs
 
-- **[hardening](docs/hardening.md)**
-    - [Memory allocator hardening](docs/hardening.md#memory-allocator-hardening)
-    - [Application sandboxing](docs/hardening.md#application-sandboxing)
-
-- **[lf](docs/lf.md)**
-    - [Previews](docs/lf.md#previews)
-    - [Watch tracking](docs/lf.md#watch-tracking)
-    - [Keybindings](docs/lf.md#keybindings)
-
-- **[notes](docs/notes.md)**
-    - [Per-host configuration](docs/notes.md#per-host-configuration)
-    - [Shell](docs/notes.md#shell)
-    - [Systemd user services](docs/notes.md#systemd-user-services)
-    - [Hyprland scripts](docs/notes.md#hyprland-scripts)
-    - [Standalone scripts](docs/notes.md#standalone-scripts-localbin)
-    - [Firefox](docs/notes.md#firefox)
-    - [Secrets](docs/notes.md#secrets)
-
-## What's included
-
-- **WM**: Hyprland (via [uwsm](https://github.com/Vladimir-csp/uwsm)) + waybar + hyprpaper + hypridle/hyprlock + hyprsunset
-- **Terminal**: kitty + zsh
-- **Editor**: neovim + lazygit
-- **Files**: lf + thunar
-- **Audio**: mpd + ncmpcpp + mpv
-- **Audio switching**: audio-device-switcher (PipeWire sink selection via wpctl + dmenu)
-- **Bluetooth**: bt-audio (connect/disconnect paired BT audio devices via dmenu, auto-switch PipeWire sink)
-- **Screenshots**: swappy (annotation tool)
-- **Input**: fcitx5 + mozc (Japanese)
-- **Theme**: Materia GTK + Kvantum + Papirus icons
-- **Browser**: Firefox (flatpak, arkenfox user.js with overrides), ungoogled-chromium (flatpak, launched with `--disable-gpu`)
-- **Cloud sync**: OpenCloud (sandboxed, systemd user service)
-- **Proxy**: sing-box (config download + runner script, per-host URL from secrets)
-- **Encrypted vault**: [keys-vault](https://github.com/fkzys/keys-vault) (gocryptfs FBE for `~/keys`, passphrase in GNOME Keyring, systemd user service with stale FUSE recovery)
-- **Scripts**: ffmpeg\_jp (Japanese/English audio extraction + manual track selection), rename\_subs (subtitle renaming by episode), cabl (clipboard plumber / search dispatcher via dmenu), wofi-launcher (sandboxed application launcher with icons and usage sorting), dmenu (sandboxed wofi wrapper for dmenu compatibility), wasabi (sandboxed Wasabi Wallet launcher), git-rtz (git wrapper that assigns commit dates a random IANA time zone, keyed per year), rewrite\_secret\_history.py (git-filter-repo helper to propagate a file into ancestor commits)
-
-## Shell (zsh)
-
-No framework (oh-my-zsh, etc.) — prompt, completions, keybindings are configured manually.
-
-### Prompt
-
-robbyrussell-style prompt with inline git branch + dirty indicator (`✗`), implemented as a shell function (no plugin).
-
-### PATH
-
-`~/.local/bin` is prepended to `$PATH` via zsh's `path` array, deduplicated with `typeset -U path`.
-
-### Plugins
-
-- [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) — fish-like suggestions
-- [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) — command highlighting
-
-### Tools
-
-- [zoxide](https://github.com/ajeetdsouza/zoxide) — smart `cd`
-- [fzf](https://github.com/junegunn/fzf) — fuzzy finder (`Ctrl-T` files, `Alt-C` dirs, `Ctrl-R` history)
-- [direnv](https://direnv.net/) — per-directory env
-
-FZF uses `fd` for file/dir discovery and `bat`/`eza` for previews.
+- **[hardening](docs/hardening.md)** — memory-allocator hardening and application sandboxing.
+- **[lf](docs/lf.md)** — lf previews and watch tracking.
+- **[notes](docs/notes.md)** — per-host config, services, scripts, secrets.
+- **[tests](tests/README.md)** — the git-rtz and secret-history test suites.
 
 ## Setup on a new machine
 
