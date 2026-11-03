@@ -23,4 +23,7 @@ A+=(--tmpfs "${HOME}/{{ . }}")
 
 bwrap_gui_finish A wayland yes default filtered no none
 
+A+=(--setenv OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX "500000" \
+    --setenv CODEGRAPH_ALLOW_UNSAFE_NODE "1")
+
 bwrap_exec "${A[@]}" -- /usr/bin/opencode "$@"

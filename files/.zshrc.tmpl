@@ -95,8 +95,6 @@ export EDITOR=nvim
 export SOPS_AGE_KEY_FILE="$HOME/keys/age/sops-pq.txt"
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}/ssh-agent.socket"
 export GIT_RANDOM_TZ_KEYS="${HOME}/keys/git-rtz"
-# Allow oh-my-openagent codegraph MCP on node
-export CODEGRAPH_ALLOW_UNSAFE_NODE=1
 
 export MAKEFLAGS="-j$(nproc)"
 export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)

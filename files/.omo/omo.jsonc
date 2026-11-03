@@ -7,27 +7,15 @@
     },
     "agents": {
       "sisyphus": {
-        "model": "opencode/claude-opus-4-7",
-        "variant": "max",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/kimi-k2.5"
-          },
-          {
-            "model": "opencode/gpt-5.5",
-            "variant": "medium"
-          },
-          {
-            "model": "opencode/glm-5"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "hephaestus": {
-        "model": "opencode/gpt-5.5",
-        "variant": "medium",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
           {
             "model": "opencode/big-pickle"
@@ -35,110 +23,64 @@
         ]
       },
       "oracle": {
-        "model": "opencode/gpt-5.5",
-        "variant": "high",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "variant": "high"
-          },
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "explore": {
-        "model": "opencode/claude-haiku-4-5",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.4-nano"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "multimodal-looker": {
-        "model": "opencode/gpt-5.5",
-        "variant": "medium",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5-nano"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "prometheus": {
-        "model": "opencode/claude-opus-4-7",
-        "variant": "max",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.5",
-            "variant": "high"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "metis": {
-        "model": "opencode/claude-opus-4-7",
-        "variant": "max",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.5",
-            "variant": "high"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "momus": {
-        "model": "opencode/gpt-5.5",
-        "variant": "xhigh",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "variant": "high"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "atlas": {
-        "model": "opencode/claude-sonnet-4-6",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.5",
-            "variant": "medium"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "sisyphus-junior": {
-        "model": "opencode/claude-sonnet-4-6",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.5",
-            "variant": "medium"
-          },
           {
             "model": "opencode/big-pickle"
           }
@@ -147,124 +89,64 @@
     },
     "categories": {
       "visual-engineering": {
-        "model": "opencode/gemini-3.1-pro",
-        "variant": "high",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/glm-5"
-          },
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "ultrabrain": {
-        "model": "opencode/gpt-5.5",
-        "variant": "xhigh",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "variant": "high"
-          },
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "artistry": {
-        "model": "opencode/gemini-3.1-pro",
-        "variant": "high",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
-          {
-            "model": "opencode/gpt-5.5"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "quick": {
-        "model": "opencode/gpt-5.4-mini",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/claude-haiku-4-5"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
-          {
-            "model": "opencode/gpt-5-nano"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "unspecified-low": {
-        "model": "opencode/claude-sonnet-4-6",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.3-codex",
-            "variant": "medium"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "unspecified-high": {
-        "model": "opencode/claude-sonnet-4-6",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/gpt-5.3-codex",
-            "variant": "medium"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "writing": {
-        "model": "opencode/gemini-3-flash",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/claude-sonnet-4-6"
-          },
           {
             "model": "opencode/big-pickle"
           }
         ]
       },
       "deep-low": {
-        "model": "opencode/gpt-5.5",
-        "variant": "medium",
+        "model": "teamorouter/deepseek-flash-free",
         "fallback_models": [
-          {
-            "model": "opencode/claude-opus-4-7",
-            "variant": "max"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "variant": "high"
-          },
           {
             "model": "opencode/big-pickle"
           }
@@ -282,49 +164,23 @@
     "categories": {
       "artistry": {
         "models": [
-          "opencode/gemini-3.1-pro",
-          {
-            "model": "opencode/claude-opus-4-7",
-            "reasoning": "max"
-          },
-          {
-            "model": "opencode/gpt-5.5"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "high"
+        ]
       },
       "deep-low": {
         "models": [
-          "opencode/gpt-5.5",
-          {
-            "model": "opencode/claude-opus-4-7",
-            "reasoning": "max"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "reasoning": "high"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "medium"
+        ]
       },
       "quick": {
         "models": [
-          "opencode/gpt-5.4-mini",
-          {
-            "model": "opencode/claude-haiku-4-5"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
-          {
-            "model": "opencode/gpt-5-nano"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
@@ -332,31 +188,15 @@
       },
       "ultrabrain": {
         "models": [
-          "opencode/gpt-5.5",
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "reasoning": "high"
-          },
-          {
-            "model": "opencode/claude-opus-4-7",
-            "reasoning": "max"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "xhigh"
+        ]
       },
       "unspecified-high": {
         "models": [
-          "opencode/claude-sonnet-4-6",
-          {
-            "model": "opencode/gpt-5.3-codex",
-            "reasoning": "medium"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
@@ -364,14 +204,7 @@
       },
       "unspecified-low": {
         "models": [
-          "opencode/claude-sonnet-4-6",
-          {
-            "model": "opencode/gpt-5.3-codex",
-            "reasoning": "medium"
-          },
-          {
-            "model": "opencode/gemini-3-flash"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
@@ -379,26 +212,15 @@
       },
       "visual-engineering": {
         "models": [
-          "opencode/gemini-3.1-pro",
-          {
-            "model": "opencode/glm-5"
-          },
-          {
-            "model": "opencode/claude-opus-4-7",
-            "reasoning": "max"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "high"
+        ]
       },
       "writing": {
         "models": [
-          "opencode/gemini-3-flash",
-          {
-            "model": "opencode/claude-sonnet-4-6"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
@@ -408,10 +230,7 @@
     "agents": {
       "explore": {
         "models": [
-          "opencode/claude-haiku-4-5",
-          {
-            "model": "opencode/gpt-5.4-nano"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
@@ -419,33 +238,19 @@
       },
       "plan-consultant": {
         "models": [
-          "opencode/claude-opus-4-7",
-          {
-            "model": "opencode/gpt-5.5",
-            "reasoning": "high"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "max"
+        ]
       },
       "plan-reviewer": {
         "models": [
-          "opencode/gpt-5.5",
-          {
-            "model": "opencode/claude-opus-4-7",
-            "reasoning": "max"
-          },
-          {
-            "model": "opencode/gemini-3.1-pro",
-            "reasoning": "high"
-          },
+          "teamorouter/deepseek-flash-free",
           {
             "model": "opencode/big-pickle"
           }
-        ],
-        "reasoning": "xhigh"
+        ]
       }
     }
   }
