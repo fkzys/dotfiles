@@ -24,6 +24,7 @@ bwrap_env_base A
 A+=(--setenv _JAVA_AWT_WM_NONREPARENTING 1)
 
 bwrap_hardened_malloc A default
+bwrap_seccomp A default
 bwrap_sandbox A yes
 
 bwrap_exec "${A[@]}" -- /opt/sparrow/bin/Sparrow "$@"
