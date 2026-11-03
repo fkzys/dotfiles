@@ -69,6 +69,7 @@ A=()
 bwrap_base A
 bwrap_lib64 A
 bwrap_resolv A
+bwrap_runtime_dir A
 A+=(--ro-bind /var/lib/pacman /var/lib/pacman
     --ro-bind /var/cache/pacman /var/cache/pacman
     --tmpfs "${HOME}"
@@ -78,7 +79,10 @@ A+=(--ro-bind /var/lib/pacman /var/lib/pacman
 for _dest in PKGDEST SRCPKGDEST LOGDEST BUILDDIR; do
     if [[ -n "${!_dest:-}" ]]; then
         mkdir -p "${!_dest}"
-        A+=(--bind "${!_dest}" "${!_dest}")
+        A+=(
+            --bind "${!_dest}" "${!_dest}"
+            --setenv "$_dest" "${!_dest}"
+        )
     fi
 done
 
