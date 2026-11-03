@@ -13,9 +13,16 @@ bwrap_bind_dir A \
     "${HOME}/.local/share/opencode" \
     "${HOME}/.local/state/opencode" \
     "${HOME}/.cache/opencode" \
+    "${HOME}/.config/opencode" \
     "$PROJECTS_DIR"
 
-bwrap_ro_bind_dir A "${HOME}/.config/opencode" "${HOME}/.local/share/pnpm"
+A+=(--ro-bind "${HOME}/.config/opencode/opencode.json" \
+              "${HOME}/.config/opencode/opencode.json"
+
+    --ro-bind "${HOME}/.local/share/opencode/auth.json" \
+              "${HOME}/.local/share/opencode/auth.json")
+
+bwrap_ro_bind_dir A  "${HOME}/.local/share/pnpm"
 
 {{ range $s.opencode.tmpfs -}}
 A+=(--tmpfs "${HOME}/{{ . }}")
@@ -24,6 +31,7 @@ A+=(--tmpfs "${HOME}/{{ . }}")
 bwrap_gui_finish A wayland yes default filtered no none
 
 A+=(--setenv OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX "500000" \
-    --setenv CODEGRAPH_ALLOW_UNSAFE_NODE "1")
+    --setenv CODEGRAPH_ALLOW_UNSAFE_NODE "1" \
+    --setenv PATH "${HOME}/.local/share/pnpm/bin:/usr/bin:/bin")
 
 bwrap_exec "${A[@]}" -- /usr/bin/opencode "$@"
