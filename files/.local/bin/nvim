@@ -4,58 +4,84 @@ set -euo pipefail
 _src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
 _src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
 
-mkdir -p "${HOME}/.local/share/nvim" \
-         "${HOME}/.local/state/nvim" \
-         "${HOME}/.cache/nvim"
+resolve_file_binds() {
+    FILE_BINDS=()
+    local -a _ignored=()
+    local -a existing=()
+    local rc=0 arg dir
 
-FILE_BINDS=(); TMP_BINDS=()
+    BWRAP_QUIET=1 bwrap_resolve_files FILE_BINDS _ignored --bind "$PWD" || rc=$?
+    # HOME/ancestor as cwd is not mounted; file arguments are bound individually.
+    (( rc == 0 || rc == 1 )) || { echo "nvim: cannot resolve current directory: $PWD" >&2; exit "$rc"; }
 
-_add_bind() {
-    local d="$1"
-    case "$d" in /usr/*|/etc/*|/proc/*|/dev/*|/sys/*) return ;; esac
-    if [[ "$d" == /tmp* ]]; then
-        TMP_BINDS+=(--bind "$d" "$d")
-    else
-        FILE_BINDS+=(--bind "$d" "$d")
+    for arg in "$@"; do
+        if [[ "$arg" == -* ]]; then
+            continue
+        fi
+        if [[ -e "$arg" ]]; then
+            existing+=("$arg")
+            continue
+        fi
+        dir=$(dirname -- "$arg")
+        if [[ ! -d "$dir" ]]; then
+            continue
+        fi
+        rc=0
+        BWRAP_QUIET=1 bwrap_resolve_files FILE_BINDS _ignored --bind "$(realpath -- "$dir")" || rc=$?
+        # Parent is HOME/ancestor: create the file so the parent-layout pass
+        # below can bind the file itself instead of exposing HOME.
+        if (( rc == 1 )); then
+            if ! touch -- "$arg"; then
+                echo "nvim: cannot create missing file: $arg" >&2
+                exit 1
+            fi
+            existing+=("$arg")
+        elif (( rc != 0 )); then
+            echo "nvim: cannot resolve directory for: $arg" >&2
+            exit "$rc"
+        fi
+    done
+
+    if (( ${#existing[@]} )); then
+        bwrap_resolve_files FILE_BINDS _ignored --layout=parent --bind "${existing[@]}"
     fi
 }
 
-_add_bind "$(realpath "$PWD")"
-for arg in "$@"; do
-    [[ "$arg" == -* ]] && continue
-    if [[ -e "$arg" ]]; then
-        _add_bind "$(dirname "$(realpath "$arg")")"
-    elif [[ -d "$(dirname "$arg")" ]]; then
-        _add_bind "$(realpath "$(dirname "$arg")")"
+build_bwrap_args() {
+    A=()
+    bwrap_base A
+    bwrap_lib64 A
+    bwrap_resolv A
+    bwrap_runtime_dir A
+    bwrap_home_tmpfs A
+
+    bwrap_ro_bind_dir A "${HOME}/.config/nvim"
+    bwrap_bind_dir A \
+        "${HOME}/.local/share/nvim" \
+        "${HOME}/.local/state/nvim" \
+        "${HOME}/.cache/nvim"
+
+    A+=(--ro-bind-try "${HOME}/.gitconfig"                  "${HOME}/.gitconfig"
+        --ro-bind-try "${HOME}/.config/git"                 "${HOME}/.config/git"
+        --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json"
+        --bind-try    "${HOME}/.local/share/chezmoi"        "${HOME}/.local/share/chezmoi"
+        "${FILE_BINDS[@]}")
+
+    A+=(--dev-bind /dev/pts /dev/pts)
+    bwrap_wayland A
+    bwrap_env_base A
+    if [[ -n "${COLORTERM:-}" ]]; then
+        A+=(--setenv COLORTERM "$COLORTERM")
     fi
-done
+    bwrap_hardened_malloc A default
+    bwrap_seccomp A default
+    bwrap_sandbox A yes
+}
 
-A=()
-bwrap_base A
-bwrap_lib64 A
-bwrap_resolv A
-A+=(--dev-bind /dev/pts /dev/pts
-    "${TMP_BINDS[@]}")
+main() {
+    resolve_file_binds "$@"
+    build_bwrap_args
+    bwrap_exec "${A[@]}" -- /usr/bin/nvim "$@"
+}
 
-A+=(--dir "${HOME}"
-    --dir "${HOME}/.config"
-    --ro-bind "${HOME}/.config/nvim"                  "${HOME}/.config/nvim"
-    --bind    "${HOME}/.local/share/nvim"              "${HOME}/.local/share/nvim"
-    --bind    "${HOME}/.local/state/nvim"              "${HOME}/.local/state/nvim"
-    --bind    "${HOME}/.cache/nvim"                    "${HOME}/.cache/nvim"
-    --ro-bind-try "${HOME}/.gitconfig"                 "${HOME}/.gitconfig"
-    --ro-bind-try "${HOME}/.config/git"                "${HOME}/.config/git"
-    --bind-try    "${HOME}/.config/nvim/lazy-lock.json" "${HOME}/.config/nvim/lazy-lock.json"
-    --bind-try    "${HOME}/.local/share/chezmoi"        "${HOME}/.local/share/chezmoi"
-    "${FILE_BINDS[@]}")
-
-bwrap_runtime_dir A
-bwrap_wayland A
-bwrap_env_base A
-A+=(--setenv TERM "${TERM}"
-    ${COLORTERM:+--setenv COLORTERM "$COLORTERM"})
-
-bwrap_hardened_malloc A default
-bwrap_sandbox A yes
-
-exec bwrap "${A[@]}" -- /usr/bin/nvim "$@"
+main "$@"
