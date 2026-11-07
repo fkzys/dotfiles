@@ -1,0 +1,376 @@
+#!/usr/bin/env bash
+# Disposable app probe: run a program with a tmpfs HOME, let it make a mess,
+# then snapshot the HOME tree before the sandbox is torn down.
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+usage() {
+    printf '%s\n' \
+        'usage: app_probe [OPTIONS] PROGRAM [ARGS...]' \
+        '' \
+        'Run PROGRAM in a sandbox with a disposable tmpfs HOME. On exit, write' \
+        'the HOME tree and metadata to a report directory, then print its path.' \
+        'Programs under HOME are bound read-only at /app and run there.' \
+        '' \
+        'Options:' \
+        '  --display wayland|x11  display backend (default: wayland)' \
+        '  --net                  keep network access (default: off)' \
+        '  --gpu / --no-gpu       bind GPU devices (default: off)' \
+        '  --audio / --no-audio   bind audio sockets (default: off)' \
+        '  --malloc / --no-malloc hardened_malloc preload (default: on)' \
+        '  --seccomp / --no-seccomp seccomp filter (default: on)' \
+        '  -h, --help             show this help' \
+        '' \
+        'Environment:' \
+        '  APP_PROBE_REPORT_DIR   report parent directory (default: XDG_RUNTIME_DIR)'
+}
+
+init_defaults() {
+    NET=no
+    GPU=no
+    AUDIO=no
+    MALLOC=default
+    SECCOMP=default
+    DISPLAY_MODE=wayland
+    STOP_SIGNAL=
+    STOPPING=0
+    REMAINING_ARGS=()
+}
+
+parse_options() {
+    while (( $# )); do
+        case "$1" in
+            --display)
+                DISPLAY_MODE=${2:-}
+                shift 2
+                ;;
+            --display=*)
+                DISPLAY_MODE=${1#*=}
+                shift
+                ;;
+            --net) NET=yes; shift ;;
+            --no-net) NET=no; shift ;;
+            --gpu) GPU=yes; shift ;;
+            --no-gpu) GPU=no; shift ;;
+            --audio) AUDIO=yes; shift ;;
+            --no-audio) AUDIO=no; shift ;;
+            --malloc) MALLOC=default; shift ;;
+            --no-malloc) MALLOC=no; shift ;;
+            --malloc=*) MALLOC=${1#*=}; shift ;;
+            --seccomp) SECCOMP=default; shift ;;
+            --no-seccomp) SECCOMP=none; shift ;;
+            --seccomp=*) SECCOMP=${1#*=}; shift ;;
+            -h|--help) usage; exit 0 ;;
+            --) shift; break ;;
+            -*) printf 'app_probe: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+            *) break ;;
+        esac
+    done
+    REMAINING_ARGS=("$@")
+}
+
+validate_options() {
+    case "$DISPLAY_MODE" in
+        wayland|x11) ;;
+        *) printf 'app_probe: --display must be wayland or x11\n' >&2; exit 2 ;;
+    esac
+    case "$GPU" in yes|no) ;; *) printf 'app_probe: invalid GPU setting\n' >&2; exit 2 ;; esac
+    case "$AUDIO" in yes|no) ;; *) printf 'app_probe: invalid audio setting\n' >&2; exit 2 ;; esac
+    case "$MALLOC" in default|light|no) ;; *) printf 'app_probe: --malloc must be default, light, or no\n' >&2; exit 2 ;; esac
+    case "$SECCOMP" in default|none) ;; *) printf 'app_probe: --seccomp must be default or none\n' >&2; exit 2 ;; esac
+}
+
+resolve_program() {
+    local arg=$1
+    if ! PROG=$(command -v -- "$arg"); then
+        printf 'app_probe: command not found: %s\n' "$arg" >&2
+        exit 127
+    fi
+    if ! PROG=$(realpath -e -- "$PROG"); then
+        printf 'app_probe: cannot resolve program: %s\n' "$arg" >&2
+        exit 126
+    fi
+    if [[ ! -f "$PROG" || ! -x "$PROG" ]]; then
+        printf 'app_probe: not an executable file: %s\n' "$PROG" >&2
+        exit 126
+    fi
+}
+
+check_x11() {
+    [[ "$DISPLAY_MODE" == x11 ]] || return 0
+    case "${XAUTHORITY:-}" in
+        ""|"$HOME_REAL"|"$HOME_REAL"/*)
+            printf 'app_probe: x11 needs XAUTHORITY outside HOME; use wayland\n' >&2
+            exit 2
+            ;;
+    esac
+    if [[ ! -f "$XAUTHORITY" ]]; then
+        printf 'app_probe: XAUTHORITY is not a file: %s\n' "$XAUTHORITY" >&2
+        exit 2
+    fi
+}
+
+prepare_binds() {
+    FILE_BINDS=()
+    PROG_RUN=$PROG
+    RUN_CWD=$HOME
+    APP_BIND_SRC=
+    APP_BIND_DEST=
+    if [[ "$PROG" == "$HOME_REAL"/* ]]; then
+        local prog_dir
+        prog_dir=$(dirname -- "$PROG")
+        # A program under HOME is invisible after the tmpfs HOME mount. Bind its
+        # directory read-only at /app (or, for a file directly in HOME, just the
+        # file) and run it from there. Sibling assets stay available.
+        if [[ "$prog_dir" == "$HOME_REAL" ]]; then
+            APP_BIND_SRC=$PROG
+            APP_BIND_DEST="/app/$(basename -- "$PROG")"
+        else
+            APP_BIND_SRC=$prog_dir
+            APP_BIND_DEST=/app
+        fi
+        PROG_RUN="/app/$(basename -- "$PROG")"
+        RUN_CWD=/app
+    elif [[ "$PROG" != /usr/* ]]; then
+        local -a resolved=()
+        bwrap_resolve_files FILE_BINDS resolved --ro-bind "$PROG"
+        PROG_RUN=${resolved[0]:-$PROG}
+    fi
+}
+
+prepare_report() {
+    REPORT_ROOT=${APP_PROBE_REPORT_DIR:-$XDG_RUNTIME_DIR}
+    if [[ ! -d "$REPORT_ROOT" ]]; then
+        printf 'app_probe: report directory does not exist: %s\n' "$REPORT_ROOT" >&2
+        exit 1
+    fi
+    REPORT_DIR=$(mktemp -d "$REPORT_ROOT/app-probe.XXXXXX")
+    REPORT="$REPORT_DIR/report.txt"
+    STARTED=$(date -Is)
+
+    {
+        printf 'program: %s\n' "$PROG"
+        printf 'run: %s\n' "$PROG_RUN"
+        printf 'cwd: %s\n' "$RUN_CWD"
+        printf 'args:'
+        if (( ${#APP_ARGS[@]} )); then printf ' %q' "${APP_ARGS[@]}"; fi
+        printf '\n'
+        printf 'home: %s (tmpfs)\n' "$HOME"
+        printf 'display: %s\n' "$DISPLAY_MODE"
+        printf 'network: %s\n' "$NET"
+        printf 'gpu: %s\n' "$GPU"
+        printf 'audio: %s\n' "$AUDIO"
+        printf 'malloc: %s\n' "$MALLOC"
+        printf 'seccomp: %s\n' "$SECCOMP"
+        printf 'started: %s\n' "$STARTED"
+    } > "$REPORT"
+
+    printf 'app_probe: report: %s\n' "$REPORT_DIR" >&2
+}
+
+# Runs as the sandbox command. It owns the app process so an EXIT trap can
+# snapshot the tmpfs HOME while the mount namespace still exists. The report
+# directory is bind-mounted at /report and is not under HOME.
+probe_script() {
+    cat <<'PROBE'
+set +e
+
+finish() {
+    rc=$1
+    trap - EXIT TERM INT HUP
+    {
+        printf "captured_at: %s\n" "$(date -Is)"
+        printf "captured_by: sandbox\n"
+        printf "exit_status: %s\n" "$rc"
+        printf "home: %s\n" "$HOME"
+        printf "\n## tree\n"
+        if command -v tree >/dev/null 2>&1; then
+            tree -a -p -u -g -s --noreport "$HOME" 2>&1 || true
+        else
+            find "$HOME" -xdev -print 2>/dev/null | sort
+        fi
+        printf "\n## paths\n"
+        find "$HOME" -xdev -print 2>/dev/null | sort
+        printf "\n## metadata\n"
+        find "$HOME" -xdev -printf "%p\t%y\t%m\t%s\t%l\n" 2>/dev/null | sort
+    } > /report/home-structure.txt 2> /report/home-structure.err
+    printf "%s\n" "$rc" > /report/status.txt
+    exit "$rc"
+}
+
+terminate() {
+    code=$1
+    trap - EXIT TERM INT HUP
+    if [[ -n "${APP_PID:-}" ]] && kill -0 "$APP_PID" 2>/dev/null; then
+        kill -TERM "$APP_PID" 2>/dev/null || true
+    fi
+    finish "$code"
+}
+
+trap "finish \$?" EXIT
+trap "terminate 130" INT
+trap "terminate 143" TERM
+trap "terminate 129" HUP
+
+"$0" "$@" &
+APP_PID=$!
+wait "$APP_PID"
+finish $?
+PROBE
+}
+
+# Snapshot the live sandbox HOME from outside before it is torn down.
+# shellcheck disable=SC2329
+snapshot_host() {
+    local code=$1 root="/proc/${CHILD_PID}/root"
+    [[ -n "$CHILD_PID" && -d "$root$HOME" ]] || return 1
+    {
+        printf 'captured_at: %s\n' "$(date -Is)"
+        printf 'captured_by: host\n'
+        printf 'exit_status: %s\n' "$code"
+        printf 'home: %s\n' "$HOME"
+        printf '\n## tree\n'
+        if command -v tree >/dev/null 2>&1; then
+            tree -a -p -u -g -s --noreport "$root$HOME" 2>&1 || true
+        else
+            find "$root$HOME" -xdev -print 2>/dev/null | sort
+        fi
+        printf '\n## paths\n'
+        find "$root$HOME" -xdev -print 2>/dev/null | sort
+        printf '\n## metadata\n'
+        find "$root$HOME" -xdev -printf '%p\t%y\t%m\t%s\t%l\n' 2>/dev/null | sort
+    } | sed "s|$root||g" > "$REPORT_DIR/home-structure.txt" 2> "$REPORT_DIR/home-structure.err"
+    printf '%s\n' "$code" > "$REPORT_DIR/status.txt"
+}
+
+# shellcheck disable=SC2329
+stop_sandbox() {
+    local sig=$1 code
+    STOP_SIGNAL=$sig
+    if (( STOPPING )); then return 0; fi
+    STOPPING=1
+
+    case "$sig" in
+        INT) code=130 ;;
+        TERM) code=143 ;;
+        HUP) code=129 ;;
+        *) code=143 ;;
+    esac
+
+    snapshot_host "$code" || true
+    if [[ -n "$CHILD_PID" ]] && kill -0 "$CHILD_PID" 2>/dev/null; then
+        kill -KILL "$CHILD_PID" 2>/dev/null || true
+    fi
+    if kill -0 "$BWRAP_PID" 2>/dev/null; then
+        kill -KILL "$BWRAP_PID" 2>/dev/null || true
+    fi
+}
+
+build_bwrap_args() {
+    A=()
+    bwrap_gui_setup A "$NET" "$GPU"
+    A+=("${FILE_BINDS[@]}")
+    A+=(--dir /report --bind "$REPORT_DIR" /report)
+    if [[ -n "$APP_BIND_SRC" ]]; then
+        A+=(--dir /app --ro-bind "$APP_BIND_SRC" "$APP_BIND_DEST")
+    fi
+    A+=(--chdir "$RUN_CWD")
+    if [[ "$AUDIO" == yes ]]; then
+        bwrap_audio A
+    fi
+    bwrap_gui_finish A "$DISPLAY_MODE" "$NET" "$MALLOC" filtered no "$SECCOMP"
+    A+=(--setenv XDG_SESSION_TYPE "$DISPLAY_MODE")
+    A+=(--as-pid-1)
+}
+
+launch_bwrap() {
+    PROBE_SCRIPT=$(probe_script)
+    INFO_FIFO=$(mktemp -u "${XDG_RUNTIME_DIR}/app-probe-info.XXXXXX")
+    mkfifo "$INFO_FIFO"
+    exec 8<>"$INFO_FIFO"
+
+    # New session: terminal/timeout signal groups must not kill bwrap before
+    # stop_sandbox has captured the live HOME tree.
+    setsid -w bwrap "${A[@]}" --info-fd 8 -- /usr/bin/bash -c "$PROBE_SCRIPT" "$PROG_RUN" "${APP_ARGS[@]}" &
+    BWRAP_PID=$!
+    _bwrap_seccomp_close_fds
+
+    CHILD_PID=
+    while IFS= read -r -t 5 -u 8 line; do
+        if [[ "$line" == *'"child-pid"'* ]]; then
+            CHILD_PID=${line//[!0-9]/}
+            break
+        fi
+    done
+    printf 'supervisor: %s\n' "${CHILD_PID:-unknown}" >> "$REPORT"
+}
+
+run_bwrap() {
+    trap 'stop_sandbox INT' INT
+    trap 'stop_sandbox TERM' TERM
+    trap 'stop_sandbox HUP' HUP
+
+    local rc=0
+    wait "$BWRAP_PID" || rc=$?
+    while kill -0 "$BWRAP_PID" 2>/dev/null; do
+        wait "$BWRAP_PID" || rc=$?
+    done
+
+    exec 8>&-
+    rm -f "$INFO_FIFO"
+
+    if [[ -n "$STOP_SIGNAL" ]]; then
+        case "$STOP_SIGNAL" in
+            INT) rc=130 ;;
+            TERM) rc=143 ;;
+            HUP) rc=129 ;;
+        esac
+    fi
+
+    local status=missing
+    if [[ -s "$REPORT_DIR/status.txt" ]]; then
+        status=$(<"$REPORT_DIR/status.txt")
+    fi
+
+    {
+        printf 'finished: %s\n' "$(date -Is)"
+        printf 'exit: %s\n' "$rc"
+        printf 'snapshot_status: %s\n' "$status"
+        printf 'snapshot: %s\n' "$REPORT_DIR/home-structure.txt"
+    } >> "$REPORT"
+
+    if [[ ! -s "$REPORT_DIR/home-structure.txt" ]]; then
+        printf 'app_probe: warning: HOME snapshot was not captured\n' >&2
+    fi
+
+    printf 'app_probe: home snapshot: %s\n' "$REPORT_DIR/home-structure.txt" >&2
+    exit "$rc"
+}
+
+main() {
+    init_defaults
+    parse_options "$@"
+    validate_options
+
+    local prog_arg=${REMAINING_ARGS[0]:-}
+    if [[ -z "$prog_arg" ]]; then
+        usage >&2
+        exit 2
+    fi
+    APP_ARGS=("${REMAINING_ARGS[@]:1}")
+
+    : "${HOME:?HOME must be set}"
+    : "${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR must be set}"
+
+    resolve_program "$prog_arg"
+    HOME_REAL=$(realpath -m -- "$HOME")
+    check_x11
+    prepare_binds
+    prepare_report
+    build_bwrap_args
+    launch_bwrap
+    run_bwrap
+}
+
+main "$@"
