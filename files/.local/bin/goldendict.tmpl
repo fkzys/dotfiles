@@ -8,7 +8,7 @@ DICT_DIR="{{ index $s "goldendict" "dict_dir" }}"
 AUDIO_DIR="{{ index $s "goldendict" "audio_dir" }}"
 
 A=()
-bwrap_gui_setup A no no
+bwrap_gui_setup A no yes
 bwrap_bind_dir A \
     "${HOME}/.config/goldendict" \
     "${HOME}/.local/share/goldendict" \
