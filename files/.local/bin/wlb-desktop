@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+A=()
+bwrap_gui_setup A yes no
+
+bwrap_bind_dir A "$HOME/.config/whitelist-bypass-creator"
+bwrap_ro_bind_dir A "/opt/whitelist-bypass"
+
+bwrap_gui_finish A wayland yes no
+
+bwrap_exec "${A[@]}" -- /opt/whitelist-bypass/whitelist-bypass-desktop/whitelist-bypass-creator \
+    --no-sandbox \
+    --ozone-platform=wayland \
+    "$@"
