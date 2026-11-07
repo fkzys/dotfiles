@@ -9,7 +9,7 @@ require_dir "${DB_DIR}"
 
 A=()
 bwrap_gui_setup A no no
-bwrap_bind_dir A "${HOME}/.config/keepassxc" "${HOME}/.cache/keepassxc"
+bwrap_bind_dir A "${HOME}/.config/keepassxc" "${HOME}/.cache/keepassxc" "${HOME}/.local/state/keepassxc"
 A+=(--bind "${DB_DIR}" "${DB_DIR}")
 bwrap_fcitx A
 bwrap_dbus_common A \
