@@ -212,8 +212,6 @@ packages = [
     dnsmasq
     {{ end }}
     """,
-    "ansible",
-    "ansible-lint",
     "age",
     "sops",
     "direnv",
