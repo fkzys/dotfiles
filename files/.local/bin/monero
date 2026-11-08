@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+A=()
+bwrap_gui_setup A yes no
+bwrap_bind_dir A "$HOME/.bitmonero" "$HOME/Monero" "$HOME/.config/monero-project"
+bwrap_gui_finish A
+
+A+=(--setenv QT_QPA_PLATFORM "wayland")
+
+bwrap_exec "${A[@]}" -- /usr/bin/monero-wallet-gui "$@"
