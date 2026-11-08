@@ -22,6 +22,9 @@ usage() {
         '  --seccomp / --no-seccomp seccomp filter (default: on)' \
         '  -h, --help             show this help' \
         '' \
+        'Any other -OPTION is forwarded to bwrap with its arguments, e.g.' \
+        'app_probe --setenv FOO bar PROGRAM passes --setenv FOO bar to bwrap.' \
+        '' \
         'Environment:' \
         '  APP_PROBE_REPORT_DIR   report parent directory (default: XDG_RUNTIME_DIR)'
 }
@@ -35,10 +38,33 @@ init_defaults() {
     DISPLAY_MODE=wayland
     STOP_SIGNAL=
     STOPPING=0
+    BWRAP_EXTRA=()
     REMAINING_ARGS=()
 }
 
+# BWRAP_ARITY maps each bwrap option to the number of values it takes. Read it
+# from bwrap's own --help so app_probe does not keep a copy of bwrap's options.
+load_bwrap_arity() {
+    declare -gA BWRAP_ARITY=()
+    local line opt rest tok count
+    local -a words=()
+    while IFS= read -r line; do
+        [[ "$line" == '    --'* ]] || continue
+        line=${line#    }
+        opt=${line%%[[:space:]]*}
+        rest=${line#"$opt"}
+        read -ra words <<< "$rest"
+        count=0
+        for tok in "${words[@]}"; do
+            [[ "$tok" =~ ^[A-Z][A-Z0-9_]*$ ]] || break
+            count=$((count + 1))
+        done
+        BWRAP_ARITY[$opt]=$count
+    done < <(LC_ALL=C bwrap --help 2>/dev/null)
+}
+
 parse_options() {
+    load_bwrap_arity
     while (( $# )); do
         case "$1" in
             --display)
@@ -63,7 +89,24 @@ parse_options() {
             --seccomp=*) SECCOMP=${1#*=}; shift ;;
             -h|--help) usage; exit 0 ;;
             --) shift; break ;;
-            -*) printf 'app_probe: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+            -*)
+                if [[ -z ${BWRAP_ARITY[$1]+set} ]]; then
+                    printf 'app_probe: unknown option: %s\n' "$1" >&2
+                    usage >&2
+                    exit 2
+                fi
+                local arity=${BWRAP_ARITY[$1]} i
+                if (( $# <= arity )); then
+                    printf 'app_probe: %s needs %d argument(s)\n' "$1" "$arity" >&2
+                    exit 2
+                fi
+                BWRAP_EXTRA+=("$1")
+                shift
+                for ((i = 0; i < arity; i++)); do
+                    BWRAP_EXTRA+=("$1")
+                    shift
+                done
+                ;;
             *) break ;;
         esac
     done
@@ -282,6 +325,8 @@ build_bwrap_args() {
     bwrap_gui_finish A "$DISPLAY_MODE" "$NET" "$MALLOC" filtered no "$SECCOMP"
     A+=(--setenv XDG_SESSION_TYPE "$DISPLAY_MODE")
     A+=(--as-pid-1)
+    # Last, so explicit pass-through options can override the defaults above.
+    A+=("${BWRAP_EXTRA[@]}")
 }
 
 launch_bwrap() {
