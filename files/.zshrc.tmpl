@@ -140,7 +140,20 @@ alias rg='rg --smart-case'
 alias vi=nvim vim=nvim
 alias lg=lazygit
 alias start-hyprland="exec uwsm start start-hyprland"
-alias ssops='sudo SOPS_AGE_KEY="$(cat ~/keys/age/dotm-pq.txt)"'
+ssops() {
+    local keyfile="$HOME/keys/age/dotm-pq.txt"
+    local user runuser_bin cat_bin key_cmd
+
+    user="$(id -un)" || return
+    runuser_bin="$(command -v runuser)" || return
+    cat_bin="$(command -v /usr/bin/cat)" || return
+
+    key_cmd="$(printf '%q ' "$runuser_bin" -u "$user" -- "$cat_bin" -- "$keyfile")" || return
+    key_cmd="${key_cmd% }"
+
+    sudo -v || return
+    sudo -n "SOPS_AGE_KEY_CMD=$key_cmd" "$@"
+}
 alias nomalloc='bwrap --dev-bind / / --bind /dev/null /etc/ld.so.preload'
 
 # Git aliases
