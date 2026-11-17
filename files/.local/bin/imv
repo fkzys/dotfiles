@@ -19,4 +19,4 @@ bwrap_hardened_malloc A default
 bwrap_seccomp A default
 bwrap_sandbox A
 
-exec bwrap "${A[@]}" -- "$BIN" "${ARGS[@]}"
+bwrap_exec "${A[@]}" -- "$BIN" "${ARGS[@]}"

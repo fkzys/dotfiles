@@ -35,4 +35,6 @@ A+=(
     --die-with-parent
 )
 
-exec bwrap "${A[@]}" -- /usr/lib/opentabletdriver/OpenTabletDriver.Daemon "$@"
+bwrap_exec_bundled
+
+bwrap_exec "${A[@]}" -- /usr/lib/opentabletdriver/OpenTabletDriver.Daemon "$@"

@@ -32,4 +32,6 @@ A+=(
 bwrap_hardened_malloc A default
 bwrap_sandbox A no
 
-exec bwrap "${A[@]}" -- /usr/bin/fcitx5 "$@"
+bwrap_exec_bundled
+
+bwrap_exec "${A[@]}" -- /usr/bin/fcitx5 "$@"

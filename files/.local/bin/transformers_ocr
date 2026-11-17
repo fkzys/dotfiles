@@ -10,18 +10,7 @@ RUNTIME_SUBDIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/transformers_ocr"
 # ── Foreground daemon → sandboxed ────────────────────────────
 if [[ "${1:-}" == "start" && "${2:-}" == "--foreground" ]]; then
     A=()
-    A+=(
-        --ro-bind /usr /usr
-        --symlink /usr/bin /bin
-        --symlink /usr/bin /sbin
-        --symlink /usr/lib /lib
-        --proc /proc
-        --ro-bind /sys /sys
-        --dev /dev
-        --bind /tmp /tmp
-        --dev-bind /dev/shm /dev/shm
-        --ro-bind /etc /etc
-    )
+    bwrap_base A
     bwrap_lib64 A
     bwrap_gpu A
     bwrap_resolv A
@@ -54,6 +43,7 @@ if [[ "${1:-}" == "start" && "${2:-}" == "--foreground" ]]; then
         --die-with-parent
     )
 
+    bwrap_exec_bundled
     bwrap_exec "${A[@]}" -- "$VENV/bin/python3" "$REAL" start --foreground
 fi
 

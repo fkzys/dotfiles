@@ -25,4 +25,4 @@ A+=(--chdir "$CONF_DIR")
 
 bwrap_gui_finish A x11 no
 
-exec bwrap "${A[@]}" -- /usr/bin/mono /opt/subs2srs/Utils/SubsReTimer/SubsReTimer.exe "$@"
+bwrap_exec "${A[@]}" -- /usr/bin/mono /opt/subs2srs/Utils/SubsReTimer/SubsReTimer.exe "$@"

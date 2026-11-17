@@ -18,4 +18,4 @@ bwrap_dbus_common A \
 bwrap_gui_finish A wayland no default none
 A+=(--setenv QT_QPA_PLATFORMTHEME qt6ct)
 
-exec bwrap "${A[@]}" -- /usr/bin/keepassxc "$@"
+bwrap_exec "${A[@]}" -- /usr/bin/keepassxc "$@"
