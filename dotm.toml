@@ -20,7 +20,7 @@ vid_edit     = { type = "bool", question = "KdenLive" }
 
 [symlinks]
 ".local/bin/imv-dir"  = "{{ .homeDir }}/.local/bin/imv"
-".local/bin/sing-box" = "{{ .homeDir }}/sing-box/sing-box"
+".local/bin/sing-box" = "/opt/sing-box/sing-box"
 
 # ─── Scripts ───
 

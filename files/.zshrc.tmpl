@@ -109,7 +109,7 @@ export MANROFFOPT="-c"
 eval "$(zoxide init zsh)"
 eval "$(fzf --zsh)"
 eval "$(direnv hook zsh)"
-eval "$(sing-box completion zsh)"
+eval "$(/opt/sing-box/sing-box completion zsh)"
 
 # ── FZF ─────────────────────────────────────────────────────
 export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
@@ -140,20 +140,6 @@ alias rg='rg --smart-case'
 alias vi=nvim vim=nvim
 alias lg=lazygit
 alias start-hyprland="exec uwsm start start-hyprland"
-ssops() {
-    local keyfile="$HOME/keys/age/dotm-pq.txt"
-    local user runuser_bin cat_bin key_cmd
-
-    user="$(id -un)" || return
-    runuser_bin="$(command -v runuser)" || return
-    cat_bin="$(command -v /usr/bin/cat)" || return
-
-    key_cmd="$(printf '%q ' "$runuser_bin" -u "$user" -- "$cat_bin" -- "$keyfile")" || return
-    key_cmd="${key_cmd% }"
-
-    sudo -v || return
-    sudo -n "SOPS_AGE_KEY_CMD=$key_cmd" "$@"
-}
 alias nomalloc='bwrap --dev-bind / / --bind /dev/null /etc/ld.so.preload'
 
 # Git aliases
@@ -200,6 +186,21 @@ bcat() {
 alias {{ $name }}='cd -- "{{ $path }}"'
 {{ end -}}
 {{ end -}}
+
+ssops() {
+    local keyfile="$HOME/keys/age/dotm-pq.txt"
+    local user runuser_bin cat_bin key_cmd
+
+    user="$(id -un)" || return
+    runuser_bin="$(command -v runuser)" || return
+    cat_bin="$(command -v /usr/bin/cat)" || return
+
+    key_cmd="$(printf '%q ' "$runuser_bin" -u "$user" -- "$cat_bin" -- "$keyfile")" || return
+    key_cmd="${key_cmd% }"
+
+    sudo -v || return
+    sudo -n "SOPS_AGE_KEY_CMD=$key_cmd" "$@"
+}
 
 # ── Keybindings ─────────────────────────────────────────────
 bindkey -s '^o' '^ulf\n'

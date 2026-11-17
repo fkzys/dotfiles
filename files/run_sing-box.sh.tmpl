@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 {{ $s := output "sops" "-d" (joinPath .sourceDir "secrets.enc.yaml") | fromYaml -}}
 {{ $url := index $s "sing-box" "config_url" .hostname -}}
 
@@ -9,8 +9,6 @@ Usage: $(basename "$0") [OPTION]
 Run sing-box with per-host config downloaded from secrets.
 
 Options:
-  --perm      Grant sing-box binary cap_net_admin, cap_net_bind_service,
-              and cap_net_raw capabilities (via setcap, requires sudo)
   -h, --help  Show this help message and exit
 
 Without options, downloads config (if available) and starts sing-box.
@@ -18,29 +16,35 @@ EOF
 }
 
 case "${1:-}" in
-    --perm)
-        sudo setcap 'cap_net_admin,cap_net_bind_service,cap_net_raw=+ep' "$HOME/sing-box/sing-box"
-        ;;
     -h|--help)
         show_help
         ;;
     "")
-        CONFIG="$HOME/{{ .hostname }}_sing-box/config.json"
+        CONFIG="/opt/sing-box/config.json"
         TEMP=$(mktemp)
 
         # -f = fail on HTTP errors (4xx, 5xx)
         # -s = silent, -S = show errors
-        if curl -fsSL "{{ $url }}" -o "$TEMP"; then
-            mv "$TEMP" "$CONFIG"
-            echo "Config updated"
+        if curl -fsSL "{{ $url }}" -o "${TEMP}"; then
+            if cp "${TEMP}" "$CONFIG"; then
+                echo -e "Config updated"
+                rm -f "${TEMP}"
+            else
+                echo "Failed to copy config, exiting..." >&2
+                rm -f "${TEMP}"
+                exit 1
+            fi
         else
-            rm -f "$TEMP"
+            rm -f "${TEMP}"
             echo "Load failed, using old config"
         fi
 
-        trap 'kill $(jobs -p) 2>/dev/null' EXIT SIGHUP SIGINT SIGTERM
+        trap 'systemctl stop sing-box' EXIT SIGHUP SIGINT SIGTERM
 
-        "$HOME/sing-box/sing-box" run -c "$CONFIG" &
+        systemctl start sing-box ;
+        echo -e "namespace ping\n" | systemd-cat --namespace=sing-box ;
+        sleep 0.1 ;
+        journalctl -a --namespace=sing-box -f &
         wait
         ;;
     *)
