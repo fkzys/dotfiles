@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_src() { local p; p=$(verify-lib "$1" "$2") && . "$p" || exit 1; }
+_src /usr/lib/bwrap-common/bwrap-common.sh /usr/lib/bwrap-common/
+
+A=()
+bwrap_gui_setup A yes no
+
+bwrap_bind_dir A "${HOME}/.local/share/torbrowser" "${HOME}/.config/torbrowser"
+
+bwrap_audio A
+bwrap_seccomp A default \
+    "clone ALLOW a0 & CLONE_NEWUSER" \
+    "chroot ALLOW"
+
+bwrap_gui_finish A wayland yes no filtered no none
+
+bwrap_exec "${A[@]}" -- "${HOME}/.local/share/torbrowser/tbb/x86_64/tor-browser/Browser/start-tor-browser" "$@"
