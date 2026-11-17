@@ -311,6 +311,7 @@ services = [
     "hyprpolkitagent",
     "hyprsunset",
     "waybar",
+    "fcitx5",
     "{{ if .tablet }}opentabletdriver{{ end }}",
     "mpd",
     "ssh-agent",
